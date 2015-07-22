@@ -1,0 +1,55 @@
+plugins {
+    id 'net.researchgate.release' version '2.1.2'
+}
+
+apply from: 'openbaton-libs/gradle/gradle/git.release.gradle'
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+version = '0.1-SNAPSHOT'
+
+apply from: 'openbaton-libs/gradle/gradle/command.line.helper.gradle'
+apply from: 'openbaton-libs/gradle/gradle/git.helpers.gradle'
+
+project.ext {
+    //------------------------------------------------//
+    /**
+     * Spring Related Variables
+     */
+    springVersion = '4.1.7.RELEASE'
+    springBootVersion = '1.2.5.RELEASE'
+    //------------------------------------------------//
+    //------------------------------------------------//
+    /**
+     * Application Related Version
+     */
+    applicationVersion = "0.6-alpha"
+    applicationVersionDebian = "1";
+
+    applicationRelease = isApplicationRelease()
+    applicationDate = new Date()
+    applicationRevision = getRevision()
+
+    applicationVersionSnapshot = (!applicationRelease) ? "+SNAPSHOT.${asUTC(applicationDate, 'yyMMddHHmm')}.git${applicationRevision}" : ""
+    applicationVersionFull = "${applicationVersion}${applicationVersionSnapshot}"
+    //------------------------------------------------//
+    //------------------------------------------------//
+    /**
+     * gradle Related Vars
+     */
+    mainClass = 'org.project.openbaton.nfvo.main.Application'
+    //------------------------------------------------//
+}
+apply from: 'openbaton-libs/gradle/gradle/application.java.gradle'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	compile project(':vnfm-sdk')
+}
+
+apply from: 'openbaton-libs/gradle/gradle/run.application.java.gradle'
+
