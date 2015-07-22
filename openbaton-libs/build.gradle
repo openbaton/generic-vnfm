@@ -1,0 +1,48 @@
+plugins {
+    id 'net.researchgate.release' version '2.1.2'
+}
+
+apply from: 'gradle/gradle/git.release.gradle'
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+apply from: 'gradle/gradle/helpers.gradle'
+version = '0.5-SNAPSHOT'
+
+apply from: 'gradle/gradle/command.line.helper.gradle'
+apply from: 'gradle/gradle/git.helpers.gradle'
+
+project.ext {
+    //------------------------------------------------//
+    /**
+     * Spring Related Variables
+     */
+    springVersion = '4.1.7.RELEASE'
+    springBootVersion = '1.2.5.RELEASE'
+    //------------------------------------------------//
+    //------------------------------------------------//
+    /**
+     * Application Related Version
+     */
+    applicationVersion = "0.6-alpha"
+    applicationVersionDebian = "1";
+
+    applicationRelease = isApplicationRelease()
+    applicationDate = new Date()
+    applicationRevision = getRevision()
+
+    applicationVersionSnapshot = (!applicationRelease) ? "+SNAPSHOT.${asUTC(applicationDate, 'yyMMddHHmm')}.git${applicationRevision}" : ""
+    applicationVersionFull = "${applicationVersion}${applicationVersionSnapshot}"
+    //------------------------------------------------//
+}
+
+apply from: 'gradle/gradle/application.java.gradle'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+}
