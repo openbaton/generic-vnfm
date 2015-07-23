@@ -7,6 +7,7 @@ import org.project.openbaton.catalogue.nfvo.Action;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 
+import javax.jms.JMSException;
 import java.util.Set;
 
 /**
@@ -27,10 +28,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
                 //Request validation and & processing (MANO: B.3.1.2 step 5)
 
-                CoreMessage coreMessage = new CoreMessage();
-                coreMessage.setAction(Action.ALLOCATE_RESOURCES);
-                coreMessage.setPayload(vnfr);
-                this.sendMessageToQueue("vnfm-core-actions", coreMessage);
+
+                sendMessageToCore(Action.ALLOCATE_RESOURCES,vnfr);
                 allocate=true;
             }
         }
@@ -41,15 +40,37 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
             {
                 if (event.getEvent() == Event.INSTALL)
                 {
-                    Set<String> commands = event.getLifecycle_events();
-                    //sendMessageToQueue(" ",commands);
-
+                    toEMS(event.getLifecycle_events());
+                    sendMessageToCore(Action.INSTANTIATE_FINISH,vnfr);
+                    break;
                 }
             }
         }
 
     }
 
+    private void sendMessageToCore(Action action, VirtualNetworkFunctionRecord payload){
+        CoreMessage coreMessage = new CoreMessage();
+        coreMessage.setAction(action);
+        coreMessage.setPayload(payload);
+        this.sendMessageToQueue("vnfm-core-actions", coreMessage);
+    }
+
+    private void toEMS(Set<String> commands){
+
+        for(String command : commands){
+            String answer=null;
+            try
+            {
+                answer = sendAndReceiveStringMessage("ems-vnfm-actions","vnfm-ems-actions",command);
+            } catch (JMSException e)
+            {
+                e.printStackTrace();
+            }
+            log.debug("Received from EMS: " + answer);
+        }
+
+    }
     @Override
     public void query() {
 
