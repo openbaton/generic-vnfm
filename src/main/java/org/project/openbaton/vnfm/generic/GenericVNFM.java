@@ -6,6 +6,7 @@ import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
+import org.springframework.boot.SpringApplication;
 
 import javax.jms.JMSException;
 import java.util.Set;
@@ -109,5 +110,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     @Override
     public void terminate() {
 
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(GenericVNFM.class);
     }
 }
