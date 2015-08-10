@@ -1,5 +1,8 @@
 package org.project.openbaton.vnfm.generic;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
@@ -8,10 +11,17 @@ import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.springframework.boot.SpringApplication;
 
+import javax.jms.JMSException;
+
 /**
  * Created by mob on 16.07.15.
  */
 public class GenericVNFM extends AbstractVnfmSpringJMS{
+    private Gson parser;
+    public GenericVNFM(){
+        parser = new GsonBuilder().setPrettyPrinting().create();
+
+    }
     @Override
     public CoreMessage instantiate(VirtualNetworkFunctionRecord vnfr) {
 
@@ -89,7 +99,6 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
     @Override
     public CoreMessage modify(VirtualNetworkFunctionRecord vnfr) {
-
         return getCoreMessage(Action.MODIFY, vnfr);
     }
 
@@ -110,12 +119,41 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
     @Override
     protected CoreMessage configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-        log.debug("Scripts are: " + virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink());
+        String scriptsLink = virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink();
+        log.debug("Scripts are: " + scriptsLink);
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("action", "SAVE_SCRIPTS");
+        jsonMessage.addProperty("payload", scriptsLink);
+        toEMS(jsonMessage.toString(), "generic");
 
+        String result=null;
+        try {
+            result = receiveTextFromQueue("generic-vnfm-actions");
+        } catch (JMSException e) {
+            e.printStackTrace();
+            getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
+        }
 
+        if(!checkResult(result))
+            return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
         return getCoreMessage(Action.CONFIGURE, virtualNetworkFunctionRecord);
     }
 
+    private boolean checkResult(String resultFromEms){
+        if(resultFromEms==null)
+            return false;
+        JsonObject jsonObject = parser.fromJson(resultFromEms,JsonObject.class);
+        boolean result=false;
+        if(jsonObject.get("status").getAsInt()==0){
+            result = true;
+        }
+        else{
+            log.error(jsonObject.get("err").getAsString());
+        }
+        log.debug(jsonObject.get("out").getAsString());
+        return result;
+
+    }
     public static void main(String[] args) {
         SpringApplication.run(GenericVNFM.class);
     }
