@@ -8,15 +8,12 @@ import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.springframework.boot.SpringApplication;
 
-import javax.jms.JMSException;
-import java.util.Set;
-
 /**
  * Created by mob on 16.07.15.
  */
 public class GenericVNFM extends AbstractVnfmSpringJMS{
     @Override
-    public void instantiate(VirtualNetworkFunctionRecord vnfr) {
+    public CoreMessage instantiate(VirtualNetworkFunctionRecord vnfr) {
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + vnfr.getName());
         log.trace("Instantiation of VirtualNetworkFunctionRecord " + vnfr);
@@ -29,9 +26,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
                 //Request validation and & processing (MANO: B.3.1.2 step 5)
 
-
-                sendMessageToCore(Action.ALLOCATE_RESOURCES,vnfr);
                 allocate=true;
+                return getCoreMessage(Action.ALLOCATE_RESOURCES, vnfr);
             }
         }
 
@@ -41,35 +37,29 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
             {
                 if (event.getEvent() == Event.INSTALL)
                 {
-                    toEMS(event.getLifecycle_events());
-                    sendMessageToCore(Action.INSTANTIATE_FINISH,vnfr);
-                    break;
+                    for (String script : event.getLifecycle_events()) {
+//                        toEMS(script, );
+                        getCoreMessage(Action.INSTANTIATE, vnfr);
+                    }
                 }
             }
         }
 
+        return getCoreMessage(Action.INSTANTIATE, vnfr);
     }
 
-    private void sendMessageToCore(Action action, VirtualNetworkFunctionRecord payload){
+    private CoreMessage getCoreMessage(Action action, VirtualNetworkFunctionRecord payload){
         CoreMessage coreMessage = new CoreMessage();
         coreMessage.setAction(action);
         coreMessage.setPayload(payload);
-        this.sendMessageToQueue("vnfm-core-actions", coreMessage);
+        return coreMessage;
     }
 
-    private void toEMS(Set<String> commands){
+    private void toEMS(String command, String vduHostname){
 
-        for(String command : commands){
             String answer=null;
-            try
-            {
-                answer = sendAndReceiveStringMessage("ems-vnfm-actions","vnfm-ems-actions",command);
-            } catch (JMSException e)
-            {
-                e.printStackTrace();
-            }
+            this.sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
             log.debug("Received from EMS: " + answer);
-        }
 
     }
     @Override
@@ -78,7 +68,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public void scale() {
+    public void scale(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
 
     }
 
@@ -98,8 +88,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public void modify(VirtualNetworkFunctionRecord vnfr) {
+    public CoreMessage modify(VirtualNetworkFunctionRecord vnfr) {
 
+        return getCoreMessage(Action.MODIFY, vnfr);
     }
 
     @Override
@@ -108,8 +99,13 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public void terminate() {
+    public CoreMessage terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+        return null;
+    }
 
+    @Override
+    public CoreMessage handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+        return null;
     }
 
     public static void main(String[] args) {
