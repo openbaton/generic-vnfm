@@ -108,6 +108,14 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         return null;
     }
 
+    @Override
+    protected CoreMessage configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+        log.debug("Scripts are: " + virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink());
+
+        
+        return getCoreMessage(Action.INSTANTIATE, virtualNetworkFunctionRecord);
+    }
+
     public static void main(String[] args) {
         SpringApplication.run(GenericVNFM.class);
     }
