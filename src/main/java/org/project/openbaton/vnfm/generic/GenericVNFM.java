@@ -48,8 +48,13 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
                 if (event.getEvent() == Event.INSTALL)
                 {
                     for (String script : event.getLifecycle_events()) {
-//                        toEMS(script, );
-                        getCoreMessage(Action.INSTANTIATE, vnfr);
+
+                        String command = getJsonObject("EXECUTE", script).toString();
+                        log.debug("Sending command: " + command);
+                        toEMS(command, "generic");
+                        if (!receiveFromEMS("generic")){
+                            return getCoreMessage(Action.ERROR,vnfr);
+                        }
                     }
                 }
             }
@@ -66,12 +71,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     private void toEMS(String command, String vduHostname){
-
-            String answer=null;
             this.sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
-            log.debug("Received from EMS: " + answer);
-
     }
+
     @Override
     public void query() {
 
@@ -121,37 +123,45 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     protected CoreMessage configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
         String scriptsLink = virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink();
         log.debug("Scripts are: " + scriptsLink);
-        JsonObject jsonMessage = new JsonObject();
-        jsonMessage.addProperty("action", "SAVE_SCRIPTS");
-        jsonMessage.addProperty("payload", scriptsLink);
+        JsonObject jsonMessage = getJsonObject("SAVE_SCRIPTS", scriptsLink);
         toEMS(jsonMessage.toString(), "generic");
 
-        String result=null;
-        try {
-            result = receiveTextFromQueue("generic-vnfm-actions");
-        } catch (JMSException e) {
-            e.printStackTrace();
-            getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
-        }
 
-        if(!checkResult(result))
+        if(!receiveFromEMS("generic"))
             return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
         return getCoreMessage(Action.CONFIGURE, virtualNetworkFunctionRecord);
     }
 
-    private boolean checkResult(String resultFromEms){
-        if(resultFromEms==null)
+    private JsonObject getJsonObject(String action, String payload) {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("action", action);
+        jsonMessage.addProperty("payload", payload);
+        return jsonMessage;
+    }
+
+    private boolean receiveFromEMS(String hostname){
+        String response=null;
+        try {
+            response = receiveTextFromQueue(hostname + "-vnfm-actions");
+        } catch (JMSException e) {
+            e.printStackTrace();
             return false;
-        JsonObject jsonObject = parser.fromJson(resultFromEms,JsonObject.class);
-        boolean result=false;
+        }
+
+        log.debug("Received from EMS: " + response);
+
+        if(response==null) {
+            return false;
+        }
+        JsonObject jsonObject = parser.fromJson(response,JsonObject.class);
         if(jsonObject.get("status").getAsInt()==0){
-            result = true;
+            log.debug("Output from EMS is: " + jsonObject.get("output").getAsString());
+            return true;
         }
         else{
             log.error(jsonObject.get("err").getAsString());
+            return false;
         }
-        log.debug(jsonObject.get("out").getAsString());
-        return result;
 
     }
     public static void main(String[] args) {
