@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
 
+import org.project.openbaton.catalogue.mano.record.Status;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
@@ -47,7 +48,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         {
             for (LifecycleEvent event : vnfr.getLifecycle_event())
             {
-                if (event.getEvent() == Event.INSTALL)
+                if (event.getEvent() == Event.INSTANTIATE)
                 {
                     for (String script : event.getLifecycle_events()) {
 
@@ -56,14 +57,15 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
 
                         try {
-                            executeActionOnEMS("generic", command);
+                            sendToEmsAndUpdate(vnfr, event.getEvent(), command, "generic");
+//                            executeActionOnEMS("generic", command);
                         } catch (JMSException e) {
                             return getCoreMessage(Action.ERROR, vnfr);
                         } catch (VnfmSdkException e) {
                             //e.getMessage();
                             return getCoreMessage(Action.ERROR, vnfr);
                         }
-                        updateVnfr(vnfr, event.getEvent(),command);
+//                        updateVnfr(vnfr, event.getEvent(),command);
                     }
                 }
             }
@@ -124,6 +126,17 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     @Override
     public CoreMessage handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
         return null;
+    }
+
+    @Override
+    protected CoreMessage start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+
+        log.debug("Starting vnfr: " + virtualNetworkFunctionRecord);
+        virtualNetworkFunctionRecord.setStatus(Status.ACTIVE);
+        CoreMessage message = new CoreMessage();
+        message.setPayload(virtualNetworkFunctionRecord);
+        message.setAction(Action.START);
+        return message;
     }
 
     @Override
