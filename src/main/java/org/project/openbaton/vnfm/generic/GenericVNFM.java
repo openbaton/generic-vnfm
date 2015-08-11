@@ -32,22 +32,20 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         log.trace("Instantiation of VirtualNetworkFunctionRecord " + vnfr);
         boolean allocate=false;
 
-        for (LifecycleEvent event : vnfr.getLifecycle_event())
-        {
-            if (event.getEvent() == Event.ALLOCATE)
-            {
 
-                //Request validation and & processing (MANO: B.3.1.2 step 5)
 
-                allocate=true;
-                return getCoreMessage(Action.ALLOCATE_RESOURCES, vnfr);
-            }
-        }
+        if (getLifecycleEvent(vnfr.getLifecycle_event(),Event.ALLOCATE) != null)
+            if (getLifecycleEvent(vnfr.getLifecycle_event_history(), Event.ALLOCATE) != null)
+                allocate=false;
+            else
+                allocate = true;
+
 
         if(!allocate)
         {
             for (LifecycleEvent event : vnfr.getLifecycle_event())
             {
+                log.debug("the event is: " + event);
                 if (event.getEvent() == Event.INSTANTIATE)
                 {
                     for (String script : event.getLifecycle_events()) {
@@ -60,16 +58,18 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
                             sendToEmsAndUpdate(vnfr, event.getEvent(), command, "generic");
 //                            executeActionOnEMS("generic", command);
                         } catch (JMSException e) {
+                            e.printStackTrace();
                             return getCoreMessage(Action.ERROR, vnfr);
                         } catch (VnfmSdkException e) {
-                            //e.getMessage();
+                            e.printStackTrace();
                             return getCoreMessage(Action.ERROR, vnfr);
                         }
 //                        updateVnfr(vnfr, event.getEvent(),command);
                     }
                 }
             }
-        }
+        }else
+            return getCoreMessage(Action.ALLOCATE_RESOURCES, vnfr);
 
         return getCoreMessage(Action.INSTANTIATE, vnfr);
     }
