@@ -1,13 +1,15 @@
 package org.project.openbaton.vnfm.generic;
 
-import com.google.gson.Gson;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
+
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
+import org.project.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.springframework.boot.SpringApplication;
 
@@ -17,7 +19,7 @@ import javax.jms.JMSException;
  * Created by mob on 16.07.15.
  */
 public class GenericVNFM extends AbstractVnfmSpringJMS{
-    private Gson parser;
+
     public GenericVNFM(){
         parser = new GsonBuilder().setPrettyPrinting().create();
 
@@ -51,10 +53,17 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
                         String command = getJsonObject("EXECUTE", script).toString();
                         log.debug("Sending command: " + command);
-                        toEMS(command, "generic");
-                        if (!receiveFromEMS("generic")){
-                            return getCoreMessage(Action.ERROR,vnfr);
+
+
+                        try {
+                            executeActionOnEMS("generic", command);
+                        } catch (JMSException e) {
+                            return getCoreMessage(Action.ERROR, vnfr);
+                        } catch (VnfmSdkException e) {
+                            //e.getMessage();
+                            return getCoreMessage(Action.ERROR, vnfr);
                         }
+                        updateVnfr(vnfr, event.getEvent(),command);
                     }
                 }
             }
@@ -70,9 +79,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         return coreMessage;
     }
 
-    private void toEMS(String command, String vduHostname){
-            this.sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
-    }
+
 
     @Override
     public void query() {
@@ -124,11 +131,15 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         String scriptsLink = virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink();
         log.debug("Scripts are: " + scriptsLink);
         JsonObject jsonMessage = getJsonObject("SAVE_SCRIPTS", scriptsLink);
-        toEMS(jsonMessage.toString(), "generic");
 
-
-        if(!receiveFromEMS("generic"))
+        try {
+            executeActionOnEMS("generic", jsonMessage.toString());
+        } catch (JMSException e) {
             return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
+        } catch (VnfmSdkException e) {
+            //e.getMessage();
+            return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
+        }
         return getCoreMessage(Action.CONFIGURE, virtualNetworkFunctionRecord);
     }
 
@@ -139,31 +150,6 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         return jsonMessage;
     }
 
-    private boolean receiveFromEMS(String hostname){
-        String response=null;
-        try {
-            response = receiveTextFromQueue(hostname + "-vnfm-actions");
-        } catch (JMSException e) {
-            e.printStackTrace();
-            return false;
-        }
-
-        log.debug("Received from EMS: " + response);
-
-        if(response==null) {
-            return false;
-        }
-        JsonObject jsonObject = parser.fromJson(response,JsonObject.class);
-        if(jsonObject.get("status").getAsInt()==0){
-            log.debug("Output from EMS is: " + jsonObject.get("output").getAsString());
-            return true;
-        }
-        else{
-            log.error(jsonObject.get("err").getAsString());
-            return false;
-        }
-
-    }
     public static void main(String[] args) {
         SpringApplication.run(GenericVNFM.class);
     }
