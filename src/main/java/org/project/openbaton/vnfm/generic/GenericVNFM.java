@@ -1,11 +1,9 @@
 package org.project.openbaton.vnfm.generic;
 
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
-
 import org.project.openbaton.catalogue.mano.record.Status;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
@@ -22,20 +20,18 @@ import javax.jms.JMSException;
 public class GenericVNFM extends AbstractVnfmSpringJMS{
 
     public GenericVNFM(){
-        parser = new GsonBuilder().setPrettyPrinting().create();
-
     }
     @Override
-    public CoreMessage instantiate(VirtualNetworkFunctionRecord vnfr) {
+    public CoreMessage instantiate() {
 
-        log.info("Instantiation of VirtualNetworkFunctionRecord " + vnfr.getName());
-        log.trace("Instantiation of VirtualNetworkFunctionRecord " + vnfr);
+        log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
+        log.trace("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord);
         boolean allocate=false;
 
 
 
-        if (getLifecycleEvent(vnfr.getLifecycle_event(),Event.ALLOCATE) != null)
-            if (getLifecycleEvent(vnfr.getLifecycle_event_history(), Event.ALLOCATE) != null)
+        if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(),Event.ALLOCATE) != null)
+            if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event_history(), Event.ALLOCATE) != null)
                 allocate=false;
             else
                 allocate = true;
@@ -43,7 +39,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
         if(!allocate)
         {
-            for (LifecycleEvent event : vnfr.getLifecycle_event())
+            for (LifecycleEvent event : virtualNetworkFunctionRecord.getLifecycle_event())
             {
                 log.debug("the event is: " + event);
                 if (event.getEvent() == Event.INSTANTIATE)
@@ -55,23 +51,23 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
 
                         try {
-                            sendToEmsAndUpdate(vnfr, event.getEvent(), command, "generic");
+                            sendToEmsAndUpdate(virtualNetworkFunctionRecord, event.getEvent(), command, "generic");
 //                            executeActionOnEMS("generic", command);
                         } catch (JMSException e) {
                             e.printStackTrace();
-                            return getCoreMessage(Action.ERROR, vnfr);
+                            return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
                         } catch (VnfmSdkException e) {
                             e.printStackTrace();
-                            return getCoreMessage(Action.ERROR, vnfr);
+                            return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
                         }
 //                        updateVnfr(vnfr, event.getEvent(),command);
                     }
                 }
             }
         }else
-            return getCoreMessage(Action.ALLOCATE_RESOURCES, vnfr);
+            return getCoreMessage(Action.ALLOCATE_RESOURCES, virtualNetworkFunctionRecord);
 
-        return getCoreMessage(Action.INSTANTIATE, vnfr);
+        return getCoreMessage(Action.INSTANTIATE, virtualNetworkFunctionRecord);
     }
 
     private CoreMessage getCoreMessage(Action action, VirtualNetworkFunctionRecord payload){
@@ -89,7 +85,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public void scale(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+    public void scale() {
 
     }
 
@@ -109,8 +105,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public CoreMessage modify(VirtualNetworkFunctionRecord vnfr) {
-        return getCoreMessage(Action.MODIFY, vnfr);
+    public CoreMessage modify() {
+        return getCoreMessage(Action.MODIFY, virtualNetworkFunctionRecord);
     }
 
     @Override
@@ -119,17 +115,17 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public CoreMessage terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+    public CoreMessage terminate() {
         return null;
     }
 
     @Override
-    public CoreMessage handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+    public CoreMessage handleError() {
         return null;
     }
 
     @Override
-    protected CoreMessage start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+    protected CoreMessage start() {
 
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord);
         virtualNetworkFunctionRecord.setStatus(Status.ACTIVE);
@@ -140,7 +136,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    protected CoreMessage configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+    protected CoreMessage configure() {
         String scriptsLink = virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink();
         log.debug("Scripts are: " + scriptsLink);
         JsonObject jsonMessage = getJsonObject("SAVE_SCRIPTS", scriptsLink);
