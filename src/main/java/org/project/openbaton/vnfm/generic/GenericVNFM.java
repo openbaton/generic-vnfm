@@ -22,7 +22,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     public GenericVNFM(){
     }
     @Override
-    public CoreMessage instantiate() {
+    public CoreMessage instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
         log.trace("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord);
@@ -105,7 +105,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public CoreMessage modify() {
+    public CoreMessage modify(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
         return getCoreMessage(Action.MODIFY, virtualNetworkFunctionRecord);
     }
 
@@ -115,17 +115,17 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public CoreMessage terminate() {
+    public CoreMessage terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
         return null;
     }
 
     @Override
-    public CoreMessage handleError() {
+    public CoreMessage handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
         return null;
     }
 
     @Override
-    protected CoreMessage start() {
+    protected CoreMessage start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
 
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord);
         virtualNetworkFunctionRecord.setStatus(Status.ACTIVE);
@@ -136,7 +136,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    protected CoreMessage configure() {
+    protected CoreMessage configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
         String scriptsLink = virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink();
         log.debug("Scripts are: " + scriptsLink);
         JsonObject jsonMessage = getJsonObject("SAVE_SCRIPTS", scriptsLink);
