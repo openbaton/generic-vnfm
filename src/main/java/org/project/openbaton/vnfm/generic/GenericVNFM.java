@@ -7,12 +7,15 @@ import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
 import org.project.openbaton.catalogue.mano.record.Status;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
+import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.springframework.boot.SpringApplication;
 
 import javax.jms.JMSException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by mob on 16.07.15.
@@ -66,6 +69,39 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
             }
         }else
             return getCoreMessage(Action.ALLOCATE_RESOURCES, virtualNetworkFunctionRecord);
+
+
+        /**
+         * Before ending, need to get all the "provides" filled
+         */
+
+        Map<String, String> map = new HashMap<>();
+        log.debug("Provides is: " + virtualNetworkFunctionRecord.getProvides());
+        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters()){
+            map.put(configurationParameter.getConfKey(), "");
+        }
+
+        String command = "{ \"action\": \"CONFIGURATION_UPDATE\", \"payload\":" + parser.toJson(map) + "}";
+        try {
+            String result = executeActionOnEMS("generic",command);
+
+            JsonObject object = parser.fromJson(result, JsonObject.class);
+            Map<String, String > res = parser.fromJson(object.get("output"), Map.class);
+            for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters()){
+                for (Map.Entry<String, String> entry:res.entrySet()) {
+                    if (configurationParameter.getConfKey().equals(entry.getKey())){
+                        configurationParameter.setValue(entry.getValue());
+                        log.debug("Got Configuration Parameter: " + configurationParameter);
+                    }
+                }
+            }
+        } catch (JMSException e) {
+            e.printStackTrace();
+            return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
+        } catch (VnfmSdkException e) {
+            e.printStackTrace();
+            return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
+        }
 
         return getCoreMessage(Action.INSTANTIATE, virtualNetworkFunctionRecord);
     }
