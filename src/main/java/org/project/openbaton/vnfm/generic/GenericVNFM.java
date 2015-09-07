@@ -167,11 +167,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
     @Override
     public void updateSoftware() {
-
     }
     @Override
     public void upgradeSoftware() {
-
     }
 
     @Override
