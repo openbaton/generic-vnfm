@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
 import org.project.openbaton.catalogue.mano.record.Status;
+import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
 import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
@@ -109,7 +110,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     private CoreMessage getCoreMessage(Action action, VirtualNetworkFunctionRecord payload){
         CoreMessage coreMessage = new CoreMessage();
         coreMessage.setAction(action);
-        coreMessage.setPayload(payload);
+        coreMessage.setVirtualNetworkFunctionRecord(payload);
         return coreMessage;
     }
 
@@ -141,7 +142,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public CoreMessage modify(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+    public CoreMessage modify(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFRecordDependency dependency) {
         return getCoreMessage(Action.MODIFY, virtualNetworkFunctionRecord);
     }
 
@@ -166,7 +167,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord);
         virtualNetworkFunctionRecord.setStatus(Status.ACTIVE);
         CoreMessage message = new CoreMessage();
-        message.setPayload(virtualNetworkFunctionRecord);
+        message.setVirtualNetworkFunctionRecord(virtualNetworkFunctionRecord);
         message.setAction(Action.START);
         return message;
     }
