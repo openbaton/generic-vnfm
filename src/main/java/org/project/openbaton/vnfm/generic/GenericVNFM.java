@@ -4,26 +4,17 @@ package org.project.openbaton.vnfm.generic;
 import com.google.gson.JsonObject;
 import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
-import org.project.openbaton.catalogue.mano.common.VNFDeploymentFlavour;
-import org.project.openbaton.catalogue.mano.descriptor.VirtualLinkDescriptor;
-import org.project.openbaton.catalogue.mano.descriptor.VirtualNetworkFunctionDescriptor;
-import org.project.openbaton.catalogue.mano.record.Status;
 import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
 import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.catalogue.nfvo.DependencyParameters;
-import org.project.openbaton.common.vnfm_sdk.exception.BadFormatException;
-import org.project.openbaton.common.vnfm_sdk.exception.NotFoundException;
 import org.project.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
-import org.project.openbaton.common.vnfm_sdk.utils.VNFRUtils;
 import org.springframework.boot.SpringApplication;
 
 import javax.jms.JMSException;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,45 +27,27 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionDescriptor vnfd, VNFDeploymentFlavour deploymentFlavour, String vnfInstanceName, List<VirtualLinkDescriptor> virtualLinkDescriptors, Map<String,String> extention){
-
-        VirtualNetworkFunctionRecord vnfr=null;
-
-        try {
-            vnfr = VNFRUtils.createVirtualNetworkFunctionRecord(vnfd, extention.get("nsr-id"));
-        } catch (NotFoundException e) {
-            e.printStackTrace();
-            sendToNfvo(getCoreMessage(Action.ERROR, vnfr));
-            return null;
-        } catch (BadFormatException e) {
-            e.printStackTrace();
-            sendToNfvo(getCoreMessage(Action.ERROR, vnfr));
-            return null;
-        }
+    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord){
 
 
-        log.info("Instantiation of VirtualNetworkFunctionRecord " + vnfr.getName());
-        //log.trace("Instantiation of VirtualNetworkFunctionRecord " + vnfr);
         boolean allocate=false;
-
-
-        if (getLifecycleEvent(vnfr.getLifecycle_event(),Event.ALLOCATE) != null)
-            if (getLifecycleEvent(vnfr.getLifecycle_event_history(), Event.ALLOCATE) != null)
+        if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(),Event.ALLOCATE) != null)
+            if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event_history(), Event.ALLOCATE) != null)
                 allocate=false;
             else
                 allocate = true;
 
+        log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
         if(!allocate)
         {
-            LifecycleEvent le = getLifecycleEvent(vnfr.getLifecycle_event_history(), Event.INSTANTIATE);
+            LifecycleEvent le = getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event_history(), Event.INSTANTIATE);
             if (le != null)
             {
                 for (String script : le.getLifecycle_events()) {
 
                     String command = getJsonObject("EXECUTE", script).toString();
                     log.debug("Sending command: " + command);
-
 
                     /*try {
                         sendToEmsAndUpdate(vnfr, le.getEvent(), command, "generic");
@@ -91,22 +64,22 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
             }
 
         }
-        //else  return getCoreMessage(Action.ALLOCATE_RESOURCES, vnfr);
-
+        else{
+            sendToNfvo(getCoreMessage(Action.ALLOCATE_RESOURCES, virtualNetworkFunctionRecord));
+            return null;
+        }
 
         /**
          * Before ending, need to get all the "provides" filled
          */
 
-        log.debug("Provides is: " + vnfr.getProvides());
-        for (ConfigurationParameter configurationParameter : vnfr.getProvides().getConfigurationParameters()){
+        log.debug("Provides is: " + virtualNetworkFunctionRecord.getProvides());
+        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters()){
             if (!configurationParameter.getConfKey().startsWith("nfvo:")){
                 configurationParameter.setValue("" + ((int) (Math.random() * 100)));
                 log.debug("Setting: "+configurationParameter.getConfKey()+" with value: "+configurationParameter.getValue());
             }
         }
-
-        //log.debug("waiting for send CONFIGURATION UPDATE to EMS");
 
         try {
             Thread.sleep(1000* ((int )(Math.random() * 3 + 1))  );
@@ -138,7 +111,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
             return null;
         }*/
 
-        return vnfr;
+        return virtualNetworkFunctionRecord;
     }
 
 
