@@ -96,4 +96,8 @@ public class VNFRecordDependency implements Serializable {
 //    public void setStatus(Status status) {
 //        this.status = status;
 //    }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> fixing bugs

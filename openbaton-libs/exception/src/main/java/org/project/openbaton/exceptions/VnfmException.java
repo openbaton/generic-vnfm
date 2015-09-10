@@ -13,8 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-dependencies {
-	compile project(':catalogue')
-//	compile 'org.springframework.boot:spring-boot-starter:' + springBootVersion
-//	compile 'org.springframework:spring-context:' + springVersion
+
+package org.project.openbaton.exceptions;
+
+/**
+ * Created by lto on 23/06/15.
+ */
+public class VnfmException extends Exception {
+    public VnfmException() {
+        super();
+    }
+
+    public VnfmException(String message) {
+        super(message);
+    }
+
+    public VnfmException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public VnfmException(Throwable cause) {
+        super(cause);
+    }
 }
