@@ -13,8 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-dependencies {
-	compile project(':catalogue')
-//	compile 'org.springframework.boot:spring-boot-starter:' + springBootVersion
-//	compile 'org.springframework:spring-context:' + springVersion
+
+package org.project.openbaton.exceptions;
+
+/**
+ * Created by lto on 20/05/15.
+ */
+public class VimException extends Exception {
+    public VimException(String s) {
+        super(s);
+    }
+
+    public VimException(Throwable cause) {
+        super(cause);
+    }
+
+    public VimException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

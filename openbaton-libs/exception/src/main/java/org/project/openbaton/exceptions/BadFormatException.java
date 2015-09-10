@@ -13,8 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-dependencies {
-	compile project(':catalogue')
-//	compile 'org.springframework.boot:spring-boot-starter:' + springBootVersion
-//	compile 'org.springframework:spring-context:' + springVersion
+
+package org.project.openbaton.exceptions;
+
+/**
+ * Created by lto on 08/06/15.
+ */
+public class BadFormatException extends Throwable {
+    public BadFormatException(String s) {
+        super(s);
+    }
+    public BadFormatException(Throwable t){
+        super(t);
+    }
 }

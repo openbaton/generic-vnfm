@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 dependencies {
-	compile project(':catalogue')
-//	compile 'org.springframework.boot:spring-boot-starter:' + springBootVersion
-//	compile 'org.springframework:spring-context:' + springVersion
+    compile project(':plugin')
+    compile project(':catalogue')
+
+    compile project(':exception')
+    compile project(':monitoring')
+    compile project(':vim-drivers')
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
 }
