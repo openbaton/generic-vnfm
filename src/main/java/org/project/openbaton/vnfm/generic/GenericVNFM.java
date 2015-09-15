@@ -27,33 +27,36 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
 
 
-        boolean allocate=false;
+        /*boolean allocate=false;
         if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(),Event.ALLOCATE) != null)
             if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event_history(), Event.ALLOCATE) != null)
                 allocate=false;
             else
                 allocate = true;
-
+*/
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-        if(!allocate)
-        {
-            LifecycleEvent le = getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event_history(), Event.INSTANTIATE);
-            if (le != null)
-            {
-                for (String script : le.getLifecycle_events()) {
+        /*if(!allocate)
+        {*/
+        if (grantLifecycleOperation(virtualNetworkFunctionRecord)){
+            if (allocateResources(virtualNetworkFunctionRecord)) {
 
-                    String command = getJsonObject("EXECUTE", script).toString();
-                    log.debug("Sending command: " + command);
-                    sendToEmsAndUpdate(virtualNetworkFunctionRecord, le.getEvent(), command, "generic");
+                LifecycleEvent le = getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event_history(), Event.INSTANTIATE);
+                if (le != null) {
+                    for (String script : le.getLifecycle_events()) {
+
+                        String command = getJsonObject("EXECUTE", script).toString();
+                        log.debug("Sending command: " + command);
+                        //sendToEmsAndUpdate(virtualNetworkFunctionRecord, le.getEvent(), command, "generic");
+                    }
                 }
-            }
-
-        }
-        else{
-            sendToNfvo(getCoreMessage(Action.ALLOCATE_RESOURCES, virtualNetworkFunctionRecord));
-            return null;
-        }
+            } else log.debug("Allocate Resources failed");
+         }else log.debug("Grant lifecycle operation failed");
+        /*}
+        else{*/
+           /* sendToNfvo(getCoreMessage(Action.ALLOCATE_RESOURCES, virtualNetworkFunctionRecord));
+            return null;*/
+        /*}*/
 
         Thread.sleep(1000 * ((int) (Math.random() * 3 + 1)));
 
@@ -111,6 +114,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     @Override
     public void updateSoftware() {
     }
+
     @Override
     public void upgradeSoftware() {
     }
@@ -118,6 +122,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     @Override
     public VirtualNetworkFunctionRecord modify(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFRecordDependency dependency) throws Exception {
         log.debug("VirtualNetworkFunctionRecord VERSION is: " + virtualNetworkFunctionRecord.getHb_version());
+        log.debug("VirtualNetworkFunctionRecord NAME is: " + virtualNetworkFunctionRecord.getName());
         log.debug("Got dependency: " + dependency);
         log.debug("Parameters are: ");
         for (Map.Entry<String, DependencyParameters> entry : dependency.getParameters().entrySet()){
