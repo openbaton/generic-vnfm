@@ -48,7 +48,7 @@ repositories {
 }
 
 dependencies {
-	compile project(':vnfm-sdk')
+	compile project(':vnfm-sdk-jms')
 	compile 'org.hibernate:hibernate-core:4.3.10.Final'
 }
 
