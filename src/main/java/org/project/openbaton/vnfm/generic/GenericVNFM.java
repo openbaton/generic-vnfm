@@ -7,14 +7,11 @@ import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
 import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
-import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.catalogue.nfvo.DependencyParameters;
-import org.project.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.springframework.boot.SpringApplication;
 
-import javax.jms.JMSException;
 import java.util.Map;
 
 /**
@@ -27,7 +24,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord){
+    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
 
 
         boolean allocate=false;
@@ -48,18 +45,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
                     String command = getJsonObject("EXECUTE", script).toString();
                     log.debug("Sending command: " + command);
-
-                    /*try {
-                        sendToEmsAndUpdate(vnfr, le.getEvent(), command, "generic");
-                    } catch (JMSException e) {
-                        e.printStackTrace();
-                        sendToNfvo(getCoreMessage(Action.ERROR, vnfr));
-                        return null;
-                    } catch (VnfmSdkException e) {
-                        e.printStackTrace();
-                        sendToNfvo(getCoreMessage(Action.ERROR, vnfr));
-                        return null;
-                    }*/
+                    sendToEmsAndUpdate(virtualNetworkFunctionRecord, le.getEvent(), command, "generic");
                 }
             }
 
@@ -69,23 +55,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
             return null;
         }
 
-        /**
-         * Before ending, need to get all the "provides" filled
-         */
-
-        log.debug("Provides is: " + virtualNetworkFunctionRecord.getProvides());
-        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters()){
-            if (!configurationParameter.getConfKey().startsWith("nfvo:")){
-                configurationParameter.setValue("" + ((int) (Math.random() * 100)));
-                log.debug("Setting: "+configurationParameter.getConfKey()+" with value: "+configurationParameter.getValue());
-            }
-        }
-
-        try {
-            Thread.sleep(1000* ((int )(Math.random() * 3 + 1))  );
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        Thread.sleep(1000 * ((int) (Math.random() * 3 + 1)));
 
         /*String command = "{ \"action\": \"CONFIGURATION_UPDATE\", \"payload\":" + parser.toJson(map) + "}";
         try {
@@ -146,7 +116,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public CoreMessage modify(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFRecordDependency dependency) {
+    public VirtualNetworkFunctionRecord modify(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFRecordDependency dependency) throws Exception {
         log.debug("VirtualNetworkFunctionRecord VERSION is: " + virtualNetworkFunctionRecord.getHb_version());
         log.debug("Got dependency: " + dependency);
         log.debug("Parameters are: ");
@@ -162,13 +132,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
             }
         }
-        try {
-            Thread.sleep(3000 + ((int) (Math.random()*7000)));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        updateVnfr(virtualNetworkFunctionRecord, Event.CONFIGURE);
-        return getCoreMessage(Action.MODIFY, virtualNetworkFunctionRecord);
+        Thread.sleep(3000 + ((int) (Math.random() * 7000)));
+//        updateVnfr(virtualNetworkFunctionRecord, Event.CONFIGURE);
+        return virtualNetworkFunctionRecord;
     }
 
     private String resolveScriptParameters(String script, Map<String, DependencyParameters> parameters) {
@@ -190,8 +156,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    public CoreMessage terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-        return null;
+    public VirtualNetworkFunctionRecord terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+        //TODO implemenet termination
+        return virtualNetworkFunctionRecord;
     }
 
     @Override
@@ -200,32 +167,21 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
-    protected CoreMessage start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+    protected VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
 
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
-        try {
-            Thread.sleep(3000 + ((int) (Math.random()*7000)));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return getCoreMessage(Action.START,virtualNetworkFunctionRecord);
+        Thread.sleep(3000 + ((int) (Math.random() * 7000)));
+        return virtualNetworkFunctionRecord;
     }
 
     @Override
-    protected CoreMessage configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+    protected VirtualNetworkFunctionRecord configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         String scriptsLink = virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink();
         log.debug("Scripts are: " + scriptsLink);
         JsonObject jsonMessage = getJsonObject("SAVE_SCRIPTS", scriptsLink);
 
-        try {
             executeActionOnEMS("generic", jsonMessage.toString());
-        } catch (JMSException e) {
-            return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
-        } catch (VnfmSdkException e) {
-            //e.getMessage();
-            return getCoreMessage(Action.ERROR, virtualNetworkFunctionRecord);
-        }
-        return getCoreMessage(Action.CONFIGURE, virtualNetworkFunctionRecord);
+        return virtualNetworkFunctionRecord;
     }
 
     private JsonObject getJsonObject(String action, String payload) {
