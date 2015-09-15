@@ -25,57 +25,17 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-        /*boolean allocate=false;
-        if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(),Event.ALLOCATE) != null)
-            if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event_history(), Event.ALLOCATE) != null)
-                allocate=false;
-            else
-                allocate = true;
-*/
-        log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
-
-        /*if(!allocate)
-        {*/
         if (grantLifecycleOperation(virtualNetworkFunctionRecord)){
             if (allocateResources(virtualNetworkFunctionRecord)) {
-
                 for (Map.Entry<String, String> entry : executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE).entrySet()){
                     log.info("Executed script: " + entry.getKey());
                     log.info("result is: " + entry.getValue());
                 }
             } else log.debug("Allocate Resources failed");
          }else log.debug("Grant lifecycle operation failed");
-        /*}
-        else{*/
-           /* sendToNfvo(getCoreMessage(Action.ALLOCATE_RESOURCES, virtualNetworkFunctionRecord));
-            return null;*/
-        /*}*/
 
         Thread.sleep(1000 * ((int) (Math.random() * 3 + 1)));
 
-        /*String command = "{ \"action\": \"CONFIGURATION_UPDATE\", \"payload\":" + parser.toJson(map) + "}";
-        try {
-            String result = executeActionOnEMS("generic",command);
-
-            JsonObject object = parser.fromJson(result, JsonObject.class);
-            Map<String, String > res = parser.fromJson(object.get("output"), Map.class);
-            for (ConfigurationParameter configurationParameter : vnfr.getProvides().getConfigurationParameters()){
-                for (Map.Entry<String, String> entry:res.entrySet()) {
-                    if (configurationParameter.getConfKey().equals(entry.getKey())){
-                        configurationParameter.setValue(entry.getValue());
-                        log.debug("Got Configuration Parameter: " + configurationParameter);
-                    }
-                }
-            }
-        } catch (JMSException e) {
-            e.printStackTrace();
-            sendToNfvo(getCoreMessage(Action.ERROR, vnfr));
-            return null;
-        } catch (VnfmSdkException e) {
-            e.printStackTrace();
-            sendToNfvo(getCoreMessage(Action.ERROR, vnfr));
-            return null;
-        }*/
         return virtualNetworkFunctionRecord;
     }
 
