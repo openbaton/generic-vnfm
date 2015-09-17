@@ -13,49 +13,59 @@
  * limitations under the License.
  */
 
-package org.project.openbaton.catalogue.util;
+package org.project.openbaton.catalogue.nfvo.messages;
 
+import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.Action;
-import org.springframework.context.ApplicationEvent;
+import org.project.openbaton.catalogue.nfvo.messages.Interfaces.VnfmOrMessage;
 
 /**
- * Created by lto on 06/08/15.
+ * Created by mob on 14.09.15.
  */
-public class EventFinishEvent extends ApplicationEvent {
+public class VnfmOrGenericMessage implements VnfmOrMessage {
     private Action action;
     private VirtualNetworkFunctionRecord virtualNetworkFunctionRecord;
+    private VNFRecordDependency vnfRecordDependency;
 
-    /**
-     * Create a new ApplicationEvent.
-     *
-     * @param source the component that published the event (never {@code null})
-     */
-    public EventFinishEvent(Object source) {
-        super(source);
-    }
 
-    public Action getAction() {
-        return action;
-    }
 
-    public void setAction(Action action) {
-        this.action = action;
+    public VnfmOrGenericMessage(VirtualNetworkFunctionRecord vnfr, Action action) {
+        this.virtualNetworkFunctionRecord = vnfr;
+        this.action=action;
+
     }
 
     public VirtualNetworkFunctionRecord getVirtualNetworkFunctionRecord() {
         return virtualNetworkFunctionRecord;
     }
 
-    public void setVirtualNetworkFunctionRecord(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-        this.virtualNetworkFunctionRecord = virtualNetworkFunctionRecord;
+    public void setVirtualNetworkFunctionRecord(VirtualNetworkFunctionRecord vnfr) {
+        this.virtualNetworkFunctionRecord = vnfr;
+    }
+    public VNFRecordDependency getVnfRecordDependency() {
+        return vnfRecordDependency;
+    }
+
+    public void setVnfRecordDependency(VNFRecordDependency vnfRecordDependency) {
+        this.vnfRecordDependency = vnfRecordDependency;
     }
 
     @Override
     public String toString() {
-        return "EventFinishEvent{" +
+        return "VnfmOrGenericMessage{" +
                 "action=" + action +
                 ", virtualNetworkFunctionRecord=" + virtualNetworkFunctionRecord +
+                ", vnfRecordDependency=" + vnfRecordDependency +
                 '}';
+    }
+
+    @Override
+    public Action getAction() {
+        return action;
+    }
+
+    public void setAction(Action action) {
+        this.action = action;
     }
 }

@@ -23,7 +23,7 @@ public class VNFRUtils {
 
     private static Logger log = LoggerFactory.getLogger(VNFRUtils.class);
 
-    public static VirtualNetworkFunctionRecord createVirtualNetworkFunctionRecord(VirtualNetworkFunctionDescriptor vnfd, String nsr_id) throws NotFoundException, BadFormatException {
+    public static VirtualNetworkFunctionRecord createVirtualNetworkFunctionRecord(VirtualNetworkFunctionDescriptor vnfd, String flavourKey, String nsr_id) throws NotFoundException, BadFormatException {
         VirtualNetworkFunctionRecord virtualNetworkFunctionRecord = new VirtualNetworkFunctionRecord();
         virtualNetworkFunctionRecord.setLifecycle_event_history(new HashSet<LifecycleEvent>());
         virtualNetworkFunctionRecord.setParent_ns_id(nsr_id);
@@ -130,7 +130,7 @@ public class VNFRUtils {
                 lifecycleEvents.add(lifecycleEvent_new);
             }
             vdu_new.setLifecycle_event(lifecycleEvents);
-
+            vdu_new.setVimInstanceName(virtualDeploymentUnit.getVimInstanceName());
             vdu_new.setHostname(virtualDeploymentUnit.getHostname());
             vdu_new.setHigh_availability(virtualDeploymentUnit.getHigh_availability());
             vdu_new.setComputation_requirement(virtualDeploymentUnit.getComputation_requirement());
@@ -154,7 +154,7 @@ public class VNFRUtils {
         virtualNetworkFunctionRecord.getConnection_point().addAll(vnfd.getConnection_point());
 
         // TODO find a way to choose between deployment flavors and create the new one
-        virtualNetworkFunctionRecord.setDeployment_flavour_key(vnfd.getDeployment_flavour().iterator().next().getFlavour_key());
+        virtualNetworkFunctionRecord.setDeployment_flavour_key(flavourKey);
         for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
             if (!existsDeploymentFlavor(virtualNetworkFunctionRecord.getDeployment_flavour_key(), virtualDeploymentUnit.getVimInstance())) {
                 throw new BadFormatException("no key " + virtualNetworkFunctionRecord.getDeployment_flavour_key() + " found in vim instance: " + virtualDeploymentUnit.getVimInstance());
