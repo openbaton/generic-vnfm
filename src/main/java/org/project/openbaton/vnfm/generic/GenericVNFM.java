@@ -26,14 +26,14 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-        if (grantLifecycleOperation(virtualNetworkFunctionRecord)){
-            if (allocateResources(virtualNetworkFunctionRecord)) {
-                for (Map.Entry<String, String> entry : executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE).entrySet()){
-                    log.info("Executed script: " + entry.getKey());
-                    log.info("result is: " + entry.getValue());
-                }
-            } else log.debug("Allocate Resources failed");
-         }else log.debug("Grant lifecycle operation failed");
+        virtualNetworkFunctionRecord = grantLifecycleOperation(virtualNetworkFunctionRecord);
+        if (virtualNetworkFunctionRecord != null) { // if you reach this line than there was no error...
+            virtualNetworkFunctionRecord = allocateResources(virtualNetworkFunctionRecord);
+            for (Map.Entry<String, String> entry : executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE).entrySet()) {
+                log.info("Executed script: " + entry.getKey());
+                log.info("result is: " + entry.getValue());
+            }
+        }else log.error("Grant lifecycle operation failed");
 
         Thread.sleep(1000 * ((int) (Math.random() * 3 + 1)));
 
@@ -129,7 +129,6 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
     @Override
     protected void fillSpecificProvides(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-
         for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters()){
             if (!configurationParameter.getConfKey().startsWith("#nfvo:")){
                 configurationParameter.setValue("" + ((int) (Math.random() * 100)));
