@@ -6,6 +6,7 @@ import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
 import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
+import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.catalogue.nfvo.DependencyParameters;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
@@ -129,6 +130,17 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     }
 
     @Override
+    protected void fillSpecificProvides(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+
+        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters()){
+            if (!configurationParameter.getConfKey().startsWith("#nfvo:")){
+                configurationParameter.setValue("" + ((int) (Math.random() * 100)));
+                log.debug("Setting: "+configurationParameter.getConfKey()+" with value: "+configurationParameter.getValue());
+            }
+        }
+    }
+
+    @Override
     protected VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
 
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
@@ -142,7 +154,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         log.debug("Scripts are: " + scriptsLink);
         JsonObject jsonMessage = getJsonObject("SAVE_SCRIPTS", scriptsLink);
 
-            executeActionOnEMS("generic", jsonMessage.toString());
+        executeActionOnEMS("generic", jsonMessage.toString());
         return virtualNetworkFunctionRecord;
     }
 
