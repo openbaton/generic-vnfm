@@ -26,20 +26,16 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-        boolean allocate=false;
-        if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(),Event.ALLOCATE) != null)
-            if (getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event_history(), Event.ALLOCATE) == null) {
-                allocate = true;
-                //TODO call blocking method for allocation
-            }
+        if (grantLifecycleOperation(virtualNetworkFunctionRecord)){
+            if (allocateResources(virtualNetworkFunctionRecord)) {
+                for (Map.Entry<String, String> entry : executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE).entrySet()){
+                    log.info("Executed script: " + entry.getKey());
+                    log.info("result is: " + entry.getValue());
+                }
+            } else log.debug("Allocate Resources failed");
+         }else log.debug("Grant lifecycle operation failed");
 
-        if(!allocate)
-        {
-            for (Map.Entry<String, String> entry : executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE).entrySet()){
-                log.info("Executed script: " + entry.getKey());
-                log.info("result is: " + entry.getValue());
-            }
-        }
+        Thread.sleep(1000 * ((int) (Math.random() * 3 + 1)));
 
         return virtualNetworkFunctionRecord;
     }
@@ -67,6 +63,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     @Override
     public void updateSoftware() {
     }
+
     @Override
     public void upgradeSoftware() {
     }
@@ -74,6 +71,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
     @Override
     public VirtualNetworkFunctionRecord modify(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFRecordDependency dependency) throws Exception {
         log.debug("VirtualNetworkFunctionRecord VERSION is: " + virtualNetworkFunctionRecord.getHb_version());
+        log.debug("VirtualNetworkFunctionRecord NAME is: " + virtualNetworkFunctionRecord.getName());
         log.debug("Got dependency: " + dependency);
         log.debug("Parameters are: ");
         for (Map.Entry<String, DependencyParameters> entry : dependency.getParameters().entrySet()){
