@@ -3,7 +3,6 @@ package org.project.openbaton.vnfm.generic;
 
 import com.google.gson.JsonObject;
 import org.project.openbaton.catalogue.mano.common.Event;
-import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
 import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
@@ -19,23 +18,23 @@ import java.util.Map;
 /**
  * Created by mob on 16.07.15.
  */
-public class GenericVNFM extends AbstractVnfmSpringJMS{
+public class GenericVNFM extends AbstractVnfmSpringJMS {
+
+    @Autowired
+    private EmsRegistrator emsRegistrator;
+
+    public static void main(String[] args) {
+        SpringApplication.run(GenericVNFM.class);
+    }
 
     @Override
-    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, String scriptsLink) throws Exception {
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-        virtualNetworkFunctionRecord = grantLifecycleOperation(virtualNetworkFunctionRecord);
-        if (virtualNetworkFunctionRecord != null) { // if you reach this line than there was no error...
-            virtualNetworkFunctionRecord = allocateResources(virtualNetworkFunctionRecord);
-            for (Map.Entry<String, String> entry : executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE).entrySet()) {
-                log.info("Executed script: " + entry.getKey());
-                log.info("result is: " + entry.getValue());
-            }
-        }else log.error("Grant lifecycle operation failed");
+        saveScriptLink(virtualNetworkFunctionRecord, scriptsLink);
 
-        Thread.sleep(1000 * ((int) (Math.random() * 3 + 1)));
+        log.info("Executed script: " + executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE, getMap(virtualNetworkFunctionRecord)));
 
         return virtualNetworkFunctionRecord;
     }
@@ -74,46 +73,18 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         log.debug("VirtualNetworkFunctionRecord NAME is: " + virtualNetworkFunctionRecord.getName());
         log.debug("Got dependency: " + dependency);
         log.debug("Parameters are: ");
-        for (Map.Entry<String, DependencyParameters> entry : dependency.getParameters().entrySet()){
+        for (Map.Entry<String, DependencyParameters> entry : dependency.getParameters().entrySet()) {
             log.debug("Source type: " + entry.getKey());
             log.debug("Parameters: " + entry.getValue().getParameters());
         }
 
+        log.debug("LifeCycle events: " +getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events() );
 
-        LifecycleEvent le = getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE);
-        if(le!=null){
-            for(String script: le.getLifecycle_events()){
-                script = resolveScriptParameters(script,dependency.getParameters());
-                log.debug("Script to send to EMS is: "+script);
-            }
-        }
-
-        for (Map.Entry<String, String> entry : executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE).entrySet()){
-            log.info("-----------------------------------------------------------------------");
-            log.info("Executed script: \t" + entry.getKey());
-            log.info("result is: \n" + entry.getValue());
-            log.info("-----------------------------------------------------------------------");
-        }
+        log.info("-----------------------------------------------------------------------");
+        log.info("Result script: \t" + executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency));
+        log.info("-----------------------------------------------------------------------");
 
         return virtualNetworkFunctionRecord;
-    }
-
-    private String resolveScriptParameters(String script, Map<String, DependencyParameters> parameters) {
-        if(script.indexOf('#')==-1)
-            return script;
-
-        String[] splittedScript = script.split(" ");
-        StringBuilder sb= new StringBuilder();
-        for(String s : splittedScript){
-            if(s.startsWith("#")){
-                DependencyParameters dp = parameters.get(s.substring(1).split(":")[0]);
-                String param = dp.getParameters().get(s.substring(1).split(":")[1]);
-                if(param!=null)
-                    sb.append(param+" ");
-            }
-            else sb.append(s+" ");
-        }
-        return sb.toString();
     }
 
     @Override
@@ -129,16 +100,17 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
 
     @Override
     protected void fillSpecificProvides(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters()){
-            if (!configurationParameter.getConfKey().startsWith("#nfvo:")){
+        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters()) {
+            if (!configurationParameter.getConfKey().startsWith("#nfvo:")) {
                 configurationParameter.setValue("" + ((int) (Math.random() * 100)));
-                log.debug("Setting: "+configurationParameter.getConfKey()+" with value: "+configurationParameter.getValue());
+                log.debug("Setting: " + configurationParameter.getConfKey() + " with value: " + configurationParameter.getValue());
             }
         }
     }
 
     @Override
-    protected VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+    protected VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws
+            Exception {
 
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
         Thread.sleep(3000 + ((int) (Math.random() * 7000)));
@@ -155,17 +127,10 @@ public class GenericVNFM extends AbstractVnfmSpringJMS{
         return virtualNetworkFunctionRecord;
     }
 
-    public static void main(String[] args) {
-        SpringApplication.run(GenericVNFM.class);
-    }
-
     @Override
     public void NotifyChange() {
 
     }
-
-    @Autowired
-    private EmsRegistrator emsRegistrator;
 
     @Override
     protected void checkEmsStarted(String hostname) {
