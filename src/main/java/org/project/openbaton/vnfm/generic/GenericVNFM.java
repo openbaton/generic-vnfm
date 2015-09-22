@@ -36,6 +36,12 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
         log.info("Executed script: " + executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE, getMap(virtualNetworkFunctionRecord)));
 
+        log.debug("added parameter to config");
+        log.debug("CONFIGURATION: " + virtualNetworkFunctionRecord.getConfigurations());
+        ConfigurationParameter cp = new ConfigurationParameter();
+        cp.setConfKey("new_key");
+        cp.setValue("new_value");
+        virtualNetworkFunctionRecord.getConfigurations().getConfigurationParameters().add(cp);
         return virtualNetworkFunctionRecord;
     }
 
@@ -109,11 +115,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     @Override
-    protected VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws
-            Exception {
+    protected VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
 
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
-        Thread.sleep(3000 + ((int) (Math.random() * 7000)));
         return virtualNetworkFunctionRecord;
     }
 
