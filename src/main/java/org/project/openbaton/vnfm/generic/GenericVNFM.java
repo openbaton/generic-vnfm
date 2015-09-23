@@ -1,7 +1,6 @@
 package org.project.openbaton.vnfm.generic;
 
 
-import com.google.gson.JsonObject;
 import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
@@ -9,6 +8,7 @@ import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.catalogue.nfvo.DependencyParameters;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
+import org.project.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.project.openbaton.vnfm.generic.utils.EmsRegistrator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -28,13 +28,13 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     @Override
-    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, String scriptsLink) throws Exception {
+    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-        saveScriptLink(virtualNetworkFunctionRecord, scriptsLink);
+        vnfmHelper.saveScriptOnEms(virtualNetworkFunctionRecord, scripts);
 
-        log.info("Executed script: " + executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE, getMap(virtualNetworkFunctionRecord)));
+        log.info("Executed script: " + vnfmHelper.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE, getMap(virtualNetworkFunctionRecord)));
 
         log.debug("added parameter to config");
         log.debug("CONFIGURATION: " + virtualNetworkFunctionRecord.getConfigurations());
@@ -84,10 +84,10 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
             log.debug("Parameters: " + entry.getValue().getParameters());
         }
 
-        log.debug("LifeCycle events: " +getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events() );
+        log.debug("LifeCycle events: " + VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events() );
 
         log.info("-----------------------------------------------------------------------");
-        log.info("Result script: \t" + executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency));
+        log.info("Result script: \t" + vnfmHelper.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency));
         log.info("-----------------------------------------------------------------------");
 
         return virtualNetworkFunctionRecord;
@@ -123,11 +123,6 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
     @Override
     protected VirtualNetworkFunctionRecord configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
-        String scriptsLink = virtualNetworkFunctionRecord.getVnfPackage().getScriptsLink();
-        log.debug("Scripts are: " + scriptsLink);
-        JsonObject jsonMessage = getJsonObject("SAVE_SCRIPTS", scriptsLink);
-
-        executeActionOnEMS("generic", jsonMessage.toString());
         return virtualNetworkFunctionRecord;
     }
 
