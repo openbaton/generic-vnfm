@@ -5,9 +5,7 @@ import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
-import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.catalogue.nfvo.DependencyParameters;
-import org.project.openbaton.catalogue.nfvo.messages.Interfaces.NFVMessage;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.project.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.project.openbaton.vnfm.generic.utils.EmsRegistrator;
@@ -103,8 +101,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     @Override
-    public NFVMessage handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-        return null;
+    public void handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+
     }
 
     @Override
@@ -118,13 +116,13 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     @Override
-    protected VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+    public VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
         return virtualNetworkFunctionRecord;
     }
 
     @Override
-    protected VirtualNetworkFunctionRecord configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+    public VirtualNetworkFunctionRecord configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         return virtualNetworkFunctionRecord;
     }
 
