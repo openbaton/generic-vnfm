@@ -5,7 +5,6 @@ import org.project.openbaton.catalogue.mano.common.Event;
 import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
-import org.project.openbaton.catalogue.nfvo.CoreMessage;
 import org.project.openbaton.catalogue.nfvo.DependencyParameters;
 import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.project.openbaton.common.vnfm_sdk.utils.VnfmUtils;
@@ -92,16 +91,18 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
         return virtualNetworkFunctionRecord;
     }
-
+    //When the EMS reveive a script which terminate the vnf, the EMS is still running.
+    //Once the vnf is terminated NFVO requests deletion of resources (MANO B.5) and the EMS will be terminated.
     @Override
-    public VirtualNetworkFunctionRecord terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-        //TODO implemenet termination
+    public VirtualNetworkFunctionRecord terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+        log.debug("Termination of VNF: "+virtualNetworkFunctionRecord.getName());
+        log.info("Executed script: " + vnfmHelper.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.TERMINATE, getMap(virtualNetworkFunctionRecord)));
         return virtualNetworkFunctionRecord;
     }
 
     @Override
-    public CoreMessage handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-        return null;
+    public void handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
+
     }
 
     @Override
@@ -115,14 +116,13 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     @Override
-    protected VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
-
+    public VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
         return virtualNetworkFunctionRecord;
     }
 
     @Override
-    protected VirtualNetworkFunctionRecord configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+    public VirtualNetworkFunctionRecord configure(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         return virtualNetworkFunctionRecord;
     }
 
