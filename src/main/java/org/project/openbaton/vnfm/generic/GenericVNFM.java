@@ -2,6 +2,8 @@ package org.project.openbaton.vnfm.generic;
 
 
 import org.project.openbaton.catalogue.mano.common.Event;
+import org.project.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
+import org.project.openbaton.catalogue.mano.record.VNFCInstance;
 import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
@@ -32,6 +34,10 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
         vnfmHelper.saveScriptOnEms(virtualNetworkFunctionRecord, scripts);
+
+        for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu())
+        for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
+            log.debug("VNFCInstance: " + vnfcInstance);
 
         log.info("Executed script: " + vnfmHelper.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE, getMap(virtualNetworkFunctionRecord)));
 
