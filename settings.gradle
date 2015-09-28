@@ -1,11 +1,2 @@
-rootProject.name = 'generic-vnfm'
-
 apply from: 'openbaton-libs/vnfm-sdk/gradle/gradle/settings-parent-vnfm-sdk-jms.gradle'
-
-//include 'vnfm-sdk'
-//include 'catalogue'
-//
-//project(':vnfm-sdk').projectDir = file('openbaton-libs/vnfm-sdk')
-//project(':catalogue').projectDir = file('openbaton-libs/catalogue')
-
-
+rootProject.name = 'generic-vnfm'
