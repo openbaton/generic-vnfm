@@ -39,7 +39,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
             log.debug("VNFCInstance: " + vnfcInstance);
 
-        log.info("Executed script: " + vnfmHelper.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE, getMap(virtualNetworkFunctionRecord)));
+        log.info("Executed script: " + vnfmHelper.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE));
 
         log.debug("added parameter to config");
         log.debug("CONFIGURATION: " + virtualNetworkFunctionRecord.getConfigurations());
@@ -102,7 +102,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     @Override
     public VirtualNetworkFunctionRecord terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         log.debug("Termination of VNF: "+virtualNetworkFunctionRecord.getName());
-        log.info("Executed script: " + vnfmHelper.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.TERMINATE, getMap(virtualNetworkFunctionRecord)));
+        log.info("Executed script: " + vnfmHelper.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.TERMINATE));
         return virtualNetworkFunctionRecord;
     }
 
