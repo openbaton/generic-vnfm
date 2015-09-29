@@ -38,7 +38,7 @@ project.ext {
     /**
      * gradle Related Vars
      */
-    mainClass = 'org.project.openbaton.vnfm.generic.GenericVNFM'
+    mainClass = 'GenericVNFM'
     //------------------------------------------------//
 }
 apply from: 'openbaton-libs/gradle/gradle/application.java.gradle'

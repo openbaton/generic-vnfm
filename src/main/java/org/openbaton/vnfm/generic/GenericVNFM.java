@@ -1,27 +1,27 @@
-package org.project.openbaton.vnfm.generic;
+package org.openbaton.vnfm.generic;
 
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.apache.commons.codec.binary.Base64;
-import org.project.openbaton.catalogue.mano.common.Event;
-import org.project.openbaton.catalogue.mano.common.Ip;
-import org.project.openbaton.catalogue.mano.common.LifecycleEvent;
-import org.project.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
-import org.project.openbaton.catalogue.mano.record.VNFCInstance;
-import org.project.openbaton.catalogue.mano.record.VNFRecordDependency;
-import org.project.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
-import org.project.openbaton.catalogue.nfvo.Action;
-import org.project.openbaton.catalogue.nfvo.ConfigurationParameter;
-import org.project.openbaton.catalogue.nfvo.DependencyParameters;
-import org.project.openbaton.catalogue.nfvo.Script;
-import org.project.openbaton.catalogue.nfvo.messages.Interfaces.NFVMessage;
-import org.project.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
-import org.project.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
-import org.project.openbaton.common.vnfm_sdk.jms.VnfmSpringHelper;
-import org.project.openbaton.common.vnfm_sdk.utils.VnfmUtils;
-import org.project.openbaton.vnfm.generic.utils.EmsRegistrator;
+import org.openbaton.vnfm.generic.utils.EmsRegistrator;
+import org.openbaton.catalogue.mano.common.Event;
+import org.openbaton.catalogue.mano.common.Ip;
+import org.openbaton.catalogue.mano.common.LifecycleEvent;
+import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
+import org.openbaton.catalogue.mano.record.VNFCInstance;
+import org.openbaton.catalogue.mano.record.VNFRecordDependency;
+import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
+import org.openbaton.catalogue.nfvo.Action;
+import org.openbaton.catalogue.nfvo.ConfigurationParameter;
+import org.openbaton.catalogue.nfvo.DependencyParameters;
+import org.openbaton.catalogue.nfvo.Script;
+import org.openbaton.catalogue.nfvo.messages.Interfaces.NFVMessage;
+import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
+import org.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
+import org.openbaton.common.vnfm_sdk.jms.VnfmSpringHelper;
+import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 
