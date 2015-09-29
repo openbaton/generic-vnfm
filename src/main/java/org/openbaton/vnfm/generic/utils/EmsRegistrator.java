@@ -1,4 +1,4 @@
-package org.project.openbaton.vnfm.generic.utils;
+package org.openbaton.vnfm.generic.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
