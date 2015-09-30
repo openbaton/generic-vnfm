@@ -211,9 +211,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                             tempEnv.put(ip.getNetName(), ip.getIp());
                         }
                         int i = 1;
-                            log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                            tempEnv.put("fip" + i, vnfcInstance.getFloatingIps());
-                            i++;
+                        log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+                        tempEnv.put("fip" + i, vnfcInstance.getFloatingIps());
+                        i++;
 
                         env.putAll(tempEnv);
                         log.info("Environment Variables are: " + env);
