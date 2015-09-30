@@ -26,6 +26,7 @@ public class EmsRegistrator {
         return hostnames;
     }
 
+    //TODO consider using DB in case of failure etc...
     private HashSet<String> hostnames;
 
     @PostConstruct
