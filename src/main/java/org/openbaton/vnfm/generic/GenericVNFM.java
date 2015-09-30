@@ -5,7 +5,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.apache.commons.codec.binary.Base64;
-import org.openbaton.vnfm.generic.utils.EmsRegistrator;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.common.Ip;
 import org.openbaton.catalogue.mano.common.LifecycleEvent;
@@ -22,6 +21,7 @@ import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.openbaton.common.vnfm_sdk.jms.VnfmSpringHelper;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
+import org.openbaton.vnfm.generic.utils.EmsRegistrator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 
@@ -57,8 +57,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         this.saveScriptOnEms(virtualNetworkFunctionRecord, scripts);
 
         for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu())
-        for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
-            log.debug("VNFCInstance: " + vnfcInstance);
+            for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
+                log.debug("VNFCInstance: " + vnfcInstance);
 
         log.info("Executed script: " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE));
 
@@ -110,7 +110,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
             log.debug("Parameters: " + entry.getValue().getParameters());
         }
 
-        log.debug("LifeCycle events: " + VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events() );
+        log.debug("LifeCycle events: " + VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events());
 
         log.info("-----------------------------------------------------------------------");
         log.info("Result script: \t" + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency));
@@ -118,6 +118,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
         return virtualNetworkFunctionRecord;
     }
+
     //When the EMS reveive a script which terminate the vnf, the EMS is still running.
     //Once the vnf is terminated NFVO requests deletion of resources (MANO B.5) and the EMS will be terminated.
     @Override
@@ -166,10 +167,10 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
     private String executeActionOnEMS(String vduHostname, String command) throws Exception {
         log.trace("Sending message: " + command + " to " + vduHostname);
-        vnfmHelper.sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
+        ((VnfmSpringHelper)vnfmHelper).sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
 
         log.info("Waiting answer from EMS - " + vduHostname);
-        String response = ((VnfmSpringHelper)vnfmHelper).receiveTextFromQueue(vduHostname + "-vnfm-actions");
+        String response = ((VnfmSpringHelper) vnfmHelper).receiveTextFromQueue(vduHostname + "-vnfm-actions");
 
         log.debug("Received from EMS (" + vduHostname + "): " + response);
 
@@ -325,9 +326,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     private Map<String, String> getMap(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
         Map<String, String> res = new HashMap<>();
         for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getProvides().getConfigurationParameters())
-            res.put(configurationParameter.getConfKey(),configurationParameter.getValue());
-        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getConfigurations().getConfigurationParameters()){
-            res.put(configurationParameter.getConfKey(),configurationParameter.getValue());
+            res.put(configurationParameter.getConfKey(), configurationParameter.getValue());
+        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getConfigurations().getConfigurationParameters()) {
+            res.put(configurationParameter.getConfKey(), configurationParameter.getValue());
         }
         return res;
     }
@@ -339,8 +340,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     @Override
-    protected void setup(){
+    protected void setup() {
         super.setup();
-        this.scriptPath = properties.getProperty("script-path","/opt/openbaton/scripts");
+        this.scriptPath = properties.getProperty("script-path", "/opt/openbaton/scripts");
     }
 }
