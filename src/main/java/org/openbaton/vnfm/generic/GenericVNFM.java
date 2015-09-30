@@ -211,11 +211,10 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                             tempEnv.put(ip.getNetName(), ip.getIp());
                         }
                         int i = 1;
-                        for (String fip : vnfcInstance.getFloatingIps()) {
-                            log.debug("adding floatingIp: " + fip);
-                            tempEnv.put("fip" + i, fip);
+                            log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+                            tempEnv.put("fip" + i, vnfcInstance.getFloatingIps());
                             i++;
-                        }
+
                         env.putAll(tempEnv);
                         log.info("Environment Variables are: " + env);
                         String command = getJsonObject("EXECUTE", script, env).toString();
