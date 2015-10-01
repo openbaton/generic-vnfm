@@ -41,7 +41,7 @@ function check_activemq {
 function check_already_running {
         result=$(screen -ls | grep generic-vnfm | wc -l);
         if [ "${result}" -ne "0" ]; then
-                echo "openbaton is already running.."
+                echo "generic-vnfm is already running.."
 		exit;
         fi
 }
@@ -54,7 +54,6 @@ function start {
     fi
 
     check_activemq
-    check_mysql
     check_already_running
     if [ 0 -eq $? ]
         then
