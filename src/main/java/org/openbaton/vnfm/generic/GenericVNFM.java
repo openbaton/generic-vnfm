@@ -170,6 +170,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         ((VnfmSpringHelper)vnfmHelper).sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
 
         log.info("Waiting answer from EMS - " + vduHostname);
+
         String response = ((VnfmSpringHelper) vnfmHelper).receiveTextFromQueue(vduHostname + "-vnfm-actions");
 
         log.debug("Received from EMS (" + vduHostname + "): " + response);
@@ -241,7 +242,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                 for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
                     for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
                         Map<String, String> params = new HashMap<>();
-                        params.putAll(dependency.getParameters().get(type).getParameters());
+                        Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+                        for (Map.Entry<String, String> param : parameters.entrySet())
+                            params.put(type+"_"+param.getKey(),param.getValue());
 
                         for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getConfigurations().getConfigurationParameters())
                             params.put(configurationParameter.getConfKey(), configurationParameter.getValue());
