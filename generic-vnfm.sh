@@ -10,38 +10,40 @@ _openbaton_config_file=/etc/openbaton/openbaton.properties
 
 function start_activemq_linux {
     sudo ${_openbaton_base}/${_message_queue_base}/bin/activemq start
+    if [ $? -ne 0 ]; then
+        echo "ERROR: activemq is not running properly (check the problem in ${_openbaton_base}/${_message_queue_base}/data/activemq.log) "
+	exit 1
+    fi
 }
 
 function start_activemq_osx {
     sudo ${_openbaton_base}/${_message_queue_base}/bin/macosx/activemq start
+    if [ $? -ne 0 ]; then
+        echo "ERROR: activemq is not running properly (check the problem in ${_openbaton_base}/${_message_queue_base}/data/activemq.log) "
+	exit 1
+    fi
 }
 
 function check_activemq {
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
-	ps -a | grep -v grep | grep activemq > /dev/null
-    	result=$?
-        if [ "${result}" -eq "0" ]; then
-         	echo "activemq service running, everything is fine"
-        else
-          	echo "activemq is not running, starting it:"
+	ps -aux | grep -v grep | grep activemq > /dev/null
+        if [ $? -ne 0 ]; then
+          	echo "activemq is not running, let's try to start it..."
             	start_activemq_linux
         fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
 	ps aux | grep -v grep | grep activemq > /dev/null
-        result=$?
-         if [ "${result}" -eq "0" ]; then
-          	echo "activemq service running, everything is fine"
-         else
-           	echo "activemq is not running, starting it:"
+        if [ $? -ne 0 ]; then
+          	echo "activemq is not running, let's try to start it..."
             	start_activemq_osx
-         fi
+        fi
     fi
 }
 
 function check_already_running {
         result=$(screen -ls | grep generic-vnfm | wc -l);
         if [ "${result}" -ne "0" ]; then
-                echo "openbaton is already running.."
+                echo "generic-vnfm is already running.."
 		exit;
         fi
 }
@@ -54,13 +56,13 @@ function start {
     fi
 
     check_activemq
-    check_mysql
     check_already_running
     if [ 0 -eq $? ]
         then
-	    screen -X eval "chdir $PWD"
-	    screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "build/libs/generic-vnfm-$_version.jar" 
-	    screen -c .screenrc -r -p 0
+	    #screen -X eval "chdir $PWD"
+	    cd "$_openbaton_base/nfvo"
+	    screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar ../generic-vnfm/build/libs/generic-vnfm-$_version.jar
+	    screen -c screenrc -r -p 0
     fi
 }
 
