@@ -64,7 +64,7 @@ function start {
 	    #
 	    # At the moment the generic starts automatically in a second window in the openbaton session screen
 	    pushd "${_openbaton_base}/nfvo"
-	    screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "build/libs/generic-vnfm-$_version.jar" 
+	    screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "../generic-vnfm/build/libs/generic-vnfm-$_version.jar"
 	    popd
 	    #screen -c .screenrc -r -p 0
     fi
