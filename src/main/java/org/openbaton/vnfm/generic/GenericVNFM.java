@@ -28,10 +28,7 @@ import org.springframework.boot.SpringApplication;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.ObjectMessage;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by mob on 16.07.15.
@@ -60,7 +57,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
             for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
                 log.debug("VNFCInstance: " + vnfcInstance);
 
-        log.info("Executed script: " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE));
+        log.info("Executed script for INSTANTIATE: \n" +
+                "\n" + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE));
 
         log.debug("added parameter to config");
         log.debug("CONFIGURATION: " + virtualNetworkFunctionRecord.getConfigurations());
@@ -113,7 +111,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         log.debug("LifeCycle events: " + VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events());
 
         log.info("-----------------------------------------------------------------------");
-        log.info("Result script: \t" + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency));
+        log.info("Result script for CONFIGURE: \n\n" + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency));
         log.info("-----------------------------------------------------------------------");
 
         return virtualNetworkFunctionRecord;
@@ -197,7 +195,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
     public Iterable<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event) throws Exception {//TODO make it parallel
         Map<String, String> env = getMap(virtualNetworkFunctionRecord);
-        LinkedList<String> res = new LinkedList<>();
+        List<String> res = new LinkedList<>();
         LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
         log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
 
@@ -211,15 +209,15 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                             log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
                             tempEnv.put(ip.getNetName(), ip.getIp());
                         }
-                        int i = 1;
                         log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                        tempEnv.put("fip" + i, vnfcInstance.getFloatingIps());
-                        i++;
+                        tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
 
                         env.putAll(tempEnv);
                         log.info("Environment Variables are: " + env);
+
                         String command = getJsonObject("EXECUTE", script, env).toString();
                         res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+
                         for (String key : tempEnv.keySet()) {
                             env.remove(key);
                         }
@@ -231,8 +229,10 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         throw new VnfmSdkException("Error executing script");
     }
 
-    public String executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event, VNFRecordDependency dependency) throws Exception {
+    public List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event, VNFRecordDependency dependency) throws Exception {
+        Map<String, String> env = getMap(virtualNetworkFunctionRecord);
         LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+        List<String> res = new LinkedList<>();
         if (le != null) {
             for (String script : le.getLifecycle_events()) {
 
@@ -241,18 +241,36 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
                 for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
                     for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-                        Map<String, String> params = new HashMap<>();
+                        Map<String, String> tempEnv = new HashMap<>();
+
+                        //Adding own ips
+                        for (Ip ip : vnfcInstance.getIps()) {
+                            log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                            tempEnv.put(ip.getNetName(), ip.getIp());
+                        }
+
+                        //Adding own floating ip
+                        log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+                        tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
+
+                        //Adding foreign parameters such as ip
                         Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
                         for (Map.Entry<String, String> param : parameters.entrySet())
-                            params.put(type+"_"+param.getKey(),param.getValue());
+                            tempEnv.put(type+"_"+param.getKey(),param.getValue());
 
-                        for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getConfigurations().getConfigurationParameters())
-                            params.put(configurationParameter.getConfKey(), configurationParameter.getValue());
-                        String command = getJsonObject("EXECUTE", script, params).toString();
-                        return executeActionOnEMS(vnfcInstance.getHostname(), command);
+                        env.putAll(tempEnv);
+                        log.info("Environment Variables are: " + env);
+
+                        String command = getJsonObject("EXECUTE", script, tempEnv).toString();
+                        res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+
+                        for (String key : tempEnv.keySet()) {
+                            env.remove(key);
+                        }
                     }
                 }
             }
+            return res;
         }
         throw new VnfmSdkException("Error executing script");
     }
