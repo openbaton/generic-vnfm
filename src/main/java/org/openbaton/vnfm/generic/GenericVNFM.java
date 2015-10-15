@@ -75,8 +75,96 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     @Override
-    public void scale() {
+    public VirtualNetworkFunctionRecord scale(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance component, Object scripts, VNFRecordDependency dependency) throws Exception {
 
+        log.info("Created VNFComponent");
+
+        saveScriptOnEms(component, scripts);
+        log.debug("Executed scripts for event INSTANTIATE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.INSTANTIATE));
+
+        if (dependency != null)
+            log.debug("Executed scripts for event CONFIGURE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.CONFIGURE, dependency));
+
+        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null)
+            log.debug("Executed scripts for event START " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.START));
+
+        log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
+        return virtualNetworkFunctionRecord;
+    }
+
+    private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event) throws Exception {
+        Map<String, String> env = getMap(virtualNetworkFunctionRecord);
+        List<String> res = new LinkedList<>();
+        LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+
+        if (le != null) {
+            log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
+            for (String script : le.getLifecycle_events()) {
+                log.info("Sending script: " + script + " to VirtualNetworkFunctionRecord: " + virtualNetworkFunctionRecord.getName());
+                Map<String, String> tempEnv = new HashMap<>();
+                for (Ip ip : vnfcInstance.getIps()) {
+                    log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                    tempEnv.put(ip.getNetName(), ip.getIp());
+                }
+                log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+                tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
+
+                env.putAll(tempEnv);
+                log.info("Environment Variables are: " + env);
+
+                String command = getJsonObject("EXECUTE", script, env).toString();
+                res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+
+                for (String key : tempEnv.keySet()) {
+                    env.remove(key);
+                }
+            }
+            return res;
+        }
+        throw new VnfmSdkException("Error executing script");
+    }
+
+    private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event, VNFRecordDependency dependency) throws Exception {
+        Map<String, String> env = getMap(virtualNetworkFunctionRecord);
+        List<String> res = new LinkedList<>();
+        LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+        log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
+        if (le != null) {
+            for (String script : le.getLifecycle_events()) {
+
+                String type = script.substring(0, script.indexOf("_"));
+                log.info("Sending command: " + script + " to adding relation with type: " + type + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
+
+                Map<String, String> tempEnv = new HashMap<>();
+
+                //Adding own ips
+                for (Ip ip : vnfcInstance.getIps()) {
+                    log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                    tempEnv.put(ip.getNetName(), ip.getIp());
+                }
+
+                //Adding own floating ip
+                log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+                tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
+
+                //Adding foreign parameters such as ip
+                Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+                for (Map.Entry<String, String> param : parameters.entrySet())
+                    tempEnv.put(type + "_" + param.getKey(), param.getValue());
+
+                env.putAll(tempEnv);
+                log.info("Environment Variables are: " + env);
+
+                String command = getJsonObject("EXECUTE", script, tempEnv).toString();
+                res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+
+                for (String key : tempEnv.keySet()) {
+                    env.remove(key);
+                }
+            }
+            return res;
+        }
+        throw new VnfmSdkException("Error executing script");
     }
 
     @Override
@@ -165,7 +253,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
     private String executeActionOnEMS(String vduHostname, String command) throws Exception {
         log.trace("Sending message: " + command + " to " + vduHostname);
-        ((VnfmSpringHelper)vnfmHelper).sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
+        ((VnfmSpringHelper) vnfmHelper).sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
 
         log.info("Waiting answer from EMS - " + vduHostname);
 
@@ -236,8 +324,11 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         if (le != null) {
             for (String script : le.getLifecycle_events()) {
 
-                String type = script.substring(0, script.indexOf("_"));
-                log.info("Sending command: " + script + " to adding relation with type: " + type + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
+                String type = null;
+                if (script.contains("_")) {
+                    type = script.substring(0, script.indexOf("_"));
+                    log.info("Sending command: " + script + " to adding relation with type: " + type + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
+                }
 
                 for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
                     for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
@@ -253,11 +344,12 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                         log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
                         tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
 
-                        //Adding foreign parameters such as ip
-                        Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
-                        for (Map.Entry<String, String> param : parameters.entrySet())
-                            tempEnv.put(type+"_"+param.getKey(),param.getValue());
-
+                        if (script.contains("_")) {
+                            //Adding foreign parameters such as ip
+                            Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+                            for (Map.Entry<String, String> param : parameters.entrySet())
+                                tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                        }
                         env.putAll(tempEnv);
                         log.info("Environment Variables are: " + env);
 
@@ -267,6 +359,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                         for (String key : tempEnv.keySet()) {
                             env.remove(key);
                         }
+
                     }
                 }
             }
@@ -307,15 +400,30 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         }
     }
 
-    public NFVMessage sendAndReceive(Action action, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws JMSException {
-        return sendAndReceiveNfvMessage(nfvoQueue, VnfmUtils.getNfvMessage(action, virtualNetworkFunctionRecord));
+    public void saveScriptOnEms(VNFCInstance component, Object scripts) throws Exception {
+
+        log.debug("Scripts are: " + scripts.getClass().getName());
+
+        if (scripts instanceof String) {
+            String scriptLink = (String) scripts;
+            log.debug("Scripts are: " + scriptLink);
+            JsonObject jsonMessage = getJsonObject("CLONE_SCRIPTS", scriptLink, scriptPath);
+            executeActionOnEMS(component.getHostname(), jsonMessage.toString());
+        } else if (scripts instanceof Set) {
+            Set<Script> scriptSet = (Set<Script>) scripts;
+            for (Script script : scriptSet) {
+                log.debug("Sending script encoded base64 ");
+                String base64String = Base64.encodeBase64String(script.getPayload());
+                log.trace("The base64 string is: " + base64String);
+                JsonObject jsonMessage = getJsonObjectForScript("SAVE_SCRIPTS", base64String, script.getName(), scriptPath);
+                executeActionOnEMS(component.getHostname(), jsonMessage.toString());
+            }
+
+        }
     }
 
-    private JsonObject getJsonObject(String action, String payload) {
-        JsonObject jsonMessage = new JsonObject();
-        jsonMessage.addProperty("action", action);
-        jsonMessage.addProperty("payload", payload);
-        return jsonMessage;
+    public NFVMessage sendAndReceive(Action action, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws JMSException {
+        return sendAndReceiveNfvMessage(nfvoQueue, VnfmUtils.getNfvMessage(action, virtualNetworkFunctionRecord));
     }
 
     private JsonObject getJsonObject(String action, String payload, String scriptPath) {
