@@ -12,11 +12,9 @@ import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
-import org.openbaton.catalogue.nfvo.Action;
 import org.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.openbaton.catalogue.nfvo.DependencyParameters;
 import org.openbaton.catalogue.nfvo.Script;
-import org.openbaton.catalogue.nfvo.messages.Interfaces.NFVMessage;
 import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
 import org.openbaton.common.vnfm_sdk.jms.VnfmSpringHelper;
@@ -25,9 +23,6 @@ import org.openbaton.vnfm.generic.utils.EmsRegistrator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.ObjectMessage;
 import java.util.*;
 
 /**
@@ -232,6 +227,10 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     @Override
     public VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
+        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events() != null)
+        {
+            log.info("Executed script: " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.START));
+        }
         return virtualNetworkFunctionRecord;
     }
 
@@ -422,10 +421,6 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         }
     }
 
-    public NFVMessage sendAndReceive(Action action, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws JMSException {
-        return sendAndReceiveNfvMessage(nfvoQueue, VnfmUtils.getNfvMessage(action, virtualNetworkFunctionRecord));
-    }
-
     private JsonObject getJsonObject(String action, String payload, String scriptPath) {
         JsonObject jsonMessage = new JsonObject();
         jsonMessage.addProperty("action", action);
@@ -459,12 +454,6 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
             res.put(configurationParameter.getConfKey(), configurationParameter.getValue());
         }
         return res;
-    }
-
-    private NFVMessage sendAndReceiveNfvMessage(String destination, NFVMessage nfvMessage) throws JMSException {
-        VnfmSpringHelper vnfmSpringHelper = (VnfmSpringHelper) this.vnfmHelper;
-        Message response = vnfmSpringHelper.getJmsTemplate().sendAndReceive(destination, vnfmSpringHelper.getObjectMessageCreator(nfvMessage));
-        return (NFVMessage) ((ObjectMessage) response).getObject();
     }
 
     @Override
