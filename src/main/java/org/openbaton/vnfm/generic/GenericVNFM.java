@@ -102,7 +102,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                     tempEnv.put(ip.getNetName(), ip.getIp());
                 }
                 log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
+                for (Map.Entry<String, String> fip : vnfcInstance.getFloatingIps().entrySet()) {
+                    tempEnv.put(fip.getKey()+"_floatingIp", fip.getValue());
+                }
 
                 env.putAll(tempEnv);
                 log.info("Environment Variables are: " + env);
@@ -140,7 +142,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
                 //Adding own floating ip
                 log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
+                for (Map.Entry<String, String> fip : vnfcInstance.getFloatingIps().entrySet()) {
+                    tempEnv.put(fip.getKey()+"_floatingIp", fip.getValue());
+                }
 
                 //Adding foreign parameters such as ip
                 Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
@@ -284,9 +288,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         Map<String, String> env = getMap(virtualNetworkFunctionRecord);
         List<String> res = new LinkedList<>();
         LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
-        log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
 
         if (le != null) {
+            log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
             for (String script : le.getLifecycle_events()) {
                 log.info("Sending script: " + script + " to VirtualNetworkFunctionRecord: " + virtualNetworkFunctionRecord.getName());
                 for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
@@ -297,7 +301,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                             tempEnv.put(ip.getNetName(), ip.getIp());
                         }
                         log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                        tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
+                        for (Map.Entry<String, String> fip : vnfcInstance.getFloatingIps().entrySet()) {
+                            tempEnv.put(fip.getKey()+"_floatingIp", fip.getValue());
+                        }
 
                         env.putAll(tempEnv);
                         log.info("Environment Variables are: " + env);
@@ -341,7 +347,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
                         //Adding own floating ip
                         log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                        tempEnv.put("floatingIp", vnfcInstance.getFloatingIps());
+                        for (Map.Entry<String, String> fip : vnfcInstance.getFloatingIps().entrySet()) {
+                            tempEnv.put(fip.getKey()+"_floatingIp", fip.getValue());
+                        }
 
                         if (script.contains("_")) {
                             //Adding foreign parameters such as ip
