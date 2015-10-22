@@ -7,15 +7,13 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
-apply from: 'openbaton-libs/gradle/gradle/command.line.helper.gradle'
-apply from: 'openbaton-libs/gradle/gradle/git.helpers.gradle'
 
 project.ext {
     //------------------------------------------------//
     /**
      * Spring Related Variables
      */
-    springVersion = '4.1.7.RELEASE'
+    springVersion = '4.2.2.RELEASE'
     springBootVersion = '1.2.5.RELEASE'
     //------------------------------------------------//
     //------------------------------------------------//
@@ -25,13 +23,6 @@ project.ext {
     applicationVersion = version 
     applicationVersionDebian = "1";
 
-    applicationRelease = isApplicationRelease()
-    applicationDate = new Date()
-    applicationRevision = getRevision()
-
-    applicationVersionSnapshot = (!applicationRelease) ? "+SNAPSHOT.${asUTC(applicationDate, 'yyMMddHHmm')}.git${applicationRevision}" : ""
-    applicationVersionFull = "${applicationVersion}${applicationVersionSnapshot}"
-    //------------------------------------------------//
     //------------------------------------------------//
     /**
      * gradle Related Vars
