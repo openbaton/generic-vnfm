@@ -103,7 +103,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                 }
                 log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
                 for (Ip fip : vnfcInstance.getFloatingIps()) {
-                    tempEnv.put(fip.getNetName()+"_floatingIp", fip.getIp());
+                    tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
                 }
 
                 env.putAll(tempEnv);
@@ -126,38 +126,50 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         List<String> res = new LinkedList<>();
         LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
         log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
+        log.debug("DEPENDENCY IS: " + dependency);
         if (le != null) {
             for (String script : le.getLifecycle_events()) {
-
                 String type = script.substring(0, script.indexOf("_"));
-                log.info("Sending command: " + script + " to adding relation with type: " + type + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
+                log.debug("There are " + dependency.getVnfcParameters().get(type).getParameters().size() + " VNFCInstanceForeign");
+                for (String vnfcForeignId : dependency.getVnfcParameters().get(type).getParameters().keySet()) {
+                    log.info("Running script: " + script + " for VNFCInstance foreign id " + vnfcForeignId);
 
-                Map<String, String> tempEnv = new HashMap<>();
+                    log.info("Sending command: " + script + " to adding relation with type: " + type + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-                //Adding own ips
-                for (Ip ip : vnfcInstance.getIps()) {
-                    log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-                    tempEnv.put(ip.getNetName(), ip.getIp());
-                }
+                    Map<String, String> tempEnv = new HashMap<>();
 
-                //Adding own floating ip
-                log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                for (Ip fip : vnfcInstance.getFloatingIps()) {
-                    tempEnv.put(fip.getNetName()+"_floatingIp", fip.getIp());
-                }
-                //Adding foreign parameters such as ip
-                Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
-                for (Map.Entry<String, String> param : parameters.entrySet())
-                    tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                    //Adding own ips
+                    for (Ip ip : vnfcInstance.getIps()) {
+                        log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                        tempEnv.put(ip.getNetName(), ip.getIp());
+                    }
 
-                env.putAll(tempEnv);
-                log.info("Environment Variables are: " + env);
+                    //Adding own floating ip
+                    log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+                    for (Ip fip : vnfcInstance.getFloatingIps()) {
+                        tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
+                    }
+                    //Adding foreign parameters such as ip
+                    if (script.contains("_")) {
+                        //Adding foreign parameters such as ip
+                        Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+                        for (Map.Entry<String, String> param : parameters.entrySet())
+                            tempEnv.put(type + "_" + param.getKey(), param.getValue());
 
-                String command = getJsonObject("EXECUTE", script, tempEnv).toString();
-                res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+                        Map<String, String> parametersVNFC = dependency.getVnfcParameters().get(type).getParameters().get(vnfcForeignId).getParameters();
+                        for (Map.Entry<String, String> param : parametersVNFC.entrySet())
+                            tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                    }
 
-                for (String key : tempEnv.keySet()) {
-                    env.remove(key);
+                    env.putAll(tempEnv);
+                    log.info("Environment Variables are: " + env);
+
+                    String command = getJsonObject("EXECUTE", script, tempEnv).toString();
+                    res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+
+                    for (String key : tempEnv.keySet()) {
+                        env.remove(key);
+                    }
                 }
             }
             return res;
@@ -214,7 +226,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
     @Override
     public void handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-
+        log.error("Received Error for VNFR " + virtualNetworkFunctionRecord.getName());
     }
 
     @Override
@@ -230,9 +242,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     @Override
     public VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
-        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events() != null)
-        {
-            log.info("Executed script: " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.START));
+        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
+            if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START).getLifecycle_events() != null)
+                log.info("Executed script: " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.START));
         }
         return virtualNetworkFunctionRecord;
     }
@@ -301,7 +313,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                         }
                         log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
                         for (Ip fip : vnfcInstance.getFloatingIps()) {
-                            tempEnv.put(fip.getNetName()+"_floatingIp", fip.getIp());
+                            tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
                         }
 
                         env.putAll(tempEnv);
@@ -336,36 +348,44 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
                 for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
                     for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-                        Map<String, String> tempEnv = new HashMap<>();
+                        log.debug("VNFCParameters are: " + dependency.getVnfcParameters());
+                        if (dependency.getVnfcParameters().get(type) != null)
+                            for (String vnfcId : dependency.getVnfcParameters().get(type).getParameters().keySet()) {
 
-                        //Adding own ips
-                        for (Ip ip : vnfcInstance.getIps()) {
-                            log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-                            tempEnv.put(ip.getNetName(), ip.getIp());
-                        }
+                                Map<String, String> tempEnv = new HashMap<>();
 
-                        //Adding own floating ip
-                        log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                        for (Ip fip : vnfcInstance.getFloatingIps()) {
-                            tempEnv.put(fip.getNetName()+"_floatingIp", fip.getIp());
-                        }
+                                //Adding own ips
+                                for (Ip ip : vnfcInstance.getIps()) {
+                                    log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                                    tempEnv.put(ip.getNetName(), ip.getIp());
+                                }
 
-                        if (script.contains("_")) {
-                            //Adding foreign parameters such as ip
-                            Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
-                            for (Map.Entry<String, String> param : parameters.entrySet())
-                                tempEnv.put(type + "_" + param.getKey(), param.getValue());
-                        }
-                        env.putAll(tempEnv);
-                        log.info("Environment Variables are: " + env);
+                                //Adding own floating ip
+                                log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+                                for (Ip fip : vnfcInstance.getFloatingIps()) {
+                                    tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
+                                }
 
-                        String command = getJsonObject("EXECUTE", script, tempEnv).toString();
-                        res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+                                if (script.contains("_")) {
+                                    //Adding foreign parameters such as ip
+                                    Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+                                    for (Map.Entry<String, String> param : parameters.entrySet())
+                                        tempEnv.put(type + "_" + param.getKey(), param.getValue());
 
-                        for (String key : tempEnv.keySet()) {
-                            env.remove(key);
-                        }
+                                    Map<String, String> parametersVNFC = dependency.getVnfcParameters().get(type).getParameters().get(vnfcId).getParameters();
+                                    for (Map.Entry<String, String> param : parametersVNFC.entrySet())
+                                        tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                                }
+                                env.putAll(tempEnv);
+                                log.info("Environment Variables are: " + env);
 
+                                String command = getJsonObject("EXECUTE", script, tempEnv).toString();
+                                res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+
+                                for (String key : tempEnv.keySet()) {
+                                    env.remove(key);
+                                }
+                            }
                     }
                 }
             }
