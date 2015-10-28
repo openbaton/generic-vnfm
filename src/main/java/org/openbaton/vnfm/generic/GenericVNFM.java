@@ -226,7 +226,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
     @Override
     public void handleError(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
-
+        log.error("Received Error for VNFR " + virtualNetworkFunctionRecord.getName());
     }
 
     @Override
