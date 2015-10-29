@@ -12,6 +12,7 @@ import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
+import org.openbaton.catalogue.nfvo.Action;
 import org.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.openbaton.catalogue.nfvo.DependencyParameters;
 import org.openbaton.catalogue.nfvo.Script;
@@ -70,21 +71,28 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     @Override
-    public VirtualNetworkFunctionRecord scale(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance component, Object scripts, VNFRecordDependency dependency) throws Exception {
+    public VirtualNetworkFunctionRecord scale(Action scaleInOrOut, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance component, Object scripts, VNFRecordDependency dependency) throws Exception {
+        if (scaleInOrOut.ordinal() == Action.SCALE_IN.ordinal()) {
+            log.info("Created VNFComponent");
 
-        log.info("Created VNFComponent");
+            saveScriptOnEms(component, scripts);
+            log.debug("Executed scripts for event INSTANTIATE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.INSTANTIATE));
 
-        saveScriptOnEms(component, scripts);
-        log.debug("Executed scripts for event INSTANTIATE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.INSTANTIATE));
+            if (dependency != null)
+                log.debug("Executed scripts for event CONFIGURE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.CONFIGURE, dependency));
 
-        if (dependency != null)
-            log.debug("Executed scripts for event CONFIGURE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.CONFIGURE, dependency));
+            if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null)
+                log.debug("Executed scripts for event START " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.START));
 
-        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null)
-            log.debug("Executed scripts for event START " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.START));
+            log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
+            return virtualNetworkFunctionRecord;
+        }
+        else {//
 
-        log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
-        return virtualNetworkFunctionRecord;
+            log.debug("Executed scripts for event SCALE_OUT " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.SCALE_OUT));
+
+            return virtualNetworkFunctionRecord;
+        }
     }
 
     private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event) throws Exception {
@@ -116,9 +124,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                     env.remove(key);
                 }
             }
-            return res;
         }
-        throw new VnfmSdkException("Error executing script");
+        return res;
     }
 
     private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event, VNFRecordDependency dependency) throws Exception {
@@ -172,9 +179,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                     }
                 }
             }
-            return res;
         }
-        throw new VnfmSdkException("Error executing script");
+        return res;
     }
 
     @Override
@@ -328,9 +334,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                     }
                 }
             }
-            return res;
         }
-        throw new VnfmSdkException("Error executing script");
+        return res;
     }
 
     public List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event, VNFRecordDependency dependency) throws Exception {
@@ -389,9 +394,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                     }
                 }
             }
-            return res;
         }
-        throw new VnfmSdkException("Error executing script");
+        return res;
     }
 
     public void saveScriptOnEms(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
