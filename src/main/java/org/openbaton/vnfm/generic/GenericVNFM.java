@@ -72,7 +72,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
 
     @Override
     public VirtualNetworkFunctionRecord scale(Action scaleInOrOut, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance component, Object scripts, VNFRecordDependency dependency) throws Exception {
-        if (scaleInOrOut.ordinal() == Action.SCALE_IN.ordinal()) {
+        if (scaleInOrOut.ordinal() == Action.SCALE_OUT.ordinal()) {
             log.info("Created VNFComponent");
 
             saveScriptOnEms(component, scripts);
@@ -89,7 +89,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
         }
         else {//
 
-            log.debug("Executed scripts for event SCALE_OUT " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.SCALE_OUT));
+            log.debug("Executed scripts for event SCALE_IN " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.SCALE_IN));
 
             return virtualNetworkFunctionRecord;
         }
