@@ -212,12 +212,14 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
             log.debug("Parameters: " + entry.getValue().getParameters());
         }
 
-        log.debug("LifeCycle events: " + VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events());
-
-        log.info("-----------------------------------------------------------------------");
-        log.info("Result script for CONFIGURE: \n\n" + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency));
-        log.info("-----------------------------------------------------------------------");
-
+        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE) != null) {
+            log.debug("LifeCycle events: " + VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE).getLifecycle_events());
+            log.info("-----------------------------------------------------------------------");
+            log.info("Result script for CONFIGURE: \n\n" + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency));
+            log.info("-----------------------------------------------------------------------");
+        } else {
+            log.debug("No LifeCycle events for Event.CONFIGURE");
+        }
         return virtualNetworkFunctionRecord;
     }
 
