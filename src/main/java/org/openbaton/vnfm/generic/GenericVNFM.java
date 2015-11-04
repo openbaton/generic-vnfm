@@ -114,6 +114,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                     tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
                 }
 
+                tempEnv.put("hostname", vnfcInstance.getHostname());
+
                 env.putAll(tempEnv);
                 log.info("Environment Variables are: " + env);
 
@@ -168,6 +170,7 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                             tempEnv.put(type + "_" + param.getKey(), param.getValue());
                     }
 
+                    tempEnv.put("hostname", vnfcInstance.getHostname());
                     env.putAll(tempEnv);
                     log.info("Environment Variables are: " + env);
 
@@ -324,6 +327,8 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                             tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
                         }
 
+                        tempEnv.put("hostname", vnfcInstance.getHostname());
+
                         env.putAll(tempEnv);
                         log.info("Environment Variables are: " + env);
 
@@ -383,6 +388,9 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
                                     for (Map.Entry<String, String> param : parametersVNFC.entrySet())
                                         tempEnv.put(type + "_" + param.getKey(), param.getValue());
                                 }
+
+                                tempEnv.put("hostname", vnfcInstance.getHostname());
+
                                 env.putAll(tempEnv);
                                 log.info("Environment Variables are: " + env);
 
