@@ -16,9 +16,8 @@ import org.openbaton.catalogue.nfvo.Action;
 import org.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.openbaton.catalogue.nfvo.DependencyParameters;
 import org.openbaton.catalogue.nfvo.Script;
+import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
-import org.openbaton.common.vnfm_sdk.jms.AbstractVnfmSpringJMS;
-import org.openbaton.common.vnfm_sdk.jms.VnfmSpringHelper;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.openbaton.vnfm.generic.utils.EmsRegistrator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +28,8 @@ import java.util.*;
 /**
  * Created by mob on 16.07.15.
  */
-public class GenericVNFM extends AbstractVnfmSpringJMS {
+public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
-    private static final String nfvoQueue = "vnfm-core-actions";
 
     @Autowired
     private EmsRegistrator emsRegistrator;
@@ -277,12 +275,10 @@ public class GenericVNFM extends AbstractVnfmSpringJMS {
     }
 
     private String executeActionOnEMS(String vduHostname, String command) throws Exception {
-        log.trace("Sending message: " + command + " to " + vduHostname);
-        ((VnfmSpringHelper) vnfmHelper).sendMessageToQueue("vnfm-" + vduHostname + "-actions", command);
-
+        log.trace("Sending message and waiting: " + command + " to " + vduHostname);
         log.info("Waiting answer from EMS - " + vduHostname);
 
-        String response = ((VnfmSpringHelper) vnfmHelper).receiveTextFromQueue(vduHostname + "-vnfm-actions");
+        String response = vnfmHelper.sendAndReceive(command, "vnfm."+ vduHostname + ".actions");
 
         log.debug("Received from EMS (" + vduHostname + "): " + response);
 
