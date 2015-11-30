@@ -40,6 +40,22 @@ function check_activemq {
     fi
 }
 
+function check_rabbitmq {
+    if [[ "$OSTYPE" == "linux-gnu" ]]; then
+	ps -aux | grep -v grep | grep rabbitmq > /dev/null
+        if [ $? -ne 0 ]; then
+            echo "rabbitmq is not running, let's try to start it..."
+            start_activemq_linux
+        fi
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+	ps aux | grep -v grep | grep rabbitmq > /dev/null
+        if [ $? -ne 0 ]; then
+            echo "rabbitmq is not running, let's try to start it..."
+            start_activemq_osx
+        fi
+    fi
+}
+
 function check_already_running {
         result=$(screen -ls | grep generic-vnfm | wc -l);
         if [ "${result}" -ne "0" ]; then
@@ -55,7 +71,8 @@ function start {
             compile
     fi
 
-    check_activemq
+#    check_activemq
+    check_rabbitmq
     check_already_running
     if [ 0 -eq $? ]
         then
