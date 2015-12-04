@@ -95,7 +95,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
     private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event) throws Exception {
         Map<String, String> env = getMap(virtualNetworkFunctionRecord);
-        List<String> res = new LinkedList<>();
+        List<String> res = new ArrayList<>();
         LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
 
         if (le != null) {
@@ -165,7 +165,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     }
     private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event, VNFRecordDependency dependency) throws Exception {
         Map<String, String> env = getMap(virtualNetworkFunctionRecord);
-        List<String> res = new LinkedList<>();
+        List<String> res = new ArrayList<>();
         LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
         log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
         log.debug("DEPENDENCY IS: " + dependency);
@@ -249,6 +249,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     public VirtualNetworkFunctionRecord modify(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFRecordDependency dependency) throws Exception {
         log.debug("VirtualNetworkFunctionRecord VERSION is: " + virtualNetworkFunctionRecord.getHb_version());
         log.debug("VirtualNetworkFunctionRecord NAME is: " + virtualNetworkFunctionRecord.getName());
+
         log.debug("Got dependency: " + dependency);
         log.debug("Parameters are: ");
         for (Map.Entry<String, DependencyParameters> entry : dependency.getParameters().entrySet()) {
@@ -294,6 +295,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     @Override
     public VirtualNetworkFunctionRecord start(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         log.debug("Starting vnfr: " + virtualNetworkFunctionRecord.getName());
+
+
         if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
             if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START).getLifecycle_events() != null)
                 log.info("Executed script: " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.START));
@@ -347,7 +350,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
     public Iterable<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event) throws Exception {//TODO make it parallel
         Map<String, String> env = getMap(virtualNetworkFunctionRecord);
-        List<String> res = new LinkedList<>();
+        List<String> res = new ArrayList<>();
         LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
 
         if (le != null) {
@@ -387,7 +390,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     public List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event, VNFRecordDependency dependency) throws Exception {
         Map<String, String> env = getMap(virtualNetworkFunctionRecord);
         LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
-        List<String> res = new LinkedList<>();
+        List<String> res = new ArrayList<>();
         if (le != null) {
             for (String script : le.getLifecycle_events()) {
 
