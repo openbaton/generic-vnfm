@@ -44,8 +44,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
-
-        this.saveScriptOnEms(virtualNetworkFunctionRecord, scripts);
+	if (scripts != null)
+	        this.saveScriptOnEms(virtualNetworkFunctionRecord, scripts);
 
         for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu())
             for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
