@@ -37,7 +37,8 @@ repositories {
 }
 
 dependencies {
-	compile project(':vnfm-sdk-jms')
+	compile project(':vnfm-sdk-amqp')
+    compile 'commons-codec:commons-codec:1.10'
 	compile 'org.hibernate:hibernate-core:4.3.10.Final'
 }
 
