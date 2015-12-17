@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Type;
@@ -60,6 +61,12 @@ public class VimDriverCaller extends VimDriver {
 
     public VimDriverCaller(String brokerIp, String username, String password, String type, String managementPort) throws IOException, TimeoutException, NotFoundException {
         pluginCaller = new PluginCaller("vim-drivers." + type, brokerIp, username, password, 5672, Integer.parseInt(managementPort));
+    }
+
+    @PreDestroy
+    public void stop() throws IOException, TimeoutException {
+        if (pluginCaller != null)
+            pluginCaller.close();
     }
 
     @Override
