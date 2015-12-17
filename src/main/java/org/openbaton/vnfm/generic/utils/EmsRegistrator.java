@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
-import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -17,7 +16,7 @@ import java.util.HashSet;
  */
 @Service
 @Scope
-public class EmsRegistrator {
+public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.EmsRegistrator{
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private Gson parser = new GsonBuilder().setPrettyPrinting().create();
@@ -34,7 +33,6 @@ public class EmsRegistrator {
         hostnames = new HashSet<>();
     }
 
-    @JmsListener(destination = "ems-generic-register", containerFactory = "jmsListenerContainerFactory")
     public void register(String json){
         log.debug("EMSRegister received: " + json);
         JsonObject object = parser.fromJson(json, JsonObject.class);
