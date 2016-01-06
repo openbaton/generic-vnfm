@@ -436,7 +436,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                                 env.putAll(tempEnv);
                                 log.info("Environment Variables are: " + env);
 
-                                String command = getJsonObject("EXECUTE", script, tempEnv).toString();
+                                String command = getJsonObject("EXECUTE", script, env).toString();
                                 res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
 
                                 for (String key : tempEnv.keySet()) {
