@@ -273,7 +273,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     @Override
     public VirtualNetworkFunctionRecord terminate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
         log.debug("Termination of VNF: " + virtualNetworkFunctionRecord.getName());
-        log.info("Executed script: " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.TERMINATE));
+        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.TERMINATE) != null) {
+            log.info("Executed script: " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.TERMINATE));
+        }
         return virtualNetworkFunctionRecord;
     }
 
