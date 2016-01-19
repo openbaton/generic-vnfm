@@ -48,13 +48,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
             for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
                 log.debug("VNFCInstance: " + vnfcInstance);
 
-        log.info("Executed script for INSTANTIATE: \n");
-
+        String output = "";
         for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE)) {
-            result.replaceAll("\\n", "\n");
-            log.info(result);
-            log.info("");
+            output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
+            output += "\n--------------------\n";
         }
+        log.info("Executed script for INSTANTIATE. Output was: \n\n" + output);
         return virtualNetworkFunctionRecord;
     }
 
