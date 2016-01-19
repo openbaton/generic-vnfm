@@ -12,10 +12,7 @@ import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
-import org.openbaton.catalogue.nfvo.Action;
-import org.openbaton.catalogue.nfvo.ConfigurationParameter;
-import org.openbaton.catalogue.nfvo.DependencyParameters;
-import org.openbaton.catalogue.nfvo.Script;
+import org.openbaton.catalogue.nfvo.*;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
@@ -41,7 +38,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     }
 
     @Override
-    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
+    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts, List<VimInstance> vimInstances) throws Exception {
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
         if (scripts != null)
@@ -51,15 +48,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
             for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
                 log.debug("VNFCInstance: " + vnfcInstance);
 
-        log.info("Executed script for INSTANTIATE: \n" +
-                "\n" + this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE));
+        log.info("Executed script for INSTANTIATE: \n");
 
-        log.debug("added parameter to config");
-        log.debug("CONFIGURATION: " + virtualNetworkFunctionRecord.getConfigurations());
-        ConfigurationParameter cp = new ConfigurationParameter();
-        cp.setConfKey("new_key");
-        cp.setValue("new_value");
-        virtualNetworkFunctionRecord.getConfigurations().getConfigurationParameters().add(cp);
+        for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE)) {
+            result.replaceAll("\\n", "\n");
+            log.info(result);
+            log.info("");
+        }
         return virtualNetworkFunctionRecord;
     }
 
