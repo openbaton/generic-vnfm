@@ -69,25 +69,27 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     }
 
     @Override
-    public VirtualNetworkFunctionRecord scale(Action scaleInOrOut, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance component, Object scripts, VNFRecordDependency dependency) throws Exception {
+    public VirtualNetworkFunctionRecord scale(Action scaleInOrOut, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Object scripts, VNFRecordDependency dependency) throws Exception {
         if (scaleInOrOut.ordinal() == Action.SCALE_OUT.ordinal()) {
             log.info("Created VNFComponent");
 
-            saveScriptOnEms(component, scripts);
-            log.debug("Executed scripts for event INSTANTIATE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.INSTANTIATE));
+            saveScriptOnEms(vnfcInstance, scripts);
+            log.debug("Executed scripts for event INSTANTIATE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.INSTANTIATE));
 
             if (dependency != null)
-                log.debug("Executed scripts for event CONFIGURE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.CONFIGURE, dependency));
+                log.debug("Executed scripts for event CONFIGURE " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.CONFIGURE, dependency));
 
-            if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null)
-                log.debug("Executed scripts for event START " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.START));
+            //If the VNFCInstance needs to be in standby don't execute the start method
+            if(vnfcInstance.getState()==null | (vnfcInstance.getState()!=null && !vnfcInstance.getState().equals("standby")))
+                if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null)
+                    log.debug("Executed scripts for event START " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START));
 
             log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
             return virtualNetworkFunctionRecord;
         }
-        else {//
+        else {
 
-            log.debug("Executed scripts for event SCALE_IN " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.SCALE_IN));
+            log.debug("Executed scripts for event SCALE_IN " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_IN));
 
             return virtualNetworkFunctionRecord;
         }
@@ -226,7 +228,26 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
     @Override
     public VirtualNetworkFunctionRecord heal(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance component, String cause) throws Exception {
-        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL) != null) {
+
+        if(cause.equals("switchToStandby")){
+            for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
+                for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
+                    if (vnfcInstance.getId().equals(component.getId()) && vnfcInstance.getState().equals("standby")) {
+                        log.debug("Activation of the standby component");
+                        if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null)
+                            log.debug("Executed scripts for event START " + this.executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.START));
+                        log.debug("Changing the status from standby to active");
+                        //This is inside the vnfr
+                        vnfcInstance.setState("active");
+                        // This is a copy of the object received as parameter and modified.
+                        // It will be sent to the orchestrator
+                        component.setState("active");
+                        break;
+                    }
+                }
+            }
+        }
+        else if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL) != null) {
             if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL).getLifecycle_events() != null) {
                 log.debug("Heal method started");
                 log.info("-----------------------------------------------------------------------");
