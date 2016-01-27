@@ -31,6 +31,16 @@ In the MODIFY scripts, the INSTANTIATE parameters are still available but plus t
 
 As for VMs deployment, VMs termination is done by the NFVO. Specific scripts can be run before termination by putting them under the RELEASE_REOSURCES lifecycel event.
 
+### Supported by
+Open Baton is a project developed by Fraunhofer FOKUS and TU Berlin. It is supported by different European publicly funded projects: 
+
+* [NUBOMEDIA][nubomedia]
+* [Mobile Cloud Networking][mcn]
+* [CogNet][cognet]
+
+[nubomedia]: https://www.nubomedia.eu/
+[mcn]: http://mobile-cloud-networking.eu/site/
+[cognet]: http://www.cognet.5g-ppp.eu/cognet-in-5gpp/
 
 <!---
 References
