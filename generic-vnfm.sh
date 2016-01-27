@@ -4,7 +4,7 @@ source gradle.properties
 
 _version=${version}
 
-_openbaton_base="/opt/public_openbaton"
+_openbaton_base="/opt/openbaton"
 _message_queue_base="apache-activemq-5.11.1"
 _openbaton_config_file=/etc/openbaton/openbaton.properties
 
