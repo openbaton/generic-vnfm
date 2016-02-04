@@ -80,7 +80,7 @@ function start {
 	    # TODO add check if the session openbaton already exists, else start the generic-vnfm in a new screen session.
 	    #
 	    # At the moment the generic starts automatically in a second window in the openbaton session screen
-	    pushd "${_openbaton_base}/NFVO"
+	    pushd "${_openbaton_base}/nfvo"
 	    screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "../generic-vnfm/build/libs/generic-vnfm-$_version.jar"
 	    popd
 	    #screen -c .screenrc -r -p 0
