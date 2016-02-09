@@ -87,16 +87,16 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
             }
 
-            if(vnfcInstance.getState()!=null | vnfcInstance.getState()!=null && !vnfcInstance.getState().equals("standby"))
-            if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
-                output = "\n--------------------\n--------------------\n";
-                for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
-                    output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
+            if (vnfcInstance.getState() != null | vnfcInstance.getState() != null && !vnfcInstance.getState().equals("standby"))
+                if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
+                    output = "\n--------------------\n--------------------\n";
+                    for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
+                        output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
+                        output += "\n--------------------\n";
+                    }
                     output += "\n--------------------\n";
+                    log.info("Executed script for START. Output was: \n\n" + output);
                 }
-                output += "\n--------------------\n";
-                log.info("Executed script for START. Output was: \n\n" + output);
-            }
 
             log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
             return virtualNetworkFunctionRecord;
@@ -250,7 +250,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     @Override
     public VirtualNetworkFunctionRecord heal(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance component, String cause) throws Exception {
 
-        if(cause.equals("switchToStandby")){
+        if (cause.equals("switchToStandby")) {
             for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
                 for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
                     if (vnfcInstance.getId().equals(component.getId()) && vnfcInstance.getState().equals("standby")) {
@@ -267,8 +267,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                     }
                 }
             }
-        }
-        else if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL) != null) {
+        } else if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL) != null) {
             if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL).getLifecycle_events() != null) {
                 log.debug("Heal method started");
                 log.info("-----------------------------------------------------------------------");
