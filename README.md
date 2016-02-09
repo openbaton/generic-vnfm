@@ -1,4 +1,6 @@
 # VNFManager Generic
+[![Build Status](https://travis-ci.org/openbaton/generic-vnfm.svg?branch=develop)](https://travis-ci.org/openbaton/generic-vnfm)
+[![Code Health](https://landscape.io/github/openbaton/generic-vnfm/develop/landscape.svg?style=flat)](https://landscape.io/github/openbaton/generic-vnfm/develop)
 
 The Generic VNFManager is an implementation following the [ETSI MANO][nfv-mano] specifications. For that reason is highly tied to the EMS.
 
