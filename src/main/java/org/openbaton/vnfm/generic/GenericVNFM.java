@@ -87,23 +87,23 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
             }
 
-            if(vnfcInstance.getState()!=null | vnfcInstance.getState()!=null && !vnfcInstance.getState().equals("standby"))
-            if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
-                output = "\n--------------------\n--------------------\n";
-                for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
-                    output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
+            if (vnfcInstance.getState() != null | vnfcInstance.getState() != null && !vnfcInstance.getState().equals("standby"))
+                if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
+                    output = "\n--------------------\n--------------------\n";
+                    for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
+                        output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
+                        output += "\n--------------------\n";
+                    }
                     output += "\n--------------------\n";
+                    log.info("Executed script for START. Output was: \n\n" + output);
                 }
-                output += "\n--------------------\n";
-                log.info("Executed script for START. Output was: \n\n" + output);
-            }
 
             log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
             return virtualNetworkFunctionRecord;
-        } else {//
+        } else {// SCALE_IN
 
             String output = "\n--------------------\n--------------------\n";
-            for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_IN)) {
+            for (String result : this.executeScriptsForEventOnVnfr(virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_IN)) {
                 output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
                 output += "\n--------------------\n";
             }
@@ -112,6 +112,58 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
             return virtualNetworkFunctionRecord;
         }
+    }
+
+    private Iterable<? extends String> executeScriptsForEventOnVnfr(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstanceRemote, Event event) throws Exception {
+        Map<String, String> env = getMap(virtualNetworkFunctionRecord);
+        List<String> res = new ArrayList<>();
+        LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+        if (le != null) {
+            log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
+            for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
+                for (VNFCInstance vnfcInstanceLocal : virtualDeploymentUnit.getVnfc_instance()) {
+                    for (String script : le.getLifecycle_events()) {
+                        log.info("Sending script: " + script + " to VirtualNetworkFunctionRecord: " + virtualNetworkFunctionRecord.getName() + " on VNFCInstance: " + vnfcInstanceLocal.getId());
+                        Map<String, String> tempEnv = new HashMap<>();
+                        for (Ip ip : vnfcInstanceLocal.getIps()) {
+                            log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                            tempEnv.put(ip.getNetName(), ip.getIp());
+                        }
+                        log.debug("adding floatingIp: " + vnfcInstanceLocal.getFloatingIps());
+                        for (Ip fip : vnfcInstanceLocal.getFloatingIps()) {
+                            tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
+                        }
+
+                        tempEnv.put("hostname", vnfcInstanceLocal.getHostname());
+
+                        if (vnfcInstanceRemote != null) {
+                            //TODO what should i put here?
+                            for (Ip ip : vnfcInstanceRemote.getIps()) {
+                                log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                                tempEnv.put("removing_" + ip.getNetName(), ip.getIp());
+                            }
+                            log.debug("adding floatingIp: " + vnfcInstanceRemote.getFloatingIps());
+                            for (Ip fip : vnfcInstanceRemote.getFloatingIps()) {
+                                tempEnv.put("removing_" + fip.getNetName() + "_floatingIp", fip.getIp());
+                            }
+
+                            tempEnv.put("removing_" + "hostname", vnfcInstanceRemote.getHostname());
+                        }
+
+                        env.putAll(tempEnv);
+                        log.info("The Environment Variables for script " + script + " are: " + env);
+
+                        String command = getJsonObject("EXECUTE", script, env).toString();
+                        res.add(executeActionOnEMS(vnfcInstanceLocal.getHostname(), command));
+
+                        for (String key : tempEnv.keySet()) {
+                            env.remove(key);
+                        }
+                    }
+                }
+            }
+        }
+        return res;
     }
 
     private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event) throws Exception {
@@ -257,7 +309,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     @Override
     public VirtualNetworkFunctionRecord heal(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance component, String cause) throws Exception {
 
-        if(cause.equals("switchToStandby")){
+        if (cause.equals("switchToStandby")) {
             for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
                 for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
                     if (vnfcInstance.getId().equals(component.getId()) && vnfcInstance.getState().equals("standby")) {
@@ -274,8 +326,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                     }
                 }
             }
-        }
-        else if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL) != null) {
+        } else if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL) != null) {
             if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL).getLifecycle_events() != null) {
                 log.debug("Heal method started");
                 log.info("-----------------------------------------------------------------------");
