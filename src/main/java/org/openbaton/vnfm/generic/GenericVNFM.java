@@ -100,10 +100,10 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
             log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
             return virtualNetworkFunctionRecord;
-        } else {//
+        } else {// SCALE_IN
 
             String output = "\n--------------------\n--------------------\n";
-            for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_IN)) {
+            for (String result : this.executeScriptsForEventOnVnfr(virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_IN)) {
                 output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
                 output += "\n--------------------\n";
             }
@@ -112,6 +112,58 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
             return virtualNetworkFunctionRecord;
         }
+    }
+
+    private Iterable<? extends String> executeScriptsForEventOnVnfr(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstanceRemote, Event event) throws Exception {
+        Map<String, String> env = getMap(virtualNetworkFunctionRecord);
+        List<String> res = new ArrayList<>();
+        LifecycleEvent le = VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+        if (le != null) {
+            log.trace("The number of scripts for " + virtualNetworkFunctionRecord.getName() + " are: " + le.getLifecycle_events());
+            for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
+                for (VNFCInstance vnfcInstanceLocal : virtualDeploymentUnit.getVnfc_instance()) {
+                    for (String script : le.getLifecycle_events()) {
+                        log.info("Sending script: " + script + " to VirtualNetworkFunctionRecord: " + virtualNetworkFunctionRecord.getName() + " on VNFCInstance: " + vnfcInstanceLocal.getId());
+                        Map<String, String> tempEnv = new HashMap<>();
+                        for (Ip ip : vnfcInstanceLocal.getIps()) {
+                            log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                            tempEnv.put(ip.getNetName(), ip.getIp());
+                        }
+                        log.debug("adding floatingIp: " + vnfcInstanceLocal.getFloatingIps());
+                        for (Ip fip : vnfcInstanceLocal.getFloatingIps()) {
+                            tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
+                        }
+
+                        tempEnv.put("hostname", vnfcInstanceLocal.getHostname());
+
+                        if (vnfcInstanceRemote != null) {
+                            //TODO what should i put here?
+                            for (Ip ip : vnfcInstanceRemote.getIps()) {
+                                log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                                tempEnv.put("removing_" + ip.getNetName(), ip.getIp());
+                            }
+                            log.debug("adding floatingIp: " + vnfcInstanceRemote.getFloatingIps());
+                            for (Ip fip : vnfcInstanceRemote.getFloatingIps()) {
+                                tempEnv.put("removing_" + fip.getNetName() + "_floatingIp", fip.getIp());
+                            }
+
+                            tempEnv.put("removing_" + "hostname", vnfcInstanceRemote.getHostname());
+                        }
+
+                        env.putAll(tempEnv);
+                        log.info("The Environment Variables for script " + script + " are: " + env);
+
+                        String command = getJsonObject("EXECUTE", script, env).toString();
+                        res.add(executeActionOnEMS(vnfcInstanceLocal.getHostname(), command));
+
+                        for (String key : tempEnv.keySet()) {
+                            env.remove(key);
+                        }
+                    }
+                }
+            }
+        }
+        return res;
     }
 
     private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event) throws Exception {
