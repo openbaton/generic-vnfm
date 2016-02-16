@@ -191,7 +191,14 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 log.info("The Environment Variables for script " + script + " are: " + env);
 
                 String command = getJsonObject("EXECUTE", script, env).toString();
-                res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+                if(event.ordinal()==Event.SCALE_IN.ordinal()){
+                    for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu())
+                        for(VNFCInstance vnfcInstance1: vdu.getVnfc_instance()){
+                            res.add(executeActionOnEMS(vnfcInstance1.getHostname(), command));
+                        }
+                }
+                else
+                    res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
 
                 for (String key : tempEnv.keySet()) {
                     env.remove(key);
