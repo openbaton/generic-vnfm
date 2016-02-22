@@ -34,7 +34,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     private String scriptPath;
 
     public static void main(String[] args) {
-        SpringApplication.run(GenericVNFM.class);
+        SpringApplication.run(GenericVNFM.class, args);
     }
 
     @Override
