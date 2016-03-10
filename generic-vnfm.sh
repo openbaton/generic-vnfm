@@ -1,10 +1,11 @@
 #!/bin/bash
 
-source gradle.properties
+_openbaton_base="/opt/openbaton"
+_generic_base="${_openbaton_base}/generic-vnfm/"
+source ${_generic_base}/gradle.properties
 
 _version=${version}
 
-_openbaton_base="/opt/openbaton"
 _message_queue_base="apache-activemq-5.11.1"
 _openbaton_config_file=/etc/openbaton/openbaton.properties
 
@@ -66,7 +67,7 @@ function check_already_running {
 
 function start {
 
-    if [ ! -d build/  ]
+    if [ ! -d ${_generic_base}/build/  ]
         then
             compile
     fi
@@ -81,7 +82,7 @@ function start {
 	    #
 	    # At the moment the generic starts automatically in a second window in the openbaton session screen
 	    pushd "${_openbaton_base}/nfvo"
-	    screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "../generic-vnfm/build/libs/generic-vnfm-$_version.jar"
+	    screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "../generic-vnfm/build/libs/generic-vnfm-${_version}.jar"
 	    popd
 	    #screen -c .screenrc -r -p 0
     fi
