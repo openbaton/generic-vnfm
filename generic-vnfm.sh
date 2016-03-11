@@ -1,7 +1,7 @@
 #!/bin/bash
 
-_openbaton_base="/opt/openbaton"
-_generic_base="${_openbaton_base}/generic-vnfm/"
+_openbaton_base="/opt/github/openbaton"
+_generic_base="${_openbaton_base}/generic-vnfm"
 source ${_generic_base}/gradle.properties
 
 _version=${version}
@@ -108,15 +108,15 @@ function kill {
 
 
 function compile {
-    ./gradlew build -x test 
+    ${_generic_base}/gradlew build -x test
 }
 
 function tests {
-    ./gradlew test
+    ${_generic_base}/gradlew test
 }
 
 function clean {
-    ./gradlew clean
+    ${_generic_base}/gradlew clean
 }
 
 function end {
