@@ -459,6 +459,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     protected void checkEmsStarted(String hostname) {
         if (!emsRegistrator.getHostnames().contains(hostname))
             throw new RuntimeException("no ems for hostame: " + hostname);
+        else
+            emsRegistrator.getHostnames().remove(hostname);
     }
 
     private String executeActionOnEMS(String vduHostname, String command) throws Exception {
