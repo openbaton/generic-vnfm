@@ -39,4 +39,8 @@ public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.
         hostnames.add(object.get("hostname").getAsString());
     }
 
+    public void unregister(String hostname){
+        log.debug("removing: " + hostname);
+        hostnames.remove(hostname);
+    }
 }
