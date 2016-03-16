@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by lto on 15/09/15.
@@ -21,12 +22,12 @@ public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private Gson parser = new GsonBuilder().setPrettyPrinting().create();
 
-    public HashSet<String> getHostnames() {
+    public Set<String> getHostnames() {
         return hostnames;
     }
 
     //TODO consider using DB in case of failure etc...
-    private HashSet<String> hostnames;
+    private Set<String> hostnames;
 
     @PostConstruct
     private void init(){
@@ -39,4 +40,8 @@ public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.
         hostnames.add(object.get("hostname").getAsString());
     }
 
+    public void unregister(String hostname){
+        log.debug("EMSRegister removing: " + hostname);
+        hostnames.remove(hostname);
+    }
 }
