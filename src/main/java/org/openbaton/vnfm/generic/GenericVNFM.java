@@ -38,7 +38,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     }
 
     @Override
-    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts, List<VimInstance> vimInstances) throws Exception {
+    public VirtualNetworkFunctionRecord instantiate(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts, Map<String, Collection<VimInstance>> vimInstances) throws Exception {
 
         log.info("Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
         if (scripts != null)
@@ -459,8 +459,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     protected void checkEmsStarted(String hostname) {
         if (!emsRegistrator.getHostnames().contains(hostname))
             throw new RuntimeException("no ems for hostame: " + hostname);
-        else
-            emsRegistrator.unregister(hostname);
+        emsRegistrator.unregister(hostname);
     }
 
     private String executeActionOnEMS(String vduHostname, String command) throws Exception {
