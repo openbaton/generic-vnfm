@@ -13,6 +13,7 @@ import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.catalogue.nfvo.*;
+import org.openbaton.common.vnfm_sdk.AbstractVnfm;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
@@ -32,6 +33,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     private EmsRegistrator emsRegistrator;
     private Gson parser = new GsonBuilder().setPrettyPrinting().create();
     private String scriptPath;
+
 
     public static void main(String[] args) {
         SpringApplication.run(GenericVNFM.class, args);
@@ -685,5 +687,30 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     protected void setup() {
         super.setup();
         this.scriptPath = properties.getProperty("script-path", "/opt/openbaton/scripts");
+    }
+
+    @Override
+    protected String getUserData() {
+        String result = convertStreamToString(AbstractVnfm.class.getResourceAsStream("/user-data.sh"));
+
+        log.debug(emsVersion);
+
+        result = result.replace("export MONITORING_IP=","export MONITORING_IP="+monitoringIp);
+        result = result.replace("export TIMEZONE=","export TIMEZONE="+timezone);
+        result = result.replace("export BROKER_IP=","export BROKER_IP="+brokerIp);
+        result = result.replace("export USERNAME=","export USERNAME="+username);
+        result = result.replace("export PASSWORD=", "export PASSWORD="+password);
+        result = result.replace("export EXCHANGE_NAME=","export EXCHANGE_NAME="+exchangeName);
+        result = result.replace("export EMS_HEARTBEAT=","export EMS_HEARTBEAT="+emsHeartbeat);
+        result = result.replace("export EMS_AUTODELETE=","export EMS_AUTODELETE="+emsAutodelete);
+        result = result.replace("export EMS_VERSION=","export EMS_VERSION="+emsVersion);
+        result = result.replace("export ENDPOINT=","export ENDPOINT="+type);
+
+        return result;
+    }
+
+    private static String convertStreamToString(java.io.InputStream is) {
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 }
