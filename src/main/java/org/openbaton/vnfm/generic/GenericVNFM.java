@@ -97,7 +97,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
             }
 
-            if (vnfcInstance.getState() != null | vnfcInstance.getState() != null && !vnfcInstance.getState().equals("standby"))
+            if (vnfcInstance.getState() == null || !vnfcInstance.getState().equals("standby")) {
                 if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
                     output = "\n--------------------\n--------------------\n";
                     for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
@@ -107,6 +107,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                     output += "\n--------------------\n";
                     log.info("Executed script for START. Output was: \n\n" + output);
                 }
+            }
 
             log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
             return virtualNetworkFunctionRecord;
