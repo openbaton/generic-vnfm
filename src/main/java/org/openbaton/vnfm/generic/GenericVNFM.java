@@ -19,6 +19,7 @@ import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.openbaton.vnfm.generic.utils.EmsRegistrator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 
 import java.util.*;
@@ -33,10 +34,17 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     private EmsRegistrator emsRegistrator;
     private Gson parser = new GsonBuilder().setPrettyPrinting().create();
     private String scriptPath;
+    @Value("${vnfm.ems.start.timeout:500}")
+    private int waitForEms;
 
 
     public static void main(String[] args) {
         SpringApplication.run(GenericVNFM.class, args);
+    }
+
+    private static String convertStreamToString(java.io.InputStream is) {
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 
     @Override
@@ -193,13 +201,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 log.info("The Environment Variables for script " + script + " are: " + env);
 
                 String command = getJsonObject("EXECUTE", script, env).toString();
-                if(event.ordinal()==Event.SCALE_IN.ordinal()){
+                if (event.ordinal() == Event.SCALE_IN.ordinal()) {
                     for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu())
-                        for(VNFCInstance vnfcInstance1: vdu.getVnfc_instance()){
+                        for (VNFCInstance vnfcInstance1 : vdu.getVnfc_instance()) {
                             res.add(executeActionOnEMS(vnfcInstance1.getHostname(), command));
                         }
-                }
-                else
+                } else
                     res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
 
                 for (String key : tempEnv.keySet()) {
@@ -256,46 +263,49 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         if (le != null) {
             for (String script : le.getLifecycle_events()) {
                 String type = script.substring(0, script.indexOf("_"));
-                log.debug("There are " + dependency.getVnfcParameters().get(type).getParameters().size() + " VNFCInstanceForeign");
-                for (String vnfcForeignId : dependency.getVnfcParameters().get(type).getParameters().keySet()) {
-                    log.info("Running script: " + script + " for VNFCInstance foreign id " + vnfcForeignId);
+                VNFCDependencyParameters vnfcDependencyParameters = dependency.getVnfcParameters().get(type);
+                if (vnfcDependencyParameters != null) {
+                    log.debug("There are " + vnfcDependencyParameters.getParameters().size() + " VNFCInstanceForeign");
+                    for (String vnfcForeignId : vnfcDependencyParameters.getParameters().keySet()) {
+                        log.info("Running script: " + script + " for VNFCInstance foreign id " + vnfcForeignId);
 
-                    log.info("Sending command: " + script + " to adding relation with type: " + type + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
+                        log.info("Sending command: " + script + " to adding relation with type: " + type + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-                    Map<String, String> tempEnv = new HashMap<>();
+                        Map<String, String> tempEnv = new HashMap<>();
 
-                    //Adding own ips
-                    for (Ip ip : vnfcInstance.getIps()) {
-                        log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-                        tempEnv.put(ip.getNetName(), ip.getIp());
-                    }
+                        //Adding own ips
+                        for (Ip ip : vnfcInstance.getIps()) {
+                            log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+                            tempEnv.put(ip.getNetName(), ip.getIp());
+                        }
 
-                    //Adding own floating ip
-                    log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-                    for (Ip fip : vnfcInstance.getFloatingIps()) {
-                        tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-                    }
-                    //Adding foreign parameters such as ip
-                    if (script.contains("_")) {
+                        //Adding own floating ip
+                        log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+                        for (Ip fip : vnfcInstance.getFloatingIps()) {
+                            tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
+                        }
                         //Adding foreign parameters such as ip
-                        Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
-                        for (Map.Entry<String, String> param : parameters.entrySet())
-                            tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                        if (script.contains("_")) {
+                            //Adding foreign parameters such as ip
+                            Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+                            for (Map.Entry<String, String> param : parameters.entrySet())
+                                tempEnv.put(type + "_" + param.getKey(), param.getValue());
 
-                        Map<String, String> parametersVNFC = dependency.getVnfcParameters().get(type).getParameters().get(vnfcForeignId).getParameters();
-                        for (Map.Entry<String, String> param : parametersVNFC.entrySet())
-                            tempEnv.put(type + "_" + param.getKey(), param.getValue());
-                    }
+                            Map<String, String> parametersVNFC = vnfcDependencyParameters.getParameters().get(vnfcForeignId).getParameters();
+                            for (Map.Entry<String, String> param : parametersVNFC.entrySet())
+                                tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                        }
 
-                    tempEnv.put("hostname", vnfcInstance.getHostname());
-                    env.putAll(tempEnv);
-                    log.info("The Environment Variables for script " + script + " are: " + env);
+                        tempEnv.put("hostname", vnfcInstance.getHostname());
+                        env.putAll(tempEnv);
+                        log.info("The Environment Variables for script " + script + " are: " + env);
 
-                    String command = getJsonObject("EXECUTE", script, tempEnv).toString();
-                    res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+                        String command = getJsonObject("EXECUTE", script, tempEnv).toString();
+                        res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
 
-                    for (String key : tempEnv.keySet()) {
-                        env.remove(key);
+                        for (String key : tempEnv.keySet()) {
+                            env.remove(key);
+                        }
                     }
                 }
             }
@@ -455,6 +465,27 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     @Override
     public void NotifyChange() {
 
+    }
+
+    protected void checkEMS(String vduHostname) {
+        int i = 0;
+        while (true) {
+            log.debug("Waiting for " + vduHostname + " ems to be started... (" + (i * 5) + " secs)");
+            i++;
+            try {
+                checkEmsStarted(vduHostname);
+                break;
+            } catch (RuntimeException e) {
+                if (i == (waitForEms / 5)) {
+                    throw e;
+                }
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
     }
 
     @Override
@@ -695,22 +726,17 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
         log.debug(emsVersion);
 
-        result = result.replace("export MONITORING_IP=","export MONITORING_IP="+monitoringIp);
-        result = result.replace("export TIMEZONE=","export TIMEZONE="+timezone);
-        result = result.replace("export BROKER_IP=","export BROKER_IP="+brokerIp);
-        result = result.replace("export USERNAME=","export USERNAME="+username);
-        result = result.replace("export PASSWORD=", "export PASSWORD="+password);
-        result = result.replace("export EXCHANGE_NAME=","export EXCHANGE_NAME="+exchangeName);
-        result = result.replace("export EMS_HEARTBEAT=","export EMS_HEARTBEAT="+emsHeartbeat);
-        result = result.replace("export EMS_AUTODELETE=","export EMS_AUTODELETE="+emsAutodelete);
-        result = result.replace("export EMS_VERSION=","export EMS_VERSION="+emsVersion);
-        result = result.replace("export ENDPOINT=","export ENDPOINT="+type);
+        result = result.replace("export MONITORING_IP=", "export MONITORING_IP=" + monitoringIp);
+        result = result.replace("export TIMEZONE=", "export TIMEZONE=" + timezone);
+        result = result.replace("export BROKER_IP=", "export BROKER_IP=" + brokerIp);
+        result = result.replace("export USERNAME=", "export USERNAME=" + username);
+        result = result.replace("export PASSWORD=", "export PASSWORD=" + password);
+        result = result.replace("export EXCHANGE_NAME=", "export EXCHANGE_NAME=" + exchangeName);
+        result = result.replace("export EMS_HEARTBEAT=", "export EMS_HEARTBEAT=" + emsHeartbeat);
+        result = result.replace("export EMS_AUTODELETE=", "export EMS_AUTODELETE=" + emsAutodelete);
+        result = result.replace("export EMS_VERSION=", "export EMS_VERSION=" + emsVersion);
+        result = result.replace("export ENDPOINT=", "export ENDPOINT=" + type);
 
         return result;
-    }
-
-    private static String convertStreamToString(java.io.InputStream is) {
-        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
-        return s.hasNext() ? s.next() : "";
     }
 }
