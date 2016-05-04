@@ -22,7 +22,7 @@ ext {
 }
 
 task openbatonGVNFMDeb(type: Deb, dependsOn: [jar, build]) {
-    packageName = 'openbaton-gvnfm'
+    packageName = (applicationRelease) ? "openbaton-gvnfm" : "openbaton-gvnfm-nightly"
     version = debianApplicationVersionFull
     release = 1 
     arch = 'amd64'
