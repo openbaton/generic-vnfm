@@ -1,0 +1,48 @@
+#!/bin/sh -e
+
+. /lib/lsb/init-functions
+
+
+OPENBATON_BASE=/usr
+OPENBATON_EXE_FOLDER=$OPENBATON_BASE/bin
+
+USER="$(id -un 2>/dev/null || true)"
+
+checkBinary () {
+  echo -n " * Checking for '$1'..."
+  if command -v $1 >/dev/null 2>&1; then
+     echo "OK"
+     return 0
+   else
+     echo >&2 "FAILED."
+     return 1
+   fi
+}
+
+_ex='sh -c'
+if [ "${USER}" != "root" ]; then
+    if checkBinary sudo; then
+        _ex='sudo -E sh -c'
+    elif checkBinary su; then
+        _ex='su -c'
+    fi
+fi
+
+
+################################################
+#### Configure OpenBaton GVNFM installation ####
+################################################
+
+configure() {
+    log_daemon_msg "Giving openbaton-gvnfm execution permissions ..."
+    $_ex "chmod a+x ${OPENBATON_EXE_FOLDER}/openbaton-gvnfm"
+    log_daemon_msg "...done."
+
+    log_daemon_msg "OpenBaton Generic VNFM installation completed"
+
+    log_daemon_msg "Starting OpenBaton Generic VNFM.."
+    $_ex 'start openbaton-gvnfm'
+}
+
+configure
+

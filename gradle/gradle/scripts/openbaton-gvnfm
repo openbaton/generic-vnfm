@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+. /lib/lsb/init-functions
+
+OPENBATON_GVNFM_CONGIG_FILE=/etc/openbaton/gvnfm/openbaton-gvnfm.properties
+INSTALL_DIR=/usr/lib/openbaton/gvnfm
+PID_FILE=/var/run/openbaton-gvnfm.pid
+DAEMON_USER=root
+OSTYPE=$(uname)
+
+###################
+#### Rabbitmq #####
+###################
+
+function check_rabbitmq {
+    if [ "${OSTYPE}" = "Linux" ]; then
+	instance=$(ps aux | grep -v grep | grep rabbitmq | grep server | wc -l)
+        if [ ${instance} -eq 0 ]; then
+          	log_daemon_msg "rabbit is not running, let's try to start it..."
+            	start_rabbitmq
+        fi
+    elif [ "$OSTYPE" = "Darwin" ]; then
+	instance=$(ps aux | grep -v grep | grep rabbitmq | grep server | wc -l)
+        if [ ${instance} -eq 0 ]; then
+          	log_daemon_msg "rabbitmq is not running, let's try to start it..."
+            	start_rabbitmq
+        fi
+    fi
+}
+
+function start_rabbitmq {
+    $(rabbitmq-server -detached)
+    if [ $? -ne 0 ]; then
+        log_daemon_msg "ERROR: rabbitmq is not running properly (check the problem in /var/log/rabbitmq.log) "
+        exit 1
+    fi
+}
+
+
+###################
+#### OpenBaton ####
+###################
+
+function check_already_running {
+        instance=$(ps aux | grep -v grep | grep "generic-vnfm" | grep jar | wc -l)
+        if [ ${instance} -ne 0 ]; then
+                log_daemon_msg "The OpenBaton Generic VNFM is already running.."
+		exit 1	
+        fi
+}
+
+function set_jar_version {
+        # TODO: so far the most recent openbaton-nfvo jar is chosen to be executed
+	#       -> add alternative version selection (with prompt question and/or with command line -v parameter)
+	OPENBATON_GVNFM_JAR=$(ls -ct ${INSTALL_DIR} | grep "generic-vnfm" | head -n 1)
+	if [ ${OPENBATON_GVNFM_JAR} = "" ]; then
+                log_daemon_msg "The OpenBaton Generic VNFM is not installed. (jar-file not found)"
+		exit 1	
+        fi
+}
+
+function configure {
+    check_already_running
+    check_rabbitmq
+    set_jar_version
+}
+
+function start {
+    configure
+    log_daemon_msg "Starting the OpenBaton Generic VNFM .."
+
+    start-stop-daemon --start --background --pidfile ${PID_FILE} --make-pidfile --user ${DAEMON_USER} --chuid ${DAEMON_USER} --exec /usr/bin/java -- -jar ${INSTALL_DIR}/${OPENBATON_GVNFM_JAR}
+}
+
+function stop {
+    start-stop-daemon --stop --pidfile $PID_FILE
+}
+
+function restart {
+    stop
+    start
+}
+
+
+function usage {
+    log_daemon_msg -e "OpenBaton Generic VNFM\n"
+    log_daemon_msg -e "Usage:\n\t [openbaton-gvnfm start|stop|restart] | [service openbaton-gvnfm start|stop|restart] | [start|stop openbaton-gvnfm]"
+}
+
+##
+#   MAIN
+##
+
+if [ $# -eq 0 ]
+   then
+        usage
+        exit 1
+fi
+
+declare -a cmds=($@)
+for (( i = 0; i <  ${#cmds[*]}; ++ i ))
+do
+    case ${cmds[$i]} in
+        "start" )
+            start ;;
+        "stop" )
+            stop ;;
+        "restart" )
+            restart ;;
+         *)   
+	usage;;
+    esac
+    if [ $? -ne 0 ];
+    then
+	    exit 1
+    fi
+done

@@ -1,12 +1,14 @@
 plugins {
     id 'net.researchgate.release' version '2.1.2'
+    id "nebula.os-package" version "2.2.6"
 }
 
-apply from: 'openbaton-libs/gradle/gradle/git.release.gradle'
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
+apply from: 'openbaton-libs/gradle/gradle/git.helpers.gradle'
+apply from: 'openbaton-libs/gradle/gradle/command.line.helper.gradle'
 
 project.ext {
     //------------------------------------------------//
@@ -20,8 +22,15 @@ project.ext {
     /**
      * Application Related Version
      */
+    applicationRelease = isApplicationRelease()
     applicationVersion = version 
     applicationVersionDebian = "1";
+    
+    applicationDate = new Date()
+    applicationRevision = getRevision()
+
+    applicationVersionSnapshot = (!applicationRelease) ? "+SNAPSHOT.${asUTC(applicationDate, 'yyyyMMdd')}.git${applicationRevision}" : ""
+    applicationVersionFull = "${applicationVersion}${applicationVersionSnapshot}"
 
     //------------------------------------------------//
     /**
@@ -30,7 +39,12 @@ project.ext {
     mainClass = 'org.openbaton.vnfm.generic.GenericVNFM'
     //------------------------------------------------//
 }
+
 apply from: 'openbaton-libs/gradle/gradle/application.java.gradle'
+apply from: 'openbaton-libs/gradle/gradle/run.application.java.gradle'
+apply from: 'openbaton-libs/gradle/gradle/git.release.gradle'
+
+apply from: 'gradle/gradle/packaging.gvnfm.debian.gradle'
 
 repositories {
     mavenCentral()
@@ -38,9 +52,7 @@ repositories {
 
 dependencies {
 	compile project(':vnfm-sdk-amqp')
-    compile 'commons-codec:commons-codec:1.10'
+        compile 'commons-codec:commons-codec:1.10'
 	compile 'org.hibernate:hibernate-core:4.3.10.Final'
 }
-
-apply from: 'openbaton-libs/gradle/gradle/run.application.java.gradle'
 
