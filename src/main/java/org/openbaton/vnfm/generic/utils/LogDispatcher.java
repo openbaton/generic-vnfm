@@ -10,7 +10,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ScheduledExecutorTask;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileSystemUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -18,6 +17,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.List;
 
 
@@ -27,8 +27,8 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
 
     @Value("${vnfm.ems.script.logpath:/var/log/openbaton/scriptsLog/}")
     private String logPath;
-    @Value("${vnfm.ems.script.delete:true}")
-    private boolean delete;
+    @Value("${vnfm.ems.script.old:60}")
+    private int old;
 
     private ScheduledExecutorTask scheduledExecutorTask;
     @Autowired
@@ -65,12 +65,27 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
         deleteLogs();
     }
 
-    @Scheduled(cron = "0 0 0 */3 * *")
+    private void deleteFilesRecursively(File top, long now){
+        for (File f : top.listFiles()){
+            if (f.isDirectory())
+                deleteFilesRecursively(f, now);
+            else
+                if ((now - f.lastModified()) > (old*60000)){
+                    log.debug("Removed " + f.getName());
+                    f.delete();
+                }
+        }
+    }
+
+    @Scheduled(fixedRate = 180000, initialDelay = 180000)
     private void deleteLogs() {
         log.debug("Checking if delete is true");
-        if (delete) {
-            log.debug("Removing script log files!");
-            FileSystemUtils.deleteRecursively(new File(logPath));
+        if (old > 0) {
+            log.info("Removing script log files that are older than " + old + " minutes");
+            File top = new File(logPath);
+            if (top.exists())
+                deleteFilesRecursively(top,new Date().getTime());
+
         }
     }
 }
