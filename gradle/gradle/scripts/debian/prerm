@@ -34,8 +34,11 @@ fi
 #############
 
 stopGVNFM () {
-    log_daemon_msg "Stopping the OpenBaton GVNFM .."
-    $_ex 'stop openbaton-gvnfm'
+    instance=$(ps aux | grep -v grep | grep "generic-vnfm-*jar | wc -l)
+    if [ ${instance} -ne 0 ]; then
+    	log_daemon_msg "Stopping the OpenBaton GVNFM .."
+    	$_ex 'stop openbaton-gvnfm'
+    fi
 }
 
 
