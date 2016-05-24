@@ -4,7 +4,7 @@ source gradle.properties
 
 _openbaton_base="/opt/openbaton"
 _generic_base="${_openbaton_base}/generic-vnfm"
-_openbaton_config_file=/etc/openbaton/openbaton.properties
+_openbaton_config_file="/etc/openbaton/generic-vnfm.properties"
 _version=${version}
 
 
@@ -73,11 +73,19 @@ function start {
     check_already_running
     screen_exists=$(screen -ls | grep openbaton | wc -l);
     if [ "${screen_exists}" -eq "0" ]; then
-	echo "Starting the Generic-VNFM in a new screen session (attach to the screen with screen -x openbaton)"
-        screen -c screenrc -d -m -S openbaton -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+	    echo "Starting the Generic-VNFM in a new screen session (attach to the screen with screen -x openbaton)"
+	    if [ -f ${_openbaton_config_file} ]; then
+            screen -c screenrc -d -m -S openbaton -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+        else
+            screen -c screenrc -d -m -S openbaton -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
+        fi
     elif [ "${screen_exists}" -ne "0" ]; then
         echo "Starting the Generic-VNFM in the existing screen session (attach to the screen with screen -x openbaton)"
-        screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+        if [ -f ${_openbaton_config_file} ]; then
+            screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+        else
+            screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
+        fi
     fi
 }
 
