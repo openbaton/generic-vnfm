@@ -104,6 +104,14 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
             }
 
+            output = "\n--------------------\n--------------------\n";
+            for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_OUT, dependency)) {
+                output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
+                output += "\n--------------------\n";
+            }
+            output += "\n--------------------\n";
+            log.info("Executed script for SCALE_OUT. Output was: \n\n" + output);
+
             if (vnfcInstance.getState() == null || !vnfcInstance.getState().equals("standby")) {
                 if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
                     output = "\n--------------------\n--------------------\n";
@@ -815,4 +823,6 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
         return result;
     }
+
+
 }
