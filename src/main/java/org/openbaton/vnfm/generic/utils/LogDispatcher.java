@@ -68,7 +68,10 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
     private void deleteFilesRecursively(File top, long now){
         for (File f : top.listFiles()){
             if (f.isDirectory())
-                deleteFilesRecursively(f, now);
+                if (f.listFiles().length > 0)
+                    deleteFilesRecursively(f, now);
+                else
+                    f.delete();
             else
                 if ((now - f.lastModified()) > (old*60000)){
                     log.debug("Removed " + f.getName());

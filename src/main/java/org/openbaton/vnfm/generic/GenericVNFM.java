@@ -176,6 +176,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                             tempEnv.put("removing_" + "hostname", vnfcInstanceRemote.getHostname());
                         }
 
+                        tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                         env.putAll(tempEnv);
                         log.info("The Environment Variables for script " + script + " are: " + env);
 
@@ -203,6 +204,17 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         return res;
     }
 
+    private Map<String, String> modifyUnsafeEnvVarNames(Map<String, String> env) {
+
+        Map<String, String> result = new HashMap<>();
+
+        for (Map.Entry<String,String> entry : env.entrySet()){
+            result.put(entry.getKey().replaceAll(" [^A-Za-z0-9_]","_"), entry.getValue());
+        }
+
+        return result;
+    }
+
     private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event) throws Exception {
         Map<String, String> env = getMap(virtualNetworkFunctionRecord);
         List<String> res = new ArrayList<>();
@@ -224,6 +236,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
                 tempEnv.put("hostname", vnfcInstance.getHostname());
 
+                tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                 env.putAll(tempEnv);
                 log.info("The Environment Variables for script " + script + " are: " + env);
 
@@ -279,6 +292,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 //Add cause to the environment variables
                 tempEnv.put("cause", cause);
 
+                tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                 env.putAll(tempEnv);
                 log.info("The Environment Variables for script " + script + " are: " + env);
 
@@ -347,6 +361,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                         }
 
                         tempEnv.put("hostname", vnfcInstance.getHostname());
+                        tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                         env.putAll(tempEnv);
                         log.info("The Environment Variables for script " + script + " are: " + env);
 
@@ -550,9 +565,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
     @Override
     protected void checkEmsStarted(String hostname) {
-        if (!emsRegistrator.getHostnames().contains(hostname))
+        if (!emsRegistrator.getHostnames().contains(hostname.toLowerCase()))
             throw new RuntimeException("no ems for hostame: " + hostname);
-        emsRegistrator.unregister(hostname);
+        emsRegistrator.unregister(hostname.toLowerCase());
     }
 
     private String executeActionOnEMS(String vduHostname, String command) throws Exception {
@@ -607,7 +622,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                         }
 
                         tempEnv.put("hostname", vnfcInstance.getHostname());
-
+                        tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                         env.putAll(tempEnv);
                         log.info("Environment Variables are: " + env);
 
@@ -681,7 +696,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                                 }
 
                                 tempEnv.put("hostname", vnfcInstance.getHostname());
-
+                                tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                                 env.putAll(tempEnv);
                                 log.info("Environment Variables are: " + env);
 
@@ -795,6 +810,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         for (ConfigurationParameter configurationParameter : virtualNetworkFunctionRecord.getConfigurations().getConfigurationParameters()) {
             res.put(configurationParameter.getConfKey(), configurationParameter.getValue());
         }
+        res = modifyUnsafeEnvVarNames(res);
         return res;
     }
 

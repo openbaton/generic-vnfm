@@ -37,11 +37,11 @@ public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.
     public void register(String json){
         log.debug("EMSRegister received: " + json);
         JsonObject object = parser.fromJson(json, JsonObject.class);
-        hostnames.add(object.get("hostname").getAsString());
+        hostnames.add(object.get("hostname").getAsString().toLowerCase());
     }
 
     public void unregister(String hostname){
         log.debug("EMSRegister removing: " + hostname);
-        hostnames.remove(hostname);
+        hostnames.remove(hostname.toLowerCase());
     }
 }
