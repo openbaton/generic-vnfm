@@ -104,14 +104,6 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
             }
 
-            output = "\n--------------------\n--------------------\n";
-            for (String result : this.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_OUT, dependency)) {
-                output += parser.fromJson(result, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n");
-                output += "\n--------------------\n";
-            }
-            output += "\n--------------------\n";
-            log.info("Executed script for SCALE_OUT. Output was: \n\n" + output);
-
             if (vnfcInstance.getState() == null || !vnfcInstance.getState().equals("standby")) {
                 if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START) != null) {
                     output = "\n--------------------\n--------------------\n";
@@ -365,7 +357,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                         env.putAll(tempEnv);
                         log.info("The Environment Variables for script " + script + " are: " + env);
 
-                        String command = getJsonObject("EXECUTE", script, tempEnv).toString();
+                        String command = getJsonObject("EXECUTE", script, env).toString();
                         String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
                         res.add(output);
 
@@ -786,11 +778,11 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         return jsonMessage;
     }
 
-    private JsonObject getJsonObject(String action, String payload, Map<String, String> dependencyParameters) {
+    private JsonObject getJsonObject(String action, String payload, Map<String, String> env) {
         JsonObject jsonMessage = new JsonObject();
         jsonMessage.addProperty("action", action);
         jsonMessage.addProperty("payload", payload);
-        jsonMessage.add("env", parser.fromJson(parser.toJson(dependencyParameters), JsonObject.class));
+        jsonMessage.add("env", parser.fromJson(parser.toJson(env), JsonObject.class));
         return jsonMessage;
     }
 
