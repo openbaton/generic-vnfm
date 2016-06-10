@@ -22,11 +22,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.util.*;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.Files;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
 
 /**
  * Created by mob on 16.07.15.
@@ -201,7 +201,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         Map<String, String> result = new HashMap<>();
 
         for (Map.Entry<String,String> entry : env.entrySet()){
-            result.put(entry.getKey().replaceAll(" [^A-Za-z0-9_]","_"), entry.getValue());
+            result.put(entry.getKey().replaceAll("[^A-Za-z0-9_]","_"), entry.getValue());
         }
 
         return result;
@@ -831,6 +831,4 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
         return result;
     }
-
-
 }
