@@ -658,7 +658,6 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
                 for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
                     for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-                        log.debug("VNFCParameters are: " + dependency.getVnfcParameters());
                         if (dependency.getVnfcParameters().get(type) != null)
                             for (String vnfcId : dependency.getVnfcParameters().get(type).getParameters().keySet()) {
 
@@ -671,20 +670,26 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                                 }
 
                                 //Adding own floating ip
-                                log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
                                 for (Ip fip : vnfcInstance.getFloatingIps()) {
+                                    log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
                                     tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
                                 }
 
                                 if (script.contains("_")) {
                                     //Adding foreign parameters such as ip
+                                    log.debug("Fetching parameter from dependency of type: " + type);
                                     Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
-                                    for (Map.Entry<String, String> param : parameters.entrySet())
+
+                                    for (Map.Entry<String, String> param : parameters.entrySet()) {
+                                        log.debug("adding param: " + type + "_" + param.getKey() + " = " + param.getValue());
                                         tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                                    }
 
                                     Map<String, String> parametersVNFC = dependency.getVnfcParameters().get(type).getParameters().get(vnfcId).getParameters();
-                                    for (Map.Entry<String, String> param : parametersVNFC.entrySet())
+                                    for (Map.Entry<String, String> param : parametersVNFC.entrySet()) {
+                                        log.debug("adding param: " + type + "_" + param.getKey() + " = " + param.getValue());
                                         tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                                    }
                                 }
 
                                 tempEnv.put("hostname", vnfcInstance.getHostname());
