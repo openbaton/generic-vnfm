@@ -40,8 +40,11 @@ configure() {
 
     log_daemon_msg "OpenBaton Generic VNFM installation completed"
 
-    log_daemon_msg "Starting OpenBaton Generic VNFM.."
-    $_ex 'start openbaton-gvnfm'
+    # Allow the use of the .deb package to install Open Baton with Docker (the Docker file developer need to manage the starting of the GVNFM in the Docker file)
+    if [ "${OPENBATON_DOCKERIZED}" != "true" ]; then
+    	log_daemon_msg "Starting OpenBaton Generic VNFM.."
+    	$_ex 'start openbaton-gvnfm'
+    fi
 }
 
 configure
