@@ -17,31 +17,31 @@ import java.util.Set;
  */
 @Service
 @Scope
-public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.EmsRegistrator{
+public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.EmsRegistrator {
 
-    private Logger log = LoggerFactory.getLogger(this.getClass());
-    private Gson parser = new GsonBuilder().setPrettyPrinting().create();
+  private Logger log = LoggerFactory.getLogger(this.getClass());
+  private Gson parser = new GsonBuilder().setPrettyPrinting().create();
 
-    public Set<String> getHostnames() {
-        return hostnames;
-    }
+  public Set<String> getHostnames() {
+    return hostnames;
+  }
 
-    //TODO consider using DB in case of failure etc...
-    private Set<String> hostnames;
+  //TODO consider using DB in case of failure etc...
+  private Set<String> hostnames;
 
-    @PostConstruct
-    private void init(){
-        hostnames = new HashSet<>();
-    }
+  @PostConstruct
+  private void init() {
+    hostnames = new HashSet<>();
+  }
 
-    public void register(String json){
-        log.debug("EMSRegister received: " + json);
-        JsonObject object = parser.fromJson(json, JsonObject.class);
-        hostnames.add(object.get("hostname").getAsString().toLowerCase());
-    }
+  public void register(String json) {
+    log.debug("EMSRegister received: " + json);
+    JsonObject object = parser.fromJson(json, JsonObject.class);
+    hostnames.add(object.get("hostname").getAsString().toLowerCase());
+  }
 
-    public void unregister(String hostname){
-        log.debug("EMSRegister removing: " + hostname);
-        hostnames.remove(hostname.toLowerCase());
-    }
+  public void unregister(String hostname) {
+    log.debug("EMSRegister removing: " + hostname);
+    hostnames.remove(hostname.toLowerCase());
+  }
 }

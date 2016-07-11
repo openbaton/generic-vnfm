@@ -20,75 +20,67 @@ import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
 
-
 @Service
 @ConfigurationProperties
-public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.LogDispatcher{
+public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.LogDispatcher {
 
-    @Value("${vnfm.ems.script.logpath:/var/log/openbaton/scriptsLog/}")
-    private String logPath;
-    @Value("${vnfm.ems.script.old:60}")
-    private int old;
+  @Value("${vnfm.ems.script.logpath:/var/log/openbaton/scriptsLog/}")
+  private String logPath;
 
-    private ScheduledExecutorTask scheduledExecutorTask;
-    @Autowired
-    private Gson gson;
+  @Value("${vnfm.ems.script.old:60}")
+  private int old;
 
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+  private ScheduledExecutorTask scheduledExecutorTask;
+  @Autowired private Gson gson;
 
-    private static List<String> readFile(String path, Charset encoding) throws IOException
-    {
-        return Files.readAllLines(Paths.get(path), encoding);
-//        return new String(encoded, encoding);
+  private Logger log = LoggerFactory.getLogger(this.getClass());
+
+  private static List<String> readFile(String path, Charset encoding) throws IOException {
+    return Files.readAllLines(Paths.get(path), encoding);
+    //        return new String(encoded, encoding);
+  }
+
+  @Override
+  public String sendLogs(String request) {
+    String vnfrName = gson.fromJson(request, JsonObject.class).get("vnfrName").getAsString();
+    String hostname = gson.fromJson(request, JsonObject.class).get("hostname").getAsString();
+
+    List<String> logs;
+    try {
+      logs = readFile(logPath + vnfrName + "/" + hostname + ".log", Charset.defaultCharset());
+    } catch (IOException e) {
+      e.printStackTrace();
+      log.error("Unable to retrieve logs: " + e.getLocalizedMessage());
+      return "{ \"answer\": \"" + "Unable to retrieve logs: " + e.getLocalizedMessage() + "\"}";
     }
 
-    @Override
-    public String sendLogs(String request) {
-        String vnfrName = gson.fromJson(request, JsonObject.class).get("vnfrName").getAsString();
-        String hostname = gson.fromJson(request, JsonObject.class).get("hostname").getAsString();
+    return "{ \"answer\": " + gson.toJson(logs) + "}";
+  }
 
-        List<String> logs;
-        try {
-            logs = readFile(logPath + vnfrName + "/" + hostname + ".log", Charset.defaultCharset());
-        } catch (IOException e) {
-            e.printStackTrace();
-            log.error("Unable to retrieve logs: " + e.getLocalizedMessage());
-            return "{ \"answer\": \"" + "Unable to retrieve logs: " + e.getLocalizedMessage() + "\"}";
+  @PostConstruct
+  private void init() {
+    deleteLogs();
+  }
 
-        }
-
-        return "{ \"answer\": " + gson.toJson(logs) + "}";
+  private void deleteFilesRecursively(File top, long now) {
+    for (File f : top.listFiles()) {
+      if (f.isDirectory())
+        if (f.listFiles().length > 0) deleteFilesRecursively(f, now);
+        else f.delete();
+      else if ((now - f.lastModified()) > (old * 60000)) {
+        log.debug("Removed " + f.getName());
+        f.delete();
+      }
     }
+  }
 
-    @PostConstruct
-    private void init(){
-        deleteLogs();
+  @Scheduled(fixedRate = 180000, initialDelay = 180000)
+  private void deleteLogs() {
+    log.debug("Checking if delete is true");
+    if (old > 0) {
+      log.info("Removing script log files that are older than " + old + " minutes");
+      File top = new File(logPath);
+      if (top.exists()) deleteFilesRecursively(top, new Date().getTime());
     }
-
-    private void deleteFilesRecursively(File top, long now){
-        for (File f : top.listFiles()){
-            if (f.isDirectory())
-                if (f.listFiles().length > 0)
-                    deleteFilesRecursively(f, now);
-                else
-                    f.delete();
-            else
-                if ((now - f.lastModified()) > (old*60000)){
-                    log.debug("Removed " + f.getName());
-                    f.delete();
-                }
-        }
-    }
-
-    @Scheduled(fixedRate = 180000, initialDelay = 180000)
-    private void deleteLogs() {
-        log.debug("Checking if delete is true");
-        if (old > 0) {
-            log.info("Removing script log files that are older than " + old + " minutes");
-            File top = new File(logPath);
-            if (top.exists())
-                deleteFilesRecursively(top,new Date().getTime());
-
-        }
-    }
+  }
 }
