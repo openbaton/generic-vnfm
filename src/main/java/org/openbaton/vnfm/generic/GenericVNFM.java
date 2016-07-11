@@ -23,6 +23,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -43,6 +44,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     private int waitForEms;
     @Value("${vnfm.ems.script.logpath:/var/log/openbaton/scriptsLog/}")
     private String scriptsLogPath;
+    @Value("${vnfm.ems.script.old:60}")
+    private int old;
 
 
     public static void main(String[] args) {
@@ -176,16 +179,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                         String output = executeActionOnEMS(vnfcInstanceLocal.getHostname(), command);
                         res.add(output);
 
-                        String path = scriptsLogPath + virtualNetworkFunctionRecord.getName() + "/" + vnfcInstanceLocal.getHostname() + ".log";
-                        File f = new File(path);
-                        if (!f.exists()) {
-                            f.getParentFile().mkdirs();
-                            f.createNewFile();
-                        }
-
-                        Files.write(Paths.get(path), ("Script : " + script + "\n\n").getBytes(), StandardOpenOption.APPEND);
-                        Files.write(Paths.get(path), parser.fromJson(output, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n").getBytes(), StandardOpenOption.APPEND);
-                        Files.write(Paths.get(path), "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~\n#########################\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n".getBytes(), StandardOpenOption.APPEND);
+                        saveLogToFile(virtualNetworkFunctionRecord, script,vnfcInstanceLocal,output);
                         for (String key : tempEnv.keySet()) {
                             env.remove(key);
                         }
@@ -200,8 +194,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
         Map<String, String> result = new HashMap<>();
 
-        for (Map.Entry<String,String> entry : env.entrySet()){
-            result.put(entry.getKey().replaceAll("[^A-Za-z0-9_]","_"), entry.getValue());
+        for (Map.Entry<String, String> entry : env.entrySet()) {
+            result.put(entry.getKey().replaceAll("[^A-Za-z0-9_]", "_"), entry.getValue());
         }
 
         return result;
@@ -239,16 +233,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
                             String output = executeActionOnEMS(vnfcInstance1.getHostname(), command);
                             res.add(output);
-
-                            String path = scriptsLogPath + virtualNetworkFunctionRecord.getName() + "/" + vnfcInstance1.getHostname() + ".log";
-                            File f = new File(path);
-
-                            f.getParentFile().mkdirs();
-                            f.createNewFile();
-
-                            Files.write(Paths.get(path), ("Script : " + script + "\n\n").getBytes(), StandardOpenOption.APPEND);
-                            Files.write(Paths.get(path), parser.fromJson(output, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n").getBytes(), StandardOpenOption.APPEND);
-                            Files.write(Paths.get(path), "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~\n#########################\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n".getBytes(), StandardOpenOption.APPEND);
+                            saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance1, output);
                         }
                 } else
                     res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
@@ -259,6 +244,22 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
             }
         }
         return res;
+    }
+
+    private void saveLogToFile(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, String script, VNFCInstance vnfcInstance1, String output) throws IOException {
+        if (old > 0) {
+            String path = scriptsLogPath + virtualNetworkFunctionRecord.getName() + "/" + vnfcInstance1.getHostname() + ".log";
+            File f = new File(path);
+
+            if (!f.exists()) {
+                f.getParentFile().mkdirs();
+                f.createNewFile();
+            }
+
+            Files.write(Paths.get(path), ("Script : " + script + "\n\n").getBytes(), StandardOpenOption.APPEND);
+            Files.write(Paths.get(path), parser.fromJson(output, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n").getBytes(), StandardOpenOption.APPEND);
+            Files.write(Paths.get(path), "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~\n#########################\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n".getBytes(), StandardOpenOption.APPEND);
+        }
     }
 
     private List<String> executeScriptsForEvent(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance, Event event, String cause) throws Exception {
@@ -291,17 +292,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 String command = getJsonObject("EXECUTE", script, env).toString();
                 String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
                 res.add(output);
-
-                String path = scriptsLogPath + virtualNetworkFunctionRecord.getName() + "/" + vnfcInstance.getHostname() + ".log";
-                File f = new File(path);
-
-                f.getParentFile().mkdirs();
-                f.createNewFile();
-
-                Files.write(Paths.get(path), ("Script : " + script + "\n\n").getBytes(), StandardOpenOption.APPEND);
-                Files.write(Paths.get(path), parser.fromJson(output, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n").getBytes(), StandardOpenOption.APPEND);
-                Files.write(Paths.get(path), "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~\n#########################\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n".getBytes(), StandardOpenOption.APPEND);
-
+                saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
                 for (String key : tempEnv.keySet()) {
                     env.remove(key);
                 }
@@ -361,15 +352,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                         String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
                         res.add(output);
 
-                        String path = scriptsLogPath + virtualNetworkFunctionRecord.getName() + "/" + vnfcInstance.getHostname() + ".log";
-                        File f = new File(path);
-
-                        f.getParentFile().mkdirs();
-                        f.createNewFile();
-
-                        Files.write(Paths.get(path), ("Script : " + script + "\n\n").getBytes(), StandardOpenOption.APPEND);
-                        Files.write(Paths.get(path), parser.fromJson(output, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n").getBytes(), StandardOpenOption.APPEND);
-                        Files.write(Paths.get(path), "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~\n#########################\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n".getBytes(), StandardOpenOption.APPEND);
+                        saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
                         for (String key : tempEnv.keySet()) {
                             env.remove(key);
                         }
@@ -622,17 +605,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                         String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
                         res.add(output);
 
-                        String path = scriptsLogPath + virtualNetworkFunctionRecord.getName() + "/" + vnfcInstance.getHostname() + ".log";
-
-                        File f = new File(path);
-
-                        f.getParentFile().mkdirs();
-                        f.createNewFile();
-
-                        Files.write(Paths.get(path), ("Script : " + script + "\n\n").getBytes(), StandardOpenOption.APPEND);
-                        Files.write(Paths.get(path), parser.fromJson(output, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n").getBytes(), StandardOpenOption.APPEND);
-                        Files.write(Paths.get(path), "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~\n#########################\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n".getBytes(), StandardOpenOption.APPEND);
-
+                        saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
                         for (String key : tempEnv.keySet()) {
                             env.remove(key);
                         }
@@ -701,15 +674,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                                 String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
                                 res.add(output);
 
-                                String path = scriptsLogPath + virtualNetworkFunctionRecord.getName() + "/" + vnfcInstance.getHostname() + ".log";
-                                File f = new File(path);
-
-                                f.getParentFile().mkdirs();
-                                f.createNewFile();
-
-                                Files.write(Paths.get(path), ("Script : " + script + "\n\n").getBytes(), StandardOpenOption.APPEND);
-                                Files.write(Paths.get(path), parser.fromJson(output, JsonObject.class).get("output").getAsString().replaceAll("\\\\n", "\n").getBytes(), StandardOpenOption.APPEND);
-                                Files.write(Paths.get(path), "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~\n#########################\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n".getBytes(), StandardOpenOption.APPEND);
+                                saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
                                 for (String key : tempEnv.keySet()) {
                                     env.remove(key);
                                 }
@@ -815,6 +780,10 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     protected void setup() {
         super.setup();
         this.scriptPath = properties.getProperty("script-path", "/opt/openbaton/scripts");
+        if (old > 0) {
+            File f = new File(scriptsLogPath);
+            f.mkdirs();
+        }
     }
 
     @Override
