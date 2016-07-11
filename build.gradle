@@ -1,6 +1,7 @@
 plugins {
     id 'net.researchgate.release' version '2.1.2'
     id "nebula.os-package" version "2.2.6"
+    id "com.github.sherter.google-java-format" version "0.3.2"
 }
 
 apply plugin: 'java'
@@ -23,9 +24,9 @@ project.ext {
      * Application Related Version
      */
     applicationRelease = isApplicationRelease()
-    applicationVersion = version 
+    applicationVersion = version
     applicationVersionDebian = "1";
-    
+
     applicationDate = new Date()
     applicationRevision = getRevision()
 
@@ -45,14 +46,16 @@ apply from: 'openbaton-libs/gradle/gradle/run.application.java.gradle'
 apply from: 'openbaton-libs/gradle/gradle/git.release.gradle'
 
 apply from: 'gradle/gradle/packaging.gvnfm.debian.gradle'
-apply from : 'gradle/gradle/packaging.innosetup.gradle'
+apply from: 'gradle/gradle/packaging.innosetup.gradle'
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-	compile project(':vnfm-sdk-amqp')
-        compile 'commons-codec:commons-codec:1.10'
-	compile 'org.hibernate:hibernate-core:4.3.10.Final'
+    compile project(':vnfm-sdk-amqp')
+    compile 'commons-codec:commons-codec:1.10'
+    compile 'org.hibernate:hibernate-core:4.3.10.Final'
 }
 
+build.dependsOn verifyGoogleJavaCode
