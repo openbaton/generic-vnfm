@@ -5,16 +5,14 @@
 OPENBATON_BASE=/usr
 OPENBATON_LOGS_FOLDER=/var/log/openbaton
 
-
 USER="$(id -un 2>/dev/null || true)"
 
 checkBinary () {
-    echo -n " * Checking for '$1'..."
-    if command -v $1 >/dev/null 2>&1; then
-        echo "OK"
+    if command -v $1 >/dev/null 2>&1 ; then
+        log_success_msg "Checking for '$1'"
         return 0
     else
-        echo >&2 "FAILED."
+        log_success_msg "Checking for '$1'"
         return 1
     fi
 }
@@ -29,27 +27,22 @@ if [ "${USER}" != 'root' ]; then
 fi
 
 
-#############
-# OpenBaton #
-#############
+####################
+#### Open Baton ####
+####################
 
 stopGVNFM () {
-    instance=$(ps aux | grep -v grep | grep "generic-vnfm-*jar | wc -l)
+    instance=$(ps aux | grep -v grep | grep "generic-vnfm-*jar" | wc -l)
     if [ ${instance} -ne 0 ]; then
-    	log_daemon_msg "Stopping the OpenBaton GVNFM .."
-    	$_ex 'stop openbaton-gvnfm'
+        if $_ex 'systemctl stop openbaton-gvnfm.service' >/dev/null 2>&1 ; then
+    	     log_success_msg "Stopping the Open Baton GVNFM .."
+        elif $_ex 'stop openbaton-gvnfm' >/dev/null 2>&1 ; then
+    	     log_success_msg "Stopping the Open Baton GVNFM .."
+        else
+             log_failure_msg "Stopping the Open Baton NFVO"
+        fi
     fi
 }
 
-
-############################################
-#### Clean OpenBaton GVNFM installation ####
-############################################
-
-clean () {
-    stopGVNFM
-}
-
-clean
-
+stopGVNFM
 

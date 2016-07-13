@@ -21,28 +21,35 @@ ext {
     openbatonInstallDir = "/opt/openbaton"
 }
 
-task openbatonGVNFMDeb(type: Deb, dependsOn: [jar, build]) {
+task makedeb(type: Deb, dependsOn: [jar, build]) {
     packageName = (applicationRelease) ? "openbaton-gvnfm" : "openbaton-gvnfm-nightly"
     version = debianApplicationVersionFull
     release = 1 
+    priority = 'optional'
     arch = 'amd64'
-    maintainer = 'OpenBaton Team <info@open-baton.org>'
-    packageDescription = 'Open Baton VNF Generic Manager'
+    maintainer = 'Open Baton Team <info@open-baton.org>'
+    vendor = 'Open Source (Implemented by Fraunhofer FOKUS and TUB)'
+    license = 'Apache 2.0 License'
+    url = 'http://openbaton.github.io/index.html'
+    summary = 'Open Baton Generic VNF Manager (GVNFM)'
+    packageDescription = 'The Generic Virtual Network Function Manager (GVNFM) is a component of the Open Baton project which is an ETSI compliant implementation of a NFV Management and Orchestration (MANO) System'
 
-    configurationFile('/etc/openbaton/gvnfm/openbaton-gvnfm.properties')
     postInstall file('gradle/gradle/scripts/debian/postinst')
     preUninstall file('gradle/gradle/scripts/debian/prerm')
 
     requires('openjdk-7-jre')
     requires('rabbitmq-server')
 
-    from(jar.outputs.files) 				{ into '/usr/lib/openbaton/gvnfm' }
-    from('gradle/gradle/scripts/openbaton-gvnfm') 	{ into '/usr/bin/'}
-    from('gradle/gradle/scripts/openbaton-gvnfm') 	{ into '/etc/init.d/'} 
-    from('gradle/gradle/scripts/openbaton-gvnfm.conf') 	{ into '/etc/init/'}
+    // Copy files from "from path" to "into path"
     from('src/main/resources/application.properties')   { into '/etc/openbaton/gvnfm/'
-                rename { String fileName -> fileName.replace("application.properties", "openbaton-gvnfm.properties") }
+            rename { String fileName -> fileName.replace("application.properties", "openbaton-gvnfm.properties") }   // properties file
     }
-
-    link('/etc/init.d/openbaton-gvnfm', '/lib/init/upstart-job')
+    from(jar.outputs.files) 				                         { into '/usr/lib/openbaton/gvnfm' }             // jar file
+    from('gradle/gradle/scripts/openbaton-gvnfm') 	                 { into '/usr/bin/'}                             // executable to run the GVNFM
+    from('gradle/gradle/scripts/openbaton-gvnfm') 	                 { into '/etc/init.d/'}                          // executable to run the GVNFM as a service (SysV)
+    from('gradle/gradle/scripts/openbaton-gvnfm.conf') 	             { into '/etc/init/'}                            // conf file to run the GVNFM as a service (Upstart)
+    from('gradle/gradle/scripts/systemd/openbaton-gvnfm.service')    { into '/usr/lib/systemd/system/'}              // executable to run the GVNFM as a service (Systemd)
+    from('gradle/gradle/scripts/systemd/gvnfm.env')                  { into '/usr/lib/openbaton/systemd/'}           // environment file to run the GVNFM as a service (Systemd)
+    from('gradle/gradle/scripts/systemd/gvnfm.preexecstart')         { into '/usr/lib/openbaton/systemd/'}           // preexecstart file to run the GVNFM as a service (Systemd)
 }
+
