@@ -3,14 +3,16 @@ package org.openbaton.vnfm.generic.utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.annotation.PostConstruct;
 
 /**
  * Created by lto on 15/09/15.
@@ -19,11 +21,11 @@ import java.util.Set;
 @Scope
 public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.EmsRegistrator {
 
-  private Logger log = LoggerFactory.getLogger(this.getClass());
+  private Logger log = LoggerFactory.getLogger(getClass());
   private Gson parser = new GsonBuilder().setPrettyPrinting().create();
 
   public Set<String> getHostnames() {
-    return hostnames;
+    return this.hostnames;
   }
 
   //TODO consider using DB in case of failure etc...
@@ -31,17 +33,18 @@ public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.
 
   @PostConstruct
   private void init() {
-    hostnames = new HashSet<>();
+    this.hostnames = new HashSet<>();
   }
 
+  @Override
   public void register(String json) {
-    log.debug("EMSRegister received: " + json);
-    JsonObject object = parser.fromJson(json, JsonObject.class);
-    hostnames.add(object.get("hostname").getAsString().toLowerCase());
+    this.log.debug("EMSRegister received: " + json);
+    JsonObject object = this.parser.fromJson(json, JsonObject.class);
+    this.hostnames.add(object.get("hostname").getAsString().toLowerCase());
   }
 
   public void unregister(String hostname) {
-    log.debug("EMSRegister removing: " + hostname);
-    hostnames.remove(hostname.toLowerCase());
+    this.log.debug("EMSRegister removing: " + hostname);
+    this.hostnames.remove(hostname.toLowerCase());
   }
 }
