@@ -21,6 +21,9 @@ USER="$(id -un 2>/dev/null || true)"
 OPENBATON_BASE=/usr
 OPENBATON_EXE_FOLDER=$OPENBATON_BASE/bin
 
+OPENBATON_AUTOSTART_DEFAULT=true
+OPENBATON_AUTOSTART=${OPENBATON_AUTOSTART:-$OPENBATON_AUTOSTART_DEFAULT}
+
 
 ##############################
 #### Execution privileges ####
