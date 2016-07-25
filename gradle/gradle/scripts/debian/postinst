@@ -55,9 +55,7 @@ fi
 
 configure() {
     log_success_msg "Configuring Open Baton GVNFM installation .."
-    log_success_msg "Giving openbaton-gvnfm execution permissions .."
     $_ex "chmod a+x ${OPENBATON_EXE_FOLDER}/openbaton-gvnfm"
-
     log_success_msg "Open Baton Generic VNFM installation completed"
 
     # Allow the use of the .deb package to install Open Baton with Docker (the Docker file developer need to manage the starting of the GVNFM in the Docker file)
