@@ -1,46 +1,77 @@
-# Generic VNF Manager
+<img src="https://raw.githubusercontent.com/openbaton/openbaton.github.io/master/images/openBaton.png" width="250"/>
+  
+  Copyright © 2015-2016 [Open Baton](http://openbaton.org). 
+  Licensed under [Apache v2 License](http://www.apache.org/licenses/LICENSE-2.0).
+  
 [![Build Status](https://travis-ci.org/openbaton/generic-vnfm.svg?branch=develop)](https://travis-ci.org/openbaton/generic-vnfm)
+  
+# Generic VNF Manager
 
-The Generic VNFManager is an implementation following the [ETSI MANO][nfv-mano] specifications. t works as intermediate component between the NFVO and the VNFs, particularly the Virtual Machines on top of which the VNF software is installed. In order to complete the lifecycle of a VNF, it interoperates with the Element Management System (EMS) acting as an agent inside the VMs and executing scripts containeed in the vnf package.
+The Generic VNFManager is an implementation of a VNF Manager following the ETSI MANO specifications. t works as intermediate component between the NFVO and the VNFs, particularly the Virtual Machines on top of which the VNF software is installed. In order to complete the lifecycle of a VNF, it interoperates with the Element Management System (EMS) acting as an agent inside the VMs and executing scripts containeed in the vnf package.
 This VNFM may be assigned the management of a single VNF instance, or the management of multiple VNF instances of the same type or of different types.
 
 The Generic VNFManager is supposed to be used for any type of VNF that follows some convetions regarding:
 
 * VMs deployment
-* script execution order
+* script execution
 * VMs termination
 
-Please refer to [our documentation][generic-vnfm] for more details about this project. Below you find just few details about this project. 
+Please refer to [our documentation][generic-vnfm] for more details about this project.
+ 
+# Technical Requirements
 
-## VMs deployment
+* openjdk 7+ or oracle JDK 7+
+* a [NFVO](https://github.com/openbaton/NFVO) running instance
+* The VMs need to have access to the openbaton repository (internet) thus to be able to dynamically download the [EMS](https://github.com/openbaton/ems)
 
-The allocation of resources (VMs) are requested by the VNFManager to the NFVO. Before that all the VNFManagers need to request whenever the resources are available on the selected PoP. This is done by the GRANT_OPERATION message and it is executed by all the VNFManagers. The Generic VNFM sends the ALLOCATE_RESOURCES message as well. If the GRANT_OPERATION message is returned, than it means that there are enough resources, if not an ERROR message will be sent. After the GRANT_OPERATION message it is possible to send the ALLOCATE_RESOURCE message. This message will create all the resources and than, if no errors occured, return the ALLOCATE_RESOURCE message to the VNFManager. after that point the VMs are created and the VNFRecord is filled with values, such as ips, that can be found directly in the VirtalNetworkFunctionRecord->VirtualDeploymentUnit->VNFCInstance object. 
+# How to install Generic VNFM
 
-## Script Execution Costraints
+It is strongly recommended to install it following the installation of the Open Baton platform that can be found [here](http://openbaton.github.io/documentation/nfvo-installation-deb/)
 
-During the INSTANTIATE and the MODIFY operations, scripts are executed in the VMs. The ordering of this scripts is defined in the NetworkServiceDescriptor from which the NetworkServiceRecord was created, in particural into the VirtalNetworkFunctionRecord->LifecycleEvents (see VNFD doc). The available parameters are defined into the VirtalNetworkFunctionDescriptor fields:
+# How to use Generic VNFM
 
-* provides
-* configurations
+The way the Generic VNFM is installed changes the way how it is possible to start/stop it. If the Generic VNFM is installed using the debian package, then the commands available are:
 
-In the INSTANTIATE scripts, the parameters defined into these two fields are then available as environment variables into the script exactly as defined.
+```bash
+sudo service openbaton-gvnfm start
+```
+or
+```bash
+sudo service openbaton-gvnfm stop
+```
 
-In the MODIFY scripts, the INSTANTIATE parameters are still available but plus there are environment variables that come from a VNFDependency. These kind of parameters are defined into the _requires_ and the VNFDependency->parameters fields, and are then available as $*type_of_vnf_source*.*name_of_parameter*
+For further details please refer to [this documentation page](http://openbaton.github.io/documentation/nfvo-installation-deb/)
 
+# Issue tracker
 
-## VMs termination
+Issues and bug reports should be posted to the GitHub Issue Tracker of this project
 
-As for VMs deployment, VMs termination is done by the NFVO. Specific scripts can be run before termination by putting them under the RELEASE_REOSURCES lifecycel event.
+# What is Open Baton?
 
-## License
+OpenBaton is an open source project providing a comprehensive implementation of the ETSI Management and Orchestration (MANO) specification.
 
-Copyright (c) 2015-2016 Fraunhofer FOKUS. All rights reserved.
+Open Baton is a ETSI NFV MANO compliant framework. Open Baton was part of the OpenSDNCore (www.opensdncore.org) project started almost three years ago by Fraunhofer FOKUS with the objective of providing a compliant implementation of the ETSI NFV specification. 
+
+Open Baton is easily extensible. It integrates with OpenStack, and provides a plugin mechanism for supporting additional VIM types. It supports Network Service management either using a generic VNFM or interoperating with VNF-specific VNFM. It uses different mechanisms (REST or PUB/SUB) for interoperating with the VNFMs. It integrates with additional components for the runtime management of a Network Service. For instance, it provides autoscaling and fault management based on monitoring information coming from the the monitoring system available at the NFVI level.
+
+# Source Code and documentation
+
+The Source Code of the other Open Baton projects can be found [here][openbaton-github] and the documentation can be found [here][openbaton-doc] .
+
+# News and Website
+
+Check the [Open Baton Website][openbaton]
+Follow us on Twitter @[openbaton][openbaton-twitter].
+
+# Licensing and distribution
+Copyright [2015-2016] Open Baton project
 
 Licensed under the Apache License, Version 2.0 (the "License");
+
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,18 +79,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-## Supported by
-Open Baton is a project developed by Fraunhofer FOKUS and TU Berlin. It is supported by different European publicly funded projects: 
+# Support
+The Open Baton project provides community support through the Open Baton Public Mailing List and through StackOverflow using the tags openbaton.
 
-* [NUBOMEDIA][nubomedia]
-* [Mobile Cloud Networking][mcn]
-* [CogNet][cognet]
+# Supported by
+  <img src="https://raw.githubusercontent.com/openbaton/openbaton.github.io/master/images/fokus.png" width="250"/><img src="https://raw.githubusercontent.com/openbaton/openbaton.github.io/master/images/tu.png" width="150"/>
 
-<!---
-References
--->
-[generic-vnfm]: http://openbaton.github.io/documentation/vnfm-generic/
-[nubomedia]: https://www.nubomedia.eu/
-[mcn]: http://mobile-cloud-networking.eu/site/
-[nfv-mano]: http://www.etsi.org/deliver/etsi_gs/NFV-MAN/001_099/001/01.01.01_60/gs_NFV-MAN001v010101p.pdf
-[cognet]: http://www.cognet.5g-ppp.eu/cognet-in-5gpp/
+[fokus-logo]: https://raw.githubusercontent.com/openbaton/openbaton.github.io/master/images/fokus.png
+[openbaton]: http://openbaton.org
+[openbaton-doc]: http://openbaton.org/documentation
+[openbaton-github]: http://github.org/openbaton
+[openbaton-logo]: https://raw.githubusercontent.com/openbaton/openbaton.github.io/master/images/openBaton.png
+[openbaton-mail]: mailto:users@openbaton.org
+[openbaton-twitter]: https://twitter.com/openbaton
+[tub-logo]: https://raw.githubusercontent.com/openbaton/openbaton.github.io/master/images/tu.png

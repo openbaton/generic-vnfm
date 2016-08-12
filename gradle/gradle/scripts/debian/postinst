@@ -1,11 +1,33 @@
-#!/bin/sh -e
+#!/bin/sh
 
+##########################
+#### General Settings ####
+##########################
+
+set -e
+set -u
+#set -x # only for DEBUG
+
+# Make available the functions defined in /lib/lsb/init-functions
 . /lib/lsb/init-functions
+
+
+##########################
+#### Global Variables ####
+##########################
+
+USER="$(id -un 2>/dev/null || true)"
 
 OPENBATON_BASE=/usr
 OPENBATON_EXE_FOLDER=$OPENBATON_BASE/bin
 
-USER="$(id -un 2>/dev/null || true)"
+OPENBATON_AUTOSTART_DEFAULT=true
+OPENBATON_AUTOSTART=${OPENBATON_AUTOSTART:-$OPENBATON_AUTOSTART_DEFAULT}
+
+
+##############################
+#### Execution privileges ####
+##############################
 
 checkBinary () {
     if command -v $1 >/dev/null 2>&1 ; then
@@ -33,13 +55,11 @@ fi
 
 configure() {
     log_success_msg "Configuring Open Baton GVNFM installation .."
-    log_success_msg "Giving openbaton-gvnfm execution permissions .."
     $_ex "chmod a+x ${OPENBATON_EXE_FOLDER}/openbaton-gvnfm"
-
     log_success_msg "Open Baton Generic VNFM installation completed"
 
     # Allow the use of the .deb package to install Open Baton with Docker (the Docker file developer need to manage the starting of the GVNFM in the Docker file)
-    if [ "${OPENBATON_DOCKERIZED}" != "true" ]; then
+    if [ "${OPENBATON_AUTOSTART}" = "true" ]; then
     	if $_ex 'systemctl start openbaton-gvnfm.service' >/dev/null 2>&1 ; then
     	    log_success_msg "Starting the Open Baton Generic VNFM .."
             continue
