@@ -538,10 +538,10 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
             }
             log.debug("Changing the status from standby to active");
             //This is inside the vnfr
-            vnfcInstance.setState("active");
+            vnfcInstance.setState("ACTIVE");
             // This is a copy of the object received as parameter and modified.
             // It will be sent to the orchestrator
-            component.setState("active");
+            component.setState("ACTIVE");
             break;
           }
         }
@@ -714,6 +714,105 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         log.info("Executed script for START. Output was: \n\n" + output);
       }
     }
+    return virtualNetworkFunctionRecord;
+  }
+
+  @Override
+  public VirtualNetworkFunctionRecord stop(
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+
+    log.info("Stopping vnfr: " + virtualNetworkFunctionRecord.getName());
+
+    if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.STOP)
+        != null) {
+      if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.STOP)
+              .getLifecycle_events()
+          != null) {
+        String output = "\n--------------------\n--------------------\n";
+        for (String result : executeScriptsForEvent(virtualNetworkFunctionRecord, Event.STOP)) {
+          output +=
+              this.parser
+                  .fromJson(result, JsonObject.class)
+                  .get("output")
+                  .getAsString()
+                  .replaceAll("\\\\n", "\n");
+          output += "\n--------------------\n";
+        }
+        output += "\n--------------------\n";
+        log.info("Executed script for STOP. Output was: \n\n" + output);
+      }
+    }
+    return virtualNetworkFunctionRecord;
+  }
+
+  @Override
+  public VirtualNetworkFunctionRecord startVNFCInstance(
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance)
+      throws Exception {
+
+    log.info("Starting vnfc instance: " + vnfcInstance.getHostname());
+
+    if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
+        != null) {
+      if (VnfmUtils.getLifecycleEvent(
+                  virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
+              .getLifecycle_events()
+          != null) {
+        String output = "\n--------------------\n--------------------\n";
+        for (String result :
+            executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
+          output +=
+              this.parser
+                  .fromJson(result, JsonObject.class)
+                  .get("output")
+                  .getAsString()
+                  .replaceAll("\\\\n", "\n");
+          output += "\n--------------------\n";
+        }
+        output += "\n--------------------\n";
+        log.info(
+            "Executed script for START on VNFC Instance "
+                + vnfcInstance.getHostname()
+                + ". Output was: \n\n"
+                + output);
+      }
+    }
+
+    return virtualNetworkFunctionRecord;
+  }
+
+  @Override
+  public VirtualNetworkFunctionRecord stopVNFCInstance(
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance)
+      throws Exception {
+
+    log.info("Stopping vnfc instance: " + vnfcInstance.getHostname());
+
+    if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.STOP)
+        != null) {
+      if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.STOP)
+              .getLifecycle_events()
+          != null) {
+        String output = "\n--------------------\n--------------------\n";
+        for (String result :
+            executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.STOP)) {
+          output +=
+              this.parser
+                  .fromJson(result, JsonObject.class)
+                  .get("output")
+                  .getAsString()
+                  .replaceAll("\\\\n", "\n");
+          output += "\n--------------------\n";
+        }
+        output += "\n--------------------\n";
+        log.info(
+            "Executed script for STOP on VNFC Instance "
+                + vnfcInstance.getHostname()
+                + ". Output was: \n\n"
+                + output);
+      }
+    }
+
     return virtualNetworkFunctionRecord;
   }
 
