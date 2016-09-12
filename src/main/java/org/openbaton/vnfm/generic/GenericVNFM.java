@@ -941,6 +941,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     } else {
       String err = jsonObject.get("err").getAsString();
       log.error(err);
+      vnfcInstance.setState("error");
       saveLogToFile(
           vnfr,
           parser.fromJson(command, JsonObject.class).get("payload").getAsString(),
