@@ -17,8 +17,11 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -38,7 +41,12 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
   private Logger log = LoggerFactory.getLogger(getClass());
 
   private static List<String> readFile(String path, Charset encoding) throws IOException {
-    return Files.readAllLines(Paths.get(path), encoding);
+    try {
+
+      return Files.readAllLines(Paths.get(path), encoding);
+    } catch (java.nio.file.NoSuchFileException e) {
+      return new ArrayList<>();
+    }
     //        return new String(encoded, encoding);
   }
 
@@ -47,9 +55,15 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
     String vnfrName = this.gson.fromJson(request, JsonObject.class).get("vnfrName").getAsString();
     String hostname = this.gson.fromJson(request, JsonObject.class).get("hostname").getAsString();
 
-    List<String> logs;
+    Map<String, List<String>> logs = new HashMap<>();
     try {
-      logs = readFile(this.logPath + vnfrName + '/' + hostname + ".log", Charset.defaultCharset());
+      logs.put(
+          "output",
+          readFile(this.logPath + vnfrName + '/' + hostname + ".log", Charset.defaultCharset()));
+      logs.put(
+          "error",
+          readFile(
+              this.logPath + vnfrName + '/' + hostname + "-error.log", Charset.defaultCharset()));
     } catch (IOException exception) {
       exception.printStackTrace();
       this.log.error("Unable to retrieve logs: " + exception.getLocalizedMessage());

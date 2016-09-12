@@ -120,7 +120,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     if (scaleInOrOut.ordinal() == Action.SCALE_OUT.ordinal()) {
       log.info("Created VNFComponent");
 
-      saveScriptOnEms(component, scripts);
+      saveScriptOnEms(component, scripts, virtualNetworkFunctionRecord);
       String output = "\n--------------------\n--------------------\n";
       for (String result :
           executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.INSTANTIATE)) {
@@ -250,7 +250,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
             log.info("The Environment Variables for script " + script + " are: " + env);
 
             String command = getJsonObject("EXECUTE", script, env).toString();
-            String output = executeActionOnEMS(vnfcInstanceLocal.getHostname(), command);
+            String output =
+                executeActionOnEMS(
+                    vnfcInstanceLocal.getHostname(),
+                    command,
+                    virtualNetworkFunctionRecord,
+                    vnfcInstanceLocal);
             res.add(output);
 
             saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstanceLocal, output);
@@ -318,13 +323,20 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
           for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
             for (VNFCInstance vnfcInstance1 : vdu.getVnfc_instance()) {
 
-              String output = executeActionOnEMS(vnfcInstance1.getHostname(), command);
+              String output =
+                  executeActionOnEMS(
+                      vnfcInstance1.getHostname(),
+                      command,
+                      virtualNetworkFunctionRecord,
+                      vnfcInstance);
               res.add(output);
               saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance1, output);
             }
           }
         } else {
-          res.add(executeActionOnEMS(vnfcInstance.getHostname(), command));
+          res.add(
+              executeActionOnEMS(
+                  vnfcInstance.getHostname(), command, virtualNetworkFunctionRecord, vnfcInstance));
         }
 
         for (String key : tempEnv.keySet()) {
@@ -341,13 +353,33 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       VNFCInstance vnfcInstance1,
       String output)
       throws IOException {
+    saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance1, output, false);
+  }
+
+  private void saveLogToFile(
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
+      String script,
+      VNFCInstance vnfcInstance1,
+      String output,
+      boolean error)
+      throws IOException {
     if (this.old > 0) {
-      String path =
-          this.scriptsLogPath
-              + virtualNetworkFunctionRecord.getName()
-              + "/"
-              + vnfcInstance1.getHostname()
-              + ".log";
+      String path = "";
+      if (!error) {
+        path =
+            this.scriptsLogPath
+                + virtualNetworkFunctionRecord.getName()
+                + "/"
+                + vnfcInstance1.getHostname()
+                + ".log";
+      } else {
+        path =
+            this.scriptsLogPath
+                + virtualNetworkFunctionRecord.getName()
+                + "/"
+                + vnfcInstance1.getHostname()
+                + "-error.log";
+      }
       File f = new File(path);
 
       if (!f.exists()) {
@@ -355,17 +387,35 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         f.createNewFile();
       }
 
-      Files.write(
-          Paths.get(path), ("Script : " + script + "\n\n").getBytes(), StandardOpenOption.APPEND);
-      Files.write(
-          Paths.get(path),
-          this.parser
-              .fromJson(output, JsonObject.class)
-              .get("output")
-              .getAsString()
-              .replaceAll("\\\\n", "\n")
-              .getBytes(),
-          StandardOpenOption.APPEND);
+      if (!error) {
+        Files.write(
+            Paths.get(path),
+            ("Output of Script : " + script + "\n\n").getBytes(),
+            StandardOpenOption.APPEND);
+        Files.write(
+            Paths.get(path),
+            this.parser
+                .fromJson(output, JsonObject.class)
+                .get("output")
+                .getAsString()
+                .replaceAll("\\\\n", "\n")
+                .getBytes(),
+            StandardOpenOption.APPEND);
+      } else {
+        Files.write(
+            Paths.get(path),
+            ("Error log of Script : " + script + "\n\n").getBytes(),
+            StandardOpenOption.APPEND);
+        Files.write(
+            Paths.get(path),
+            this.parser
+                .fromJson(output, JsonObject.class)
+                .get("err")
+                .getAsString()
+                .replaceAll("\\\\n", "\n")
+                .getBytes(),
+            StandardOpenOption.APPEND);
+      }
       Files.write(
           Paths.get(path),
           "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~\n#########################\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n"
@@ -416,7 +466,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         log.info("The Environment Variables for script " + script + " are: " + env);
 
         String command = getJsonObject("EXECUTE", script, env).toString();
-        String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
+        String output =
+            executeActionOnEMS(
+                vnfcInstance.getHostname(), command, virtualNetworkFunctionRecord, vnfcInstance);
         res.add(output);
         saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
         for (String key : tempEnv.keySet()) {
@@ -498,7 +550,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
             log.info("The Environment Variables for script " + script + " are: " + env);
 
             String command = getJsonObject("EXECUTE", script, env).toString();
-            String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
+            String output =
+                executeActionOnEMS(
+                    vnfcInstance.getHostname(),
+                    command,
+                    virtualNetworkFunctionRecord,
+                    vnfcInstance);
             res.add(output);
 
             saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
@@ -855,7 +912,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     this.emsRegistrator.unregister(hostname.toLowerCase());
   }
 
-  private String executeActionOnEMS(String vduHostname, String command) throws Exception {
+  private String executeActionOnEMS(
+      String vduHostname,
+      String command,
+      VirtualNetworkFunctionRecord vnfr,
+      VNFCInstance vnfcInstance)
+      throws Exception {
     log.trace("Sending message and waiting: " + command + " to " + vduHostname);
     log.info("Waiting answer from EMS - " + vduHostname);
 
@@ -877,12 +939,15 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         throw e;
       }
     } else {
-      log.error(jsonObject.get("err").getAsString());
-      throw new VnfmSdkException(
-          "EMS ("
-              + vduHostname
-              + ") had the following error: "
-              + jsonObject.get("err").getAsString());
+      String err = jsonObject.get("err").getAsString();
+      log.error(err);
+      saveLogToFile(
+          vnfr,
+          parser.fromJson(command, JsonObject.class).get("payload").getAsString(),
+          vnfcInstance,
+          response,
+          true);
+      throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
     }
     return response;
   }
@@ -926,7 +991,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
             log.info("Environment Variables are: " + env);
 
             String command = getJsonObject("EXECUTE", script, env).toString();
-            String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
+            String output =
+                executeActionOnEMS(
+                    vnfcInstance.getHostname(),
+                    command,
+                    virtualNetworkFunctionRecord,
+                    vnfcInstance);
             res.add(output);
 
             saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
@@ -1016,7 +1086,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 log.info("Environment Variables are: " + env);
 
                 String command = getJsonObject("EXECUTE", script, env).toString();
-                String output = executeActionOnEMS(vnfcInstance.getHostname(), command);
+                String output =
+                    executeActionOnEMS(
+                        vnfcInstance.getHostname(),
+                        command,
+                        virtualNetworkFunctionRecord,
+                        vnfcInstance);
                 res.add(output);
 
                 saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
@@ -1044,7 +1119,11 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
       for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
         for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
-          executeActionOnEMS(vnfcInstance.getHostname(), jsonMessage.toString());
+          executeActionOnEMS(
+              vnfcInstance.getHostname(),
+              jsonMessage.toString(),
+              virtualNetworkFunctionRecord,
+              vnfcInstance);
         }
       }
     } else if (scripts instanceof Set) {
@@ -1058,14 +1137,22 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
             getJsonObjectForScript("SAVE_SCRIPTS", base64String, script.getName(), this.scriptPath);
         for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
-            executeActionOnEMS(vnfcInstance.getHostname(), jsonMessage.toString());
+            executeActionOnEMS(
+                vnfcInstance.getHostname(),
+                jsonMessage.toString(),
+                virtualNetworkFunctionRecord,
+                vnfcInstance);
           }
         }
       }
     }
   }
 
-  public void saveScriptOnEms(VNFCInstance component, Object scripts) throws Exception {
+  public void saveScriptOnEms(
+      VNFCInstance vnfcInstance,
+      Object scripts,
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord)
+      throws Exception {
 
     log.debug("Scripts are: " + scripts.getClass().getName());
 
@@ -1073,7 +1160,11 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       String scriptLink = (String) scripts;
       log.debug("Scripts are: " + scriptLink);
       JsonObject jsonMessage = getJsonObject("CLONE_SCRIPTS", scriptLink, this.scriptPath);
-      executeActionOnEMS(component.getHostname(), jsonMessage.toString());
+      executeActionOnEMS(
+          vnfcInstance.getHostname(),
+          jsonMessage.toString(),
+          virtualNetworkFunctionRecord,
+          vnfcInstance);
     } else if (scripts instanceof Set) {
       Iterable<Script> scriptSet = (Set<Script>) scripts;
       for (Script script : scriptSet) {
@@ -1082,7 +1173,11 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         log.trace("The base64 string is: " + base64String);
         JsonObject jsonMessage =
             getJsonObjectForScript("SAVE_SCRIPTS", base64String, script.getName(), this.scriptPath);
-        executeActionOnEMS(component.getHostname(), jsonMessage.toString());
+        executeActionOnEMS(
+            vnfcInstance.getHostname(),
+            jsonMessage.toString(),
+            virtualNetworkFunctionRecord,
+            vnfcInstance);
       }
     }
   }

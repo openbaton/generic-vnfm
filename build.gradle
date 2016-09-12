@@ -57,4 +57,4 @@ dependencies {
     compile 'org.hibernate:hibernate-core:4.3.10.Final'
 }
 
-build.dependsOn verifyGoogleJavaFormat
+compileJava.dependsOn tasks.googleJavaFormat
