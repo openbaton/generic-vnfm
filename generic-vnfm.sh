@@ -6,6 +6,7 @@ _openbaton_base="/opt/openbaton"
 _generic_base="${_openbaton_base}/generic-vnfm"
 _openbaton_config_file="/etc/openbaton/generic-vnfm.properties"
 _version=${version}
+_screen_name="generic-vnfm"
 
 
 function checkBinary {
@@ -75,23 +76,23 @@ function start {
     if [ "${screen_exists}" -eq "0" ]; then
 	    echo "Starting the Generic-VNFM in a new screen session (attach to the screen with screen -x openbaton)"
 	    if [ -f ${_openbaton_config_file} ]; then
-            screen -c screenrc -d -m -S openbaton -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+            screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
         else
-            screen -c screenrc -d -m -S openbaton -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
+            screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
         fi
-    elif [ "${screen_exists}" -ne "0" ]; then
+    else
         echo "Starting the Generic-VNFM in the existing screen session (attach to the screen with screen -x openbaton)"
         if [ -f ${_openbaton_config_file} ]; then
-            screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+            screen -S openbaton -X screen -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
         else
-            screen -S openbaton -p 0 -X screen -t generic-vnfm java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
+            screen -S openbaton -X screen -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
         fi
     fi
 }
 
 function stop {
-    if screen -list | grep "openbaton"; then
-	    screen -S openbaton -p 0 -X stuff "exit$(printf \\r)"
+    if screen -list | grep "openbaton" > /dev/null ; then
+	    screen -S openbaton -p ${_screen_name} -X stuff '\003'
     fi
 }
 
