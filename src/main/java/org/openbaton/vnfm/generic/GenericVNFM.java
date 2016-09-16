@@ -631,7 +631,33 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   }
 
   @Override
-  public void updateSoftware() {}
+  public VirtualNetworkFunctionRecord updateSoftware(
+      Script script, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+    for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+      for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+        updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
+      }
+    }
+    return virtualNetworkFunctionRecord;
+  }
+
+  private void updateScript(
+      Script script,
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
+      VNFCInstance vnfcInstance)
+      throws Exception {
+    JsonObject jsonMessage =
+        getJsonObjectForScript(
+            "SCRIPTS_UPDATE",
+            Base64.encodeBase64String(script.getPayload()),
+            script.getName(),
+            scriptPath);
+    executeActionOnEMS(
+        vnfcInstance.getHostname(),
+        jsonMessage.toString(),
+        virtualNetworkFunctionRecord,
+        vnfcInstance);
+  }
 
   @Override
   public void upgradeSoftware() {}
