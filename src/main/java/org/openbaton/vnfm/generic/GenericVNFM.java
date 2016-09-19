@@ -1268,6 +1268,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     result = result.replace("export MONITORING_IP=", "export MONITORING_IP=" + monitoringIp);
     result = result.replace("export TIMEZONE=", "export TIMEZONE=" + timezone);
     result = result.replace("export BROKER_IP=", "export BROKER_IP=" + brokerIp);
+    result = result.replace("export BROKER_PORT=", "export BROKER_PORT=" + brokerPort);
     result = result.replace("export USERNAME=", "export USERNAME=" + username);
     result = result.replace("export PASSWORD=", "export PASSWORD=" + password);
     result = result.replace("export EXCHANGE_NAME=", "export EXCHANGE_NAME=" + exchangeName);

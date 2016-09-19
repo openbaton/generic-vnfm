@@ -3,6 +3,7 @@
 export MONITORING_IP=
 export TIMEZONE=
 export BROKER_IP=
+export BROKER_PORT=
 export USERNAME=
 export PASSWORD=
 export EXCHANGE_NAME=
@@ -40,7 +41,8 @@ fi
 
 mkdir -p /etc/openbaton/ems
 echo [ems] > /etc/openbaton/ems/conf.ini
-echo orch_ip=$BROKER_IP >> /etc/openbaton/ems/conf.ini
+echo broker_ip=$BROKER_IP >> /etc/openbaton/ems/conf.ini
+echo broker_port=$BROKER_PORT >> /etc/openbaton/ems/conf.ini
 echo username=$USERNAME >> /etc/openbaton/ems/conf.ini
 echo password=$PASSWORD >> /etc/openbaton/ems/conf.ini
 echo exchange=$EXCHANGE_NAME >> /etc/openbaton/ems/conf.ini
@@ -49,5 +51,4 @@ echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
 export hn=`hostname`
 echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
 echo hostname=$hn >> /etc/openbaton/ems/conf.ini
-echo orch_port=61613 >> /etc/openbaton/ems/conf.ini
 service ems restart
