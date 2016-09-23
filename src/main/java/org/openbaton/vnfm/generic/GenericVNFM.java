@@ -583,7 +583,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
         for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
           if (vnfcInstance.getId().equals(component.getId())
-              && "standby".equals(vnfcInstance.getState())) {
+              && "standby".equalsIgnoreCase(vnfcInstance.getState())) {
             log.debug("Activation of the standby component");
             if (VnfmUtils.getLifecycleEvent(
                     virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
