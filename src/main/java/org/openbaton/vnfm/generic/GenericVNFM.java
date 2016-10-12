@@ -499,8 +499,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       for (String script : le.getLifecycle_events()) {
         int indexOf = script.indexOf('_');
         VNFCDependencyParameters vnfcDependencyParameters = null;
+        String type = null;
         if (indexOf != -1) {
-          String type = script.substring(0, indexOf);
+          type = script.substring(0, indexOf);
           vnfcDependencyParameters = dependency.getVnfcParameters().get(type);
         }
         if (vnfcDependencyParameters != null) {
