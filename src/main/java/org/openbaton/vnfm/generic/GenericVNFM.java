@@ -951,7 +951,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     log.trace("Sending message and waiting: " + command + " to " + vduHostname);
     log.info("Waiting answer from EMS - " + vduHostname);
 
-    String response = this.vnfmHelper.sendAndReceive(command, "vnfm." + vduHostname + ".actions");
+    String response =
+        this.vnfmHelper.sendAndReceive(command, "vnfm." + vduHostname.toLowerCase() + ".actions");
 
     log.debug("Received from EMS (" + vduHostname + "): " + response);
 
