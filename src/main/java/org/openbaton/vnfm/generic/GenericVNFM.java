@@ -8,6 +8,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.common.Ip;
 import org.openbaton.catalogue.mano.common.LifecycleEvent;
+import org.openbaton.catalogue.mano.descriptor.VNFComponent;
 import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VNFRecordDependency;
@@ -113,17 +114,17 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   public VirtualNetworkFunctionRecord scale(
       Action scaleInOrOut,
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
-      VNFCInstance component,
+      VNFComponent component,
       Object scripts,
       VNFRecordDependency dependency)
       throws Exception {
+    VNFCInstance vnfcInstance = (VNFCInstance) component;
     if (scaleInOrOut.ordinal() == Action.SCALE_OUT.ordinal()) {
       log.info("Created VNFComponent");
-
-      saveScriptOnEms(component, scripts, virtualNetworkFunctionRecord);
+      saveScriptOnEms(vnfcInstance, scripts, virtualNetworkFunctionRecord);
       String output = "\n--------------------\n--------------------\n";
       for (String result :
-          executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.INSTANTIATE)) {
+          executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.INSTANTIATE)) {
         output +=
             this.parser
                 .fromJson(result, JsonObject.class)
@@ -139,7 +140,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         output = "\n--------------------\n--------------------\n";
         for (String result :
             executeScriptsForEvent(
-                virtualNetworkFunctionRecord, component, Event.CONFIGURE, dependency)) {
+                virtualNetworkFunctionRecord, vnfcInstance, Event.CONFIGURE, dependency)) {
           output +=
               this.parser
                   .fromJson(result, JsonObject.class)
@@ -152,13 +153,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
       }
 
-      if ((component.getState() == null) || !component.getState().equals("standby")) {
+      if ((vnfcInstance.getState() == null) || !vnfcInstance.getState().equals("standby")) {
         if (VnfmUtils.getLifecycleEvent(
                 virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
             != null) {
           output = "\n--------------------\n--------------------\n";
           for (String result :
-              executeScriptsForEvent(virtualNetworkFunctionRecord, component, Event.START)) {
+              executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
             output +=
                 this.parser
                     .fromJson(result, JsonObject.class)
@@ -178,7 +179,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
       String output = "\n--------------------\n--------------------\n";
       for (String result :
-          executeScriptsForEventOnVnfr(virtualNetworkFunctionRecord, component, Event.SCALE_IN)) {
+          executeScriptsForEventOnVnfr(
+              virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_IN)) {
         output +=
             this.parser
                 .fromJson(result, JsonObject.class)
@@ -906,6 +908,15 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Override
   public VirtualNetworkFunctionRecord configure(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+    return virtualNetworkFunctionRecord;
+  }
+
+  @Override
+  public VirtualNetworkFunctionRecord resume(
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
+      VNFCInstance vnfcInstance,
+      VNFRecordDependency dependency)
+      throws Exception {
     return virtualNetworkFunctionRecord;
   }
 
