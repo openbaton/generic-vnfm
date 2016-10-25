@@ -15,16 +15,5 @@
  *
  */
 
-include 'catalogue'
-include 'vim-drivers'
-include 'exception'
-include 'plugin'
-include 'vim-impl'
-include 'vim-int'
-include 'vnfm-sdk'
-include 'vnfm-sdk-jms'
-include 'vnfm-sdk-amqp'
-include 'vnfm-sdk-rest'
-include 'monitoring'
-include 'utils'
-
+apply from: 'openbaton-libs/vnfm-sdk/gradle/gradle/settings-parent-vnfm-sdk-amqp.gradle'
+rootProject.name = 'generic-vnfm'
