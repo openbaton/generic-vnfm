@@ -153,7 +153,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
       }
 
-      if ((vnfcInstance.getState() == null) || !vnfcInstance.getState().equals("standby")) {
+      if ((vnfcInstance.getState() == null) || !vnfcInstance.getState().equals("STANDBY")) {
         if (VnfmUtils.getLifecycleEvent(
                 virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
             != null) {
