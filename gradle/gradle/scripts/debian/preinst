@@ -31,29 +31,26 @@ set -u
 ##########################
 
 OPENBATON_BASE_DIR=/usr
+INSTALL_DIR=${OPENBATON_BASE_DIR}/lib/openbaton
 
 OPENBATON_COMPONENT_NAME_FANCY="VNFM Generic (VNFMG)"
 OPENBATON_COMPONENT_NAME=vnfm-generic
+OPENBATON_COMPONENT_RELATIVE_SUBPATH=vnfm/generic
 
 OPENBATON_COMPONENT_JAR_FILE_NAME=openbaton-${OPENBATON_COMPONENT_NAME}
+OPENBATON_COMPONENT_JAR_INSTALL_DIR=/usr/lib/openbaton/${OPENBATON_COMPONENT_RELATIVE_SUBPATH}
 
 
 ####################
 #### Open Baton ####
 ####################
 
-stop_vnfm_generic () {
-    instance=$(ps aux | grep -v grep | grep "${OPENBATON_COMPONENT_JAR_FILE_NAME}" | grep "jar" | wc -l)
-    if [ ${instance} -ne 0 ]; then
-        if systemctl stop openbaton-${OPENBATON_COMPONENT_NAME}.service >/dev/null 2>&1 ; then
-    	     log_success_msg "Stopping the Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} .."
-        elif stop openbaton-${OPENBATON_COMPONENT_NAME} >/dev/null 2>&1 ; then
-    	     log_success_msg "Stopping the Open Baton ${OPENBATON_COMPONENT_NAME} .."
-        else
-             log_failure_msg "Stopping the Open Baton ${OPENBATON_COMPONENT_NAME}"
+remove_existing_old_version_installed () {
+    if [ -d ${OPENBATON_COMPONENT_JAR_INSTALL_DIR} ]; then
+        openbaton_component_jar_file_name_versioned=$(ls -ct ${OPENBATON_COMPONENT_JAR_INSTALL_DIR} | grep "${OPENBATON_COMPONENT_JAR_FILE_NAME}" | grep "jar" | head -n 1)
+        if [ "${openbaton_component_jar_file_name_versioned}" != "" ]; then
+            rm ${OPENBATON_COMPONENT_JAR_INSTALL_DIR}/${openbaton_component_jar_file_name_versioned}
+            log_success_msg "Removing old Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} .."
         fi
     fi
 }
-
-stop_vnfm_generic
-

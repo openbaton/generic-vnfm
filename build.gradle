@@ -69,7 +69,7 @@ apply from: 'openbaton-libs/gradle/gradle/application.java.gradle'
 apply from: 'openbaton-libs/gradle/gradle/run.application.java.gradle'
 apply from: 'openbaton-libs/gradle/gradle/git.release.gradle'
 
-apply from: 'gradle/gradle/packaging.gvnfm.debian.gradle'
+apply from: 'gradle/gradle/packaging.vnfm-generic.debian.gradle'
 apply from: 'gradle/gradle/packaging.innosetup.gradle'
 
 repositories {
@@ -117,3 +117,4 @@ dependencies {
     compile 'commons-codec:commons-codec:1.10'
     compile 'org.hibernate:hibernate-core:4.3.10.Final'
 }
+
