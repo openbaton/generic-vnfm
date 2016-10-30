@@ -60,7 +60,7 @@ pre_exec_start () {
 
 
     ###################
-    #### Rabbitmq #####
+    #### RabbitMQ #####
     ###################
 
     # Check and eventually starts rabbitmq-server
@@ -75,7 +75,7 @@ pre_exec_start () {
                 exit 1
             fi
         fi
-    elif [ "${OSTYPE}" = "darwin"* ]; then
+    elif [ "${OSTYPE}" = "Darwin" ]; then
         instance=$(ps aux | grep -v grep | grep rabbitmq | grep server | wc -l)
         if [ ${instance} -eq 0 ]; then
             log_warning_msg "rabbitmq is not running, let's try to start it..."

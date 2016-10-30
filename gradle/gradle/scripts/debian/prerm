@@ -30,8 +30,6 @@ set -u
 #### Global Variables ####
 ##########################
 
-OPENBATON_BASE_DIR=/usr
-
 OPENBATON_COMPONENT_NAME_FANCY="VNFM Generic (VNFMG)"
 OPENBATON_COMPONENT_NAME=vnfm-generic
 
@@ -42,7 +40,7 @@ OPENBATON_COMPONENT_JAR_FILE_NAME=openbaton-${OPENBATON_COMPONENT_NAME}
 #### Open Baton ####
 ####################
 
-stop_vnfm_generic () {
+stop_running () {
     instance=$(ps aux | grep -v grep | grep "${OPENBATON_COMPONENT_JAR_FILE_NAME}" | grep "jar" | wc -l)
     if [ ${instance} -ne 0 ]; then
         if systemctl stop openbaton-${OPENBATON_COMPONENT_NAME}.service >/dev/null 2>&1 ; then
@@ -55,5 +53,4 @@ stop_vnfm_generic () {
     fi
 }
 
-stop_vnfm_generic
-
+stop_running

@@ -44,7 +44,7 @@ OSTYPE=$(uname)
 
 
 ###################
-#### Rabbitmq #####
+#### RabbitMQ #####
 ###################
 
 check_rabbitmq () {
@@ -101,7 +101,6 @@ configure () {
 start () {
     configure
     log_success_msg "Starting the Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} .."
-
     start-stop-daemon --start --background --pidfile ${OPENBATON_COMPONENT_PID_FILE} --make-pidfile --user ${DAEMON_USER} --chuid ${DAEMON_USER} --exec /usr/bin/java -- -jar ${OPENBATON_COMPONENT_JAR_INSTALL_DIR}/${openbaton_component_jar_file_name_versioned} --spring.config.location=file:${OPENBATON_COMPONENT_CONFIG_FILE}
 }
 
@@ -120,14 +119,14 @@ usage () {
     echo "Usage:\n\t [openbaton-${OPENBATON_COMPONENT_NAME} start|stop|restart] | [service openbaton-${OPENBATON_COMPONENT_NAME} start|stop|restart] | [start|stop openbaton-${OPENBATON_COMPONENT_NAME}] | [systemctl start|stop openbaton-${OPENBATON_COMPONENT_NAME}.service]"
 }
 
+
 ##
 #   MAIN
 ##
 
-if [ ${#} -eq 0 ]
-   then
-        usage
-        exit 1
+if [ ${#} -eq 0 ]; then
+    usage
+    exit 1
 fi
 
 for cmd in ${@}
@@ -142,8 +141,7 @@ do
          *)   
 	        usage;;
     esac
-    if [ $? -ne 0 ];
-    then
+    if [ $? -ne 0 ]; then
 	    exit 1
     fi
 done

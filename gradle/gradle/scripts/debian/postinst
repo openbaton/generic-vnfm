@@ -36,13 +36,13 @@ OPENBATON_COMPONENT_NAME=vnfm-generic
 OPENBATON_BASE_DIR=/usr
 OPENBATON_COMPONENT_EXE_DIR=${OPENBATON_BASE_DIR}/bin
 
-OPENBATON_AUTOSTART_DEFAULT=true
-OPENBATON_AUTOSTART=${OPENBATON_AUTOSTART:-$OPENBATON_AUTOSTART_DEFAULT}
+OPENBATON_COMPONENT_AUTOSTART_DEFAULT=true
+OPENBATON_COMPONENT_AUTOSTART=${OPENBATON_COMPONENT_AUTOSTART:-$OPENBATON_COMPONENT_AUTOSTART_DEFAULT}
 
 
-##############
-#### Main ####
-##############
+####################
+#### Open Baton ####
+####################
 
 configure () {
     log_success_msg "Configuring Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} installation .."
@@ -50,7 +50,7 @@ configure () {
     log_success_msg "Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} installation completed"
 
     # Allow the use of the .deb package to install Open Baton with Docker (the Docker file developer need to manage the starting of the GVNFM in the Docker file)
-    if [ "${OPENBATON_AUTOSTART}" = "true" ]; then
+    if [ "${OPENBATON_COMPONENT_AUTOSTART}" = "true" ]; then
     	if systemctl start openbaton-${OPENBATON_COMPONENT_NAME}.service >/dev/null 2>&1 ; then
     	    log_success_msg "Starting the Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} .."
             continue
@@ -64,4 +64,3 @@ configure () {
 }
 
 configure
-

@@ -30,9 +30,6 @@ set -u
 #### Global Variables ####
 ##########################
 
-OPENBATON_BASE_DIR=/usr
-INSTALL_DIR=${OPENBATON_BASE_DIR}/lib/openbaton
-
 OPENBATON_COMPONENT_NAME_FANCY="VNFM Generic (VNFMG)"
 OPENBATON_COMPONENT_NAME=vnfm-generic
 OPENBATON_COMPONENT_RELATIVE_SUBPATH=vnfm/generic
@@ -54,3 +51,22 @@ remove_existing_old_version_installed () {
         fi
     fi
 }
+
+
+##############
+#### Main ####
+##############
+
+case "${1}" in
+    install|upgrade)
+        remove_existing_old_version_installed
+        ;;
+    remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+    *)
+        log_failure_msg "preinst called with unknown argument ${1}"
+        exit 1
+        ;;
+esac
+
+exit 0
