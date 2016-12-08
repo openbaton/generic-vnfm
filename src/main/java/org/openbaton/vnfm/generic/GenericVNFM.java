@@ -46,9 +46,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -80,6 +78,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Value("${vnfm.ems.script.old:60}")
   private int old;
+
+  @Value("${vnfm.ems.userdata.filepath:/etc/openbaton/openbaton-vnfm-generic-user-data.sh}")
+  private String userDataFilePath;
 
   public static void main(String[] args) {
     SpringApplication.run(GenericVNFM.class, args);
@@ -1294,7 +1295,20 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Override
   protected String getUserData() {
-    String result = convertStreamToString(AbstractVnfm.class.getResourceAsStream("/user-data.sh"));
+    String result;
+    try {
+      log.info("Attempting Userdata file (from properties file): " + userDataFilePath);
+      result = convertStreamToString(new FileInputStream(userDataFilePath));
+    } catch (FileNotFoundException e) {
+      log.warn("Userdata file not found: " + userDataFilePath);
+      try {
+        log.warn("Attempting Userdata file (from classpath): /user-data.sh");
+        result = convertStreamToString(AbstractVnfm.class.getResourceAsStream("/user-data.sh"));
+      } catch (NullPointerException npe) {
+        log.error("Userdata file not found: '/user-data.sh'");
+        throw npe;
+      }
+    }
 
     log.debug(emsVersion);
 
