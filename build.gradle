@@ -118,3 +118,5 @@ dependencies {
     compile 'org.hibernate:hibernate-core:4.3.10.Final'
 }
 
+// Force code formatting
+compileJava.dependsOn tasks.googleJavaFormat
