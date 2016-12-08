@@ -105,8 +105,6 @@ allprojects {
     }
 }
 
-build.dependsOn verifyGoogleJavaFormat
-
 javadoc {
 	source = sourceSets.main.allJava
 	classpath = configurations.compile
