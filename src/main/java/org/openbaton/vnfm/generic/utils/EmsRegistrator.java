@@ -41,27 +41,35 @@ public class EmsRegistrator implements org.openbaton.common.vnfm_sdk.interfaces.
   private Logger log = LoggerFactory.getLogger(getClass());
   private Gson parser = new GsonBuilder().setPrettyPrinting().create();
 
-  public Set<String> getHostnames() {
-    return this.hostnames;
-  }
-
   //TODO consider using DB in case of failure etc...
-  private Set<String> hostnames;
+  private Set<String> expectedHostnames;
 
   @PostConstruct
   private void init() {
-    this.hostnames = new HashSet<>();
+    this.expectedHostnames = new HashSet<>();
   }
 
-  @Override
-  public void register(String json) {
-    this.log.debug("EMSRegister received: " + json);
-    JsonObject object = this.parser.fromJson(json, JsonObject.class);
-    this.hostnames.add(object.get("hostname").getAsString().toLowerCase());
+  public Set<String> getExpectedHostnames() {
+    return this.expectedHostnames;
   }
+
+  public void register(String hostname) {
+    this.log.debug("EMSRegister adding: " + hostname);
+    this.expectedHostnames.add(hostname.toLowerCase());
+   }
 
   public void unregister(String hostname) {
     this.log.debug("EMSRegister removing: " + hostname);
-    this.hostnames.remove(hostname.toLowerCase());
+    if (this.expectedHostnames.contains(hostname)) this.expectedHostnames.remove(hostname);
   }
+
+  @Override
+  public void unregisterFromMsg(String json) {
+    this.log.debug("EMSRegister received: " + json);
+    JsonObject object = this.parser.fromJson(json, JsonObject.class);
+    String hostname = object.get("hostname").getAsString().toLowerCase();
+    this.log.debug("EMSRegister removing: " + hostname);
+    if (this.expectedHostnames.contains(hostname)) this.expectedHostnames.remove(hostname);
+  }
+
 }

@@ -752,6 +752,14 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       output += "\n--------------------\n";
       log.info("Executed script for TERMINATE. Output was: \n\n" + output);
     }
+
+    for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+      for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
+        log.warn("Canceling wait of EMS for: " + vnfci.getHostname());
+        emsRegistrator.unregister(vnfci.getHostname());
+      }
+    }
+
     return virtualNetworkFunctionRecord;
   }
 
@@ -943,9 +951,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Override
   protected void checkEMS(String hostname) {
+    log.debug("Starting wait of EMS for: " + hostname);
+    this.emsRegistrator.register(hostname);
     int i = 0;
     while (true) {
-      log.debug("Waiting for " + hostname + " ems to be started... (" + i * 5 + " secs)");
+      log.debug(
+          "Number of expected EMS hostnames: " + this.emsRegistrator.getExpectedHostnames().size());
+      log.debug("Waiting for " + hostname + " EMS to be started... (" + i * 5 + " secs)");
       i++;
       try {
         checkEmsStarted(hostname);
@@ -965,10 +977,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Override
   protected void checkEmsStarted(String hostname) {
-    if (!this.emsRegistrator.getHostnames().contains(hostname.toLowerCase())) {
-      throw new RuntimeException("no ems for hostame: " + hostname);
+    if (this.emsRegistrator.getExpectedHostnames().contains(hostname.toLowerCase())) {
+      throw new RuntimeException("No EMS for hostname: " + hostname);
     }
-    this.emsRegistrator.unregister(hostname.toLowerCase());
   }
 
   private String executeActionOnEMS(
