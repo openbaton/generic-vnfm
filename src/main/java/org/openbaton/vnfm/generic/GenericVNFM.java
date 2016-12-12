@@ -977,7 +977,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Override
   protected void checkEmsStarted(String hostname) {
-    if (this.emsRegistrator.getExpectedHostnames().contains(hostname.toLowerCase())) {
+    if (this.emsRegistrator
+        .getExpectedHostnames()
+        .contains(hostname.toLowerCase().replace("_", "-"))) {
       throw new RuntimeException("No EMS for hostname: " + hostname);
     }
   }
@@ -992,7 +994,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     log.info("Waiting answer from EMS - " + vduHostname);
 
     String response =
-        this.vnfmHelper.sendAndReceive(command, "vnfm." + vduHostname.toLowerCase() + ".actions");
+        this.vnfmHelper.sendAndReceive(
+            command, "vnfm." + vduHostname.toLowerCase().replace("_", "-") + ".actions");
 
     log.debug("Received from EMS (" + vduHostname + "): " + response);
 
