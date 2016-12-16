@@ -335,8 +335,10 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
     for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
       for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
-        log.warn("Canceling wait of EMS for: " + vnfci.getHostname());
-        ems.unregister(vnfci.getHostname());
+        if (ems.getExpectedHostnames().contains(vnfci.getHostname())) {
+          log.warn("Canceling wait of EMS for: " + vnfci.getHostname());
+          ems.unregister(vnfci.getHostname());
+        }
       }
     }
 
