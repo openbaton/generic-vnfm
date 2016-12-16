@@ -19,6 +19,7 @@
 
 package org.openbaton.vnfm.generic.core;
 
+import java.util.*;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.common.Ip;
 import org.openbaton.catalogue.mano.common.LifecycleEvent;
@@ -37,11 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-
-/**
- * Created by lto on 15/09/15.
- */
+/** Created by lto on 15/09/15. */
 @Service
 @Scope
 public class LifeCycleManagement {

@@ -22,12 +22,9 @@ package org.openbaton.vnfm.generic.utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-
 import java.util.Map;
 
-/**
- * Created by mpa on 14.12.16.
- */
+/** Created by mpa on 14.12.16. */
 public class JsonUtils {
 
   private static Gson parser = new GsonBuilder().setPrettyPrinting().create();

@@ -19,12 +19,11 @@
 
 package org.openbaton.vnfm.generic.interfaces;
 
+import java.util.Set;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
-
-import java.util.Set;
 
 /** Created by lto on 10/11/15. */
 public interface EmsInterface {
