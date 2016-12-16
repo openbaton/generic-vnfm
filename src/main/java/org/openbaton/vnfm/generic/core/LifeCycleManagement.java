@@ -17,7 +17,7 @@
  *
  */
 
-package org.openbaton.vnfm.generic.utils;
+package org.openbaton.vnfm.generic.core;
 
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.common.Ip;
@@ -29,6 +29,8 @@ import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.openbaton.catalogue.nfvo.VNFCDependencyParameters;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
+import org.openbaton.vnfm.generic.utils.JsonUtils;
+import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +48,7 @@ public class LifeCycleManagement {
 
   protected Logger log = LoggerFactory.getLogger(this.getClass());
 
-  @Autowired private EMS ems;
+  @Autowired private ElementManagementSystem ems;
 
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event)

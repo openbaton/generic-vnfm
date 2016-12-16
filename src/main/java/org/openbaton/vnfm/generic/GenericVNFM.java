@@ -35,9 +35,9 @@ import org.openbaton.common.vnfm_sdk.AbstractVnfm;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
-import org.openbaton.vnfm.generic.utils.EMS;
+import org.openbaton.vnfm.generic.core.ElementManagementSystem;
 import org.openbaton.vnfm.generic.utils.JsonUtils;
-import org.openbaton.vnfm.generic.utils.LifeCycleManagement;
+import org.openbaton.vnfm.generic.core.LifeCycleManagement;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,7 +56,7 @@ import java.util.Scanner;
 @EnableScheduling
 public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
-  @Autowired private EMS ems;
+  @Autowired private ElementManagementSystem ems;
 
   @Autowired private LifeCycleManagement lcm;
 

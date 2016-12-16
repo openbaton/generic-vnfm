@@ -17,7 +17,7 @@
  *
  */
 
-package org.openbaton.vnfm.generic.utils;
+package org.openbaton.vnfm.generic.core;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -31,6 +31,8 @@ import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
 import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
+import org.openbaton.vnfm.generic.utils.JsonUtils;
+import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,7 +49,7 @@ import java.util.regex.Pattern;
  */
 @Service
 @Scope
-public class EMS implements EmsInterface {
+public class ElementManagementSystem implements EmsInterface {
 
   private static Gson parser = new GsonBuilder().setPrettyPrinting().create();
 
