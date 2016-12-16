@@ -30,7 +30,7 @@ import org.openbaton.catalogue.nfvo.Script;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
 import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
-import org.openbaton.common.vnfm_sdk.interfaces.EmsInterface;
+import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

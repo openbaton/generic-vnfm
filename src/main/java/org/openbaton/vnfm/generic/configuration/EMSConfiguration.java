@@ -17,9 +17,9 @@
  *
  */
 
-package org.openbaton.vnfm.generic.utils;
+package org.openbaton.vnfm.generic.configuration;
 
-import org.openbaton.common.vnfm_sdk.interfaces.EmsInterface;
+import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Binding;
