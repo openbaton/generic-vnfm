@@ -18,7 +18,11 @@
 package org.openbaton.vnfm.generic;
 
 import com.google.gson.JsonObject;
-
+import java.io.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.descriptor.VNFComponent;
@@ -36,23 +40,15 @@ import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.openbaton.vnfm.generic.core.ElementManagementSystem;
-import org.openbaton.vnfm.generic.utils.JsonUtils;
 import org.openbaton.vnfm.generic.core.LifeCycleManagement;
+import org.openbaton.vnfm.generic.utils.JsonUtils;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.io.*;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
-
-/**
- * Created by mob on 16.07.15.
- */
+/** Created by mob on 16.07.15. */
 @EnableScheduling
 public class GenericVNFM extends AbstractVnfmSpringAmqp {
 

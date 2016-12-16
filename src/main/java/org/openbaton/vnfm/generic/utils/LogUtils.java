@@ -22,19 +22,16 @@ package org.openbaton.vnfm.generic.utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import org.openbaton.catalogue.mano.record.VNFCInstance;
-import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
-import org.springframework.beans.factory.annotation.Value;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import org.openbaton.catalogue.mano.record.VNFCInstance;
+import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
+import org.springframework.beans.factory.annotation.Value;
 
-/**
- * Created by mpa on 14.12.16.
- */
+/** Created by mpa on 14.12.16. */
 public class LogUtils {
 
   private static Gson parser = new GsonBuilder().setPrettyPrinting().create();
