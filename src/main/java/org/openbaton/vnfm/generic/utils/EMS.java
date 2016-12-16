@@ -105,13 +105,23 @@ public class EMS implements EmsInterface {
   public void checkEms(String hostname) throws BadFormatException {
     log.debug("Starting wait of EMS for: " + hostname);
     this.register(hostname);
+    String extractedId = "";
+    Pattern pattern = Pattern.compile("-(\\d+)$");
+    Matcher matcher = pattern.matcher(hostname.trim());
+    if (matcher.find()) {
+      extractedId = (matcher.group(1));
+    } else {
+      throw new BadFormatException(
+          "Hostname does not fit the expected format. Must fit: '.*-[1-9]+$'");
+    }
+    log.trace("Extracted host ID: " + extractedId);
     int i = 0;
     while (true) {
       log.debug("Number of expected EMS hostnames: " + this.getExpectedHostnames().size());
       log.debug("Waiting for " + hostname + " EMS to be started... (" + i * 5 + " secs)");
       i++;
       try {
-        checkEmsStarted(hostname);
+        checkEmsStarted(extractedId);
         break;
       } catch (RuntimeException e) {
         if (i == this.waitForEms / 5) {
@@ -127,33 +137,23 @@ public class EMS implements EmsInterface {
   }
 
   @Override
-  public void checkEmsStarted(String hostname) throws BadFormatException {
+  public void checkEmsStarted(String hostId) throws BadFormatException {
     boolean registered = true;
-    String extractedId = "";
-    Pattern pattern = Pattern.compile(".*-([1-9]+$)");
-    Matcher matcher = pattern.matcher(hostname);
-    if (matcher.matches()) {
-      extractedId = (matcher.group(1));
-    } else {
-      throw new BadFormatException(
-          "Hostname does not fit the expected format. Must fit: '.*-[1-9]+$'");
-    }
-    log.trace("Extracted host ID: " + extractedId);
-    log.trace("Expected hostnames: " + this.getExpectedHostnames());
+    log.debug("Expected hostnames: " + this.getExpectedHostnames());
     for (String expectedHostname : this.getExpectedHostnames()) {
-      if (expectedHostname.endsWith(extractedId)) {
+      if (expectedHostname.endsWith(hostId)) {
         registered = false;
         break;
       }
     }
     if (registered == false) {
-      throw new RuntimeException("No EMS for hostname: " + hostname);
+      throw new RuntimeException("No EMS yet for host with extracted host ID: " + hostId);
     }
   }
 
   @Override
   public void saveScriptOnEms(
-          VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
 
     log.debug("Scripts are: " + scripts.getClass().getName());
 
@@ -287,22 +287,5 @@ public class EMS implements EmsInterface {
   @Override
   public String getEmsVersion() {
     return emsVersion;
-  }
-
-  public static void main(String[] args) {
-    String hostname = "-1234";
-    //    String hostname = "asda-sdasda-sd-1234567";
-    Pattern pattern = Pattern.compile(".*-([1-9]+$)");
-    Matcher matcher = pattern.matcher(hostname);
-    if (matcher.matches())
-    //    if (matcher.find())
-    {
-      String extracedID = (matcher.group(1));
-
-      System.out.println("Entered");
-      System.out.println(extracedID);
-    } else {
-      System.out.println("not entered");
-    }
   }
 }

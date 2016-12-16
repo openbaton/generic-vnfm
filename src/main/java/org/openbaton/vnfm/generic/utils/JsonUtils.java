@@ -49,7 +49,7 @@ public class JsonUtils {
   }
 
   public static JsonObject getJsonObjectForScript(
-          String save_scripts, String payload, String name, String scriptPath) {
+      String save_scripts, String payload, String name, String scriptPath) {
     JsonObject jsonMessage = new JsonObject();
     jsonMessage.addProperty("action", save_scripts);
     jsonMessage.addProperty("payload", payload);

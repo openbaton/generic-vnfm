@@ -49,7 +49,7 @@ public class LifeCycleManagement {
   @Autowired private EMS ems;
 
   public Iterable<String> executeScriptsForEvent(
-          VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event)
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event)
       throws Exception { //TODO make it parallel
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     Collection<String> res = new ArrayList<>();
