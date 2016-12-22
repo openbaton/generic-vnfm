@@ -79,7 +79,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         "Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
     for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
       for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
-          ems.register(vnfcInstance.getHostname());
+        ems.register(vnfcInstance.getHostname());
       }
     }
     for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
@@ -127,6 +127,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     if (scaleInOrOut.ordinal() == Action.SCALE_OUT.ordinal()) {
       log.info("Created VNFComponent");
       try {
+        ems.register(vnfcInstance.getHostname());
         ems.checkEms(vnfcInstance.getHostname());
       } catch (BadFormatException e) {
         throw new Exception(e.getMessage());
