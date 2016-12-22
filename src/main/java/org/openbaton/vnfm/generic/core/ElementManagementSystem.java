@@ -103,7 +103,6 @@ public class ElementManagementSystem implements EmsInterface {
   @Override
   public void checkEms(String hostname) throws BadFormatException {
     log.debug("Starting wait of EMS for: " + hostname);
-    this.register(hostname);
     String extractedId = "";
     Pattern pattern = Pattern.compile("-(\\d+)$");
     Matcher matcher = pattern.matcher(hostname.trim());

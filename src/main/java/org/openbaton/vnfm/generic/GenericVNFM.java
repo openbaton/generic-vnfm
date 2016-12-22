@@ -79,6 +79,11 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         "Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
     for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
       for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
+          ems.register(vnfcInstance.getHostname());
+      }
+    }
+    for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
+      for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
         try {
           ems.checkEms(vnfcInstance.getHostname());
         } catch (BadFormatException e) {
