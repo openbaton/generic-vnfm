@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Properties;
 import javax.annotation.PostConstruct;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
-import org.openbaton.common.vnfm_sdk.interfaces.EmsRegistrator;
 import org.openbaton.common.vnfm_sdk.interfaces.LogDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +52,6 @@ public class RabbitConfiguration {
   public static final String queueName_vnfmCoreActions = "vnfm.nfvo.actions";
   public static final String queueName_vnfmCoreActionsReply = "vnfm.nfvo.actions.reply";
   public static String queueName_nfvoGenericActions = "nfvo.type.actions";
-  public static String queueName_emsRegistrator = "ems.generic.register";
   private static final String queueName_logDispatch = "nfvo.vnfm.logs";
 
   private RabbitAdmin rabbitAdmin;
@@ -64,17 +62,10 @@ public class RabbitConfiguration {
   private int minConcurrency;
   private int maxConcurrency;
 
-  @Autowired(required = false)
-  private EmsRegistrator registrator;
-
   @Autowired private ConnectionFactory connectionFactory;
 
   @Autowired(required = false)
   private LogDispatcher logDispatcher;
-
-  @Autowired(required = false)
-  @Qualifier("listenerAdapter_emsRegistrator")
-  private MessageListenerAdapter listenerAdapter_emsRegistrator;
 
   private Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -177,28 +168,9 @@ public class RabbitConfiguration {
   }
 
   @Bean
-  Queue queue_emsRegistrator() {
-    Properties properties = new Properties();
-
-    try {
-      properties.load(ClassLoader.getSystemResourceAsStream("conf.properties"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    queueName_emsRegistrator = "ems." + properties.getProperty("type") + ".register";
-
-    return new Queue(queueName_emsRegistrator, durable, exclusive, autodelete);
-  }
-
-  @Bean
   TopicExchange exchange() {
     TopicExchange topicExchange = new TopicExchange("openbaton-exchange");
     return topicExchange;
-  }
-
-  @Bean
-  Binding binding_vnfmCoreActionReply(TopicExchange exchange) {
-    return BindingBuilder.bind(queue_emsRegistrator()).to(exchange).with(queueName_emsRegistrator);
   }
 
   @Bean
@@ -211,12 +183,6 @@ public class RabbitConfiguration {
   @Bean
   MessageListenerAdapter listenerAdapter_nfvoGenericActions(AbstractVnfmSpringAmqp receiver) {
     return new MessageListenerAdapter(receiver, "onAction");
-  }
-
-  @Bean
-  MessageListenerAdapter listenerAdapter_emsRegistrator() {
-    if (registrator != null) return new MessageListenerAdapter(registrator, "unregisterFromMsg");
-    else return null;
   }
 
   @Bean
@@ -235,18 +201,5 @@ public class RabbitConfiguration {
     }
     container.setMessageListener(listenerAdapter);
     return container;
-  }
-
-  @Bean
-  SimpleMessageListenerContainer container_emsRegistrator(ConnectionFactory connectionFactory) {
-    if (listenerAdapter_emsRegistrator != null) {
-      SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-      container.setConnectionFactory(connectionFactory);
-      container.setQueueNames(queueName_emsRegistrator);
-      container.setConcurrentConsumers(1);
-      container.setMaxConcurrentConsumers(15);
-      container.setMessageListener(listenerAdapter_emsRegistrator);
-      return container;
-    } else return null;
   }
 }
