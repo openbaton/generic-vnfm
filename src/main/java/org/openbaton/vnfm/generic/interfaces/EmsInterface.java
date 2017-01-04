@@ -36,7 +36,7 @@ public interface EmsInterface {
 
   void unregister(String hostname);
 
-  void unregisterFromMsg(String json);
+  void unregisterFromMsg(String json) throws BadFormatException;
 
   String getEmsHeartbeat();
 
