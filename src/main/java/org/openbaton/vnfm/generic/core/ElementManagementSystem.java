@@ -96,7 +96,6 @@ public class ElementManagementSystem implements EmsInterface {
     this.log.debug("EMSRegister received: " + json);
     JsonObject object = this.parser.fromJson(json, JsonObject.class);
     String hostname = object.get("hostname").getAsString();
-    this.log.debug("EMSRegister removing: " + hostname);
     String extractedId = extractIdFromHostname(hostname);
     String hostnameToRemove = null;
     for (String expectedHostname : expectedHostnames) {
@@ -106,7 +105,8 @@ public class ElementManagementSystem implements EmsInterface {
       }
     }
     if (hostnameToRemove != null) {
-      this.expectedHostnames.remove(hostname);
+      this.log.debug("EMSRegister removing: " + hostnameToRemove);
+      this.expectedHostnames.remove(hostnameToRemove);
     } else {
       log.warn("Host " + hostname + " was not found in the list of awaiting hostnames");
     }
@@ -146,7 +146,7 @@ public class ElementManagementSystem implements EmsInterface {
       extractedId = (matcher.group(1));
     } else {
       throw new BadFormatException(
-              "Hostname does not fit the expected format. Must fit: '.*-[1-9]+$'");
+          "Hostname does not fit the expected format. Must fit: '.*-[1-9]+$'");
     }
     return extractedId;
   }
@@ -168,7 +168,7 @@ public class ElementManagementSystem implements EmsInterface {
 
   @Override
   public void saveScriptOnEms(
-          VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
 
     log.debug("Scripts are: " + scripts.getClass().getName());
 
@@ -180,10 +180,10 @@ public class ElementManagementSystem implements EmsInterface {
       for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
         for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
           executeActionOnEMS(
-                  vnfcInstance.getHostname(),
-                  jsonMessage.toString(),
-                  virtualNetworkFunctionRecord,
-                  vnfcInstance);
+              vnfcInstance.getHostname(),
+              jsonMessage.toString(),
+              virtualNetworkFunctionRecord,
+              vnfcInstance);
         }
       }
     } else if (scripts instanceof Set) {
@@ -194,15 +194,15 @@ public class ElementManagementSystem implements EmsInterface {
         String base64String = Base64.encodeBase64String(script.getPayload());
         log.trace("The base64 string is: " + base64String);
         JsonObject jsonMessage =
-                JsonUtils.getJsonObjectForScript(
-                        "SAVE_SCRIPTS", base64String, script.getName(), scriptPath);
+            JsonUtils.getJsonObjectForScript(
+                "SAVE_SCRIPTS", base64String, script.getName(), scriptPath);
         for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
             executeActionOnEMS(
-                    vnfcInstance.getHostname(),
-                    jsonMessage.toString(),
-                    virtualNetworkFunctionRecord,
-                    vnfcInstance);
+                vnfcInstance.getHostname(),
+                jsonMessage.toString(),
+                virtualNetworkFunctionRecord,
+                vnfcInstance);
           }
         }
       }
@@ -211,10 +211,10 @@ public class ElementManagementSystem implements EmsInterface {
 
   @Override
   public void saveScriptOnEms(
-          VNFCInstance vnfcInstance,
-          Object scripts,
-          VirtualNetworkFunctionRecord virtualNetworkFunctionRecord)
-          throws Exception {
+      VNFCInstance vnfcInstance,
+      Object scripts,
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord)
+      throws Exception {
 
     log.debug("Scripts are: " + scripts.getClass().getName());
 
@@ -223,10 +223,10 @@ public class ElementManagementSystem implements EmsInterface {
       log.debug("Scripts are: " + scriptLink);
       JsonObject jsonMessage = JsonUtils.getJsonObject("CLONE_SCRIPTS", scriptLink, scriptPath);
       executeActionOnEMS(
-              vnfcInstance.getHostname(),
-              jsonMessage.toString(),
-              virtualNetworkFunctionRecord,
-              vnfcInstance);
+          vnfcInstance.getHostname(),
+          jsonMessage.toString(),
+          virtualNetworkFunctionRecord,
+          vnfcInstance);
     } else if (scripts instanceof Set) {
       Iterable<Script> scriptSet = (Set<Script>) scripts;
       for (Script script : scriptSet) {
@@ -234,30 +234,30 @@ public class ElementManagementSystem implements EmsInterface {
         String base64String = Base64.encodeBase64String(script.getPayload());
         log.trace("The base64 string is: " + base64String);
         JsonObject jsonMessage =
-                JsonUtils.getJsonObjectForScript(
-                        "SAVE_SCRIPTS", base64String, script.getName(), scriptPath);
+            JsonUtils.getJsonObjectForScript(
+                "SAVE_SCRIPTS", base64String, script.getName(), scriptPath);
         executeActionOnEMS(
-                vnfcInstance.getHostname(),
-                jsonMessage.toString(),
-                virtualNetworkFunctionRecord,
-                vnfcInstance);
+            vnfcInstance.getHostname(),
+            jsonMessage.toString(),
+            virtualNetworkFunctionRecord,
+            vnfcInstance);
       }
     }
   }
 
   @Override
   public String executeActionOnEMS(
-          String vduHostname,
-          String command,
-          VirtualNetworkFunctionRecord vnfr,
-          VNFCInstance vnfcInstance)
-          throws Exception {
+      String vduHostname,
+      String command,
+      VirtualNetworkFunctionRecord vnfr,
+      VNFCInstance vnfcInstance)
+      throws Exception {
     log.debug("Sending message and waiting: " + command + " to " + vduHostname);
     log.info("Waiting answer from EMS - " + vduHostname);
 
     String response =
-            vnfmHelper.sendAndReceive(
-                    command, "vnfm." + vduHostname.toLowerCase().replace("_", "-") + ".actions");
+        vnfmHelper.sendAndReceive(
+            command, "vnfm." + vduHostname.toLowerCase().replace("_", "-") + ".actions");
 
     log.debug("Received from EMS (" + vduHostname + "): " + response);
 
@@ -279,11 +279,11 @@ public class ElementManagementSystem implements EmsInterface {
       log.error(err);
       vnfcInstance.setState("error");
       LogUtils.saveLogToFile(
-              vnfr,
-              parser.fromJson(command, JsonObject.class).get("payload").getAsString(),
-              vnfcInstance,
-              response,
-              true);
+          vnfr,
+          parser.fromJson(command, JsonObject.class).get("payload").getAsString(),
+          vnfcInstance,
+          response,
+          true);
       throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
     }
     return response;
