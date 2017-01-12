@@ -2,7 +2,8 @@
 APP_NAME="Open Baton VNFM Generic"
 CONFIG_FILE=/config/file/path
 PID_FILE=~/.openbaton-vnfm-generic.pid
-#START_ARGUMENTS=${@#$APP_ARGS}
+APP_ARGS_TRIMMED=$(echo $APP_ARGS | tr -d '\n' | tr -d '\' | tr -d \' | tr -d '[:space:]')
+START_ARGUMENTS=${@#$APP_ARGS_TRIMMED}
 
 ###################
 #### Rabbitmq #####
@@ -67,19 +68,16 @@ configure () {
 start () {
     configure
     echo "Starting $APP_NAME"
-    nohup "$JAVACMD" "$@" --spring.config.location=file:${CONFIG_FILE} > /dev/null 2>&1 &
-    echo $! > $PID_FILE
 
-#    echo "$START_ARGUMENTS"
- #  echo "--spring.config.location=file:${CONFIG_FILE}"
-  #  #nohup "$JAVACMD" "$START_ARGUMENTS" --spring.config.location=file:${CONFIG_FILE} > /dev/null 2>&1 &
+    nohup $JAVACMD $START_ARGUMENTS --spring.config.location=file:${CONFIG_FILE} > /dev/null 2>&1 &
+    echo $! > $PID_FILE
 
     APP_PID="-1"
 	COUNTER=60
 	IS_RUNNING=0
 	while [ "$IS_RUNNING" == "0" -a $COUNTER -gt 0 ]; do
 		IS_RUNNING=$(check_running)
-		echo -n "."
+		printf "."
 		APP_PID="$(get_pid)"
 	    COUNTER=$(($COUNTER-1))
 	    sleep 1
@@ -106,7 +104,7 @@ stop (){
 
 		while [ "$IS_RUNNING" == "1" -a $COUNTER -gt 0 ]; do
 			IS_RUNNING=$(check_running)
-			echo -n "."
+			printf "."
 
 			COUNTER=$(($COUNTER-1))
 			sleep 1
@@ -164,27 +162,13 @@ usage () {
 #   MAIN
 ##
 
-
-#APP_ARGS_FOR_SCRIPT=$(echo $APP_ARGS | tr -d '\n' | tr -d '\' | tr -d \')
-
-#if [ $(echo "$APP_ARGS_FOR_SCRIPT" | wc -w) -eq 0 ]
-#   then
-#        usage
-#        exit 1
-#fi
-
-#echo "...fin"
-
-#for cmd in $APP_ARGS_FOR_SCRIPT
-
-
-if [ ${#} -eq 0 ]
-   then
+if [ $(echo "$APP_ARGS_TRIMMED" | wc -w) -eq 0 ]
+then
         usage
         exit 1
 fi
 
-for cmd in ${@}
+for cmd in $APP_ARGS_TRIMMED
 do
     case ${cmd} in
         "start" )
