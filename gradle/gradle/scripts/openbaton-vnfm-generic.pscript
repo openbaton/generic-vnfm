@@ -2,6 +2,7 @@
 APP_NAME="Open Baton VNFM Generic"
 CONFIG_FILE=/config/file/path
 PID_FILE=~/.openbaton-vnfm-generic.pid
+#START_ARGUMENTS=${@#$APP_ARGS}
 
 ###################
 #### Rabbitmq #####
@@ -68,6 +69,10 @@ start () {
     echo "Starting $APP_NAME"
     nohup "$JAVACMD" "$@" --spring.config.location=file:${CONFIG_FILE} > /dev/null 2>&1 &
     echo $! > $PID_FILE
+
+#    echo "$START_ARGUMENTS"
+ #  echo "--spring.config.location=file:${CONFIG_FILE}"
+  #  #nohup "$JAVACMD" "$START_ARGUMENTS" --spring.config.location=file:${CONFIG_FILE} > /dev/null 2>&1 &
 
     APP_PID="-1"
 	COUNTER=60
@@ -158,6 +163,20 @@ usage () {
 ##
 #   MAIN
 ##
+
+
+#APP_ARGS_FOR_SCRIPT=$(echo $APP_ARGS | tr -d '\n' | tr -d '\' | tr -d \')
+
+#if [ $(echo "$APP_ARGS_FOR_SCRIPT" | wc -w) -eq 0 ]
+#   then
+#        usage
+#        exit 1
+#fi
+
+#echo "...fin"
+
+#for cmd in $APP_ARGS_FOR_SCRIPT
+
 
 if [ ${#} -eq 0 ]
    then
