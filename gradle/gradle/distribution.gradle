@@ -36,26 +36,3 @@ startScripts {
         unixFile.renameTo("${startScripts.outputDir}/openbaton-vnfm-generic")
     }
 }
-
-// to be executed just before the new release so that it gets the right version
-task makeBrewFormula() {
-
-    def brewFormula = new File("${rootProject.projectDir}/gradle/gradle/scripts/osx/openbaton-vnfm-generic.rb")
-    String brewFormulaText = brewFormula.text
-    String brewFormulaTextNew = ""
-    String currentBranch = version.toString().contains("-SNAPSHOT") ? "develop" : version ;
-
-    brewFormulaText.readLines().each {
-        line ->
-            if (line.trim().startsWith("version")){
-                brewFormulaTextNew += "  version \""+version + "\"" + '\n'
-            }
-            else if(line.trim().startsWith("url")){
-                brewFormulaTextNew += "  url \"https://codeload.github.com/openbaton/generic-vnfm/legacy.tar.gz/"+currentBranch+"\"" + '\n'
-            }
-            else {
-                brewFormulaTextNew += line + '\n'
-            }
-    }
-    brewFormula.text = brewFormulaTextNew
-}
