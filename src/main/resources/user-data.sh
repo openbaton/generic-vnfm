@@ -61,6 +61,8 @@ install_ems_on_centos () {
         echo "baseurl=http://${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}/${CENTOS_EMS_REPOSITORY_PATH}" >> /etc/yum.repos.d/OpenBaton.repo
         echo "gpgcheck=0" >> /etc/yum.repos.d/OpenBaton.repo
         echo "enabled=1" >> /etc/yum.repos.d/OpenBaton.repo
+        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+        yum install -y git
         yum install -y ems
         service ems start
     else
