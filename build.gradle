@@ -24,10 +24,11 @@ buildscript {
 }
 
 plugins {
-    id 'net.researchgate.release' version '2.4.0'
-    id "nebula.os-package" version "2.2.6"
+    id 'net.researchgate.release' version '2.5.0'
+    id "nebula.ospackage" version "4.3.0"
     id "com.github.sherter.google-java-format" version "0.5"
     id 'com.github.ben-manes.versions' version '0.13.0'
+    id 'org.springframework.boot' version '1.4.3.RELEASE'
 }
 
 apply plugin: 'java'
@@ -42,8 +43,8 @@ ext {
     /**
      * Spring Related Variables
      */
-    springVersion = '4.2.2.RELEASE'
-    springBootVersion = '1.2.5.RELEASE'
+    springVersion = '4.3.5.RELEASE'
+    springBootVersion = '1.4.3.RELEASE'
     //------------------------------------------------//
     //------------------------------------------------//
     /**
@@ -64,6 +65,11 @@ ext {
      */
     mainClass = 'org.openbaton.vnfm.generic.GenericVNFM'
     //------------------------------------------------//
+    //------------------------------------------------//
+    /**
+     * Junit Version
+     */
+    junitVersion = "4.12"
 }
 
 apply from: 'openbaton-libs/gradle/gradle/application.java.gradle'
@@ -116,7 +122,7 @@ javadoc {
 dependencies {
     compile project(':vnfm-sdk-amqp')
     compile 'commons-codec:commons-codec:1.10'
-    compile 'org.hibernate:hibernate-core:4.3.10.Final'
+    compile 'org.hibernate:hibernate-core:5.2.6.Final'
 }
 
 // Force code formatting
