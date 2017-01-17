@@ -22,7 +22,7 @@ startScripts {
 
         def unixTextTmp = ""
         def unixText = unixFile.text
-        def unixDaemonScript = new File("${rootProject.projectDir}/gradle/gradle/scripts/openbaton-vnfm-generic.pscript").text
+        def unixDaemonScript = file("gradle/gradle/scripts/openbaton-vnfm-generic.pscript").text
 
         unixText.readLines().each {
             line ->
