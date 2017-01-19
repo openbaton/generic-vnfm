@@ -44,7 +44,6 @@ import org.openbaton.exceptions.VimDriverException;
 import org.openbaton.exceptions.VimException;
 import org.openbaton.nfvo.vim_interfaces.vim.Vim;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
@@ -55,37 +54,30 @@ import org.springframework.stereotype.Service;
 @Scope(value = "prototype")
 public class GenericVIM extends Vim {
 
-  public GenericVIM(String type, String name, ApplicationContext context) throws PluginException {
-    super(type, name, context);
-  }
-
   public GenericVIM(
       String type,
       String username,
       String password,
       String brokerIp,
+      int port,
       String managementPort,
-      ApplicationContext context)
+      ApplicationContext context,
+      String pluginName,
+      int pluginTimeout)
       throws PluginException {
-    super(type, username, password, brokerIp, managementPort, context);
-  }
-
-  public GenericVIM(
-      String type, String brokerIp, int port, String managementPort, ApplicationContext context)
-      throws PluginException {
-    super(type, brokerIp, port, managementPort, context);
+    super(
+        type,
+        username,
+        password,
+        brokerIp,
+        managementPort,
+        context,
+        pluginName,
+        pluginTimeout,
+        port);
   }
 
   public GenericVIM() {}
-
-  public GenericVIM(String type, String name, String managementPort, ApplicationContext context)
-      throws PluginException {
-    super(type, name, managementPort, context);
-  }
-
-  public GenericVIM(String type, ConfigurableApplicationContext context) throws PluginException {
-    super(type, context);
-  }
 
   @Override
   public DeploymentFlavour add(VimInstance vimInstance, DeploymentFlavour deploymentFlavour)
@@ -1089,11 +1081,17 @@ public class GenericVIM extends Vim {
     }
     log.info("Found Networks with ExtIds: " + networks);
 
-    String flavorExtId = getFlavorExtID(vnfr.getDeployment_flavour_key(), vimInstance);
+    String flavorKey = null;
+    if (vdu.getComputation_requirement() != null && !vdu.getComputation_requirement().isEmpty()) {
+      flavorKey = vdu.getComputation_requirement();
+    } else {
+      flavorKey = vnfr.getDeployment_flavour_key();
+    }
+    String flavorExtId = getFlavorExtID(flavorKey, vimInstance);
 
     log.info("Generating Hostname...");
     vdu.setHostname(vnfr.getName());
-    String hostname = vdu.getHostname() + "-" + ((int) (Math.random() * 1000));
+    String hostname = vdu.getHostname() + "-" + ((int) (Math.random() * 10000000));
     log.info("Generated Hostname: " + hostname);
 
     userdata = userdata.replace("#Hostname=", "Hostname=" + hostname);
@@ -1376,7 +1374,50 @@ public class GenericVIM extends Vim {
 
   @Override
   public Quota getQuota(VimInstance vimInstance) throws VimException {
-    throw new UnsupportedOperationException("Not yet implemented");
+    log.debug(
+        "Listing Quota for Tenant "
+            + vimInstance.getTenant()
+            + " of VimInstance "
+            + vimInstance.getName());
+    Quota quota = null;
+    try {
+      quota = client.getQuota(vimInstance);
+      log.info(
+          "Listed Quota successfully for Tenant "
+              + vimInstance.getTenant()
+              + " of VimInstance "
+              + vimInstance.getName()
+              + " -> Quota: "
+              + quota);
+    } catch (Exception e) {
+      if (log.isDebugEnabled()) {
+        log.error(
+            "Not listed Quota successfully for Tenant "
+                + vimInstance.getTenant()
+                + " of VimInstance "
+                + vimInstance.getName()
+                + ". Caused by: "
+                + e.getMessage(),
+            e);
+      } else {
+        log.error(
+            "Not listed Quota successfully for Tenant "
+                + vimInstance.getTenant()
+                + " of VimInstance "
+                + vimInstance.getName()
+                + ". Caused by: "
+                + e.getMessage());
+      }
+      throw new VimException(
+          "Not listed Quota successfully for Tenant "
+              + vimInstance.getTenant()
+              + " of VimInstance "
+              + vimInstance.getName()
+              + ". Caused by: "
+              + e.getMessage(),
+          e);
+    }
+    return quota;
   }
 
   protected VNFCInstance getVnfcInstanceFromServer(
@@ -1388,48 +1429,51 @@ public class GenericVIM extends Vim {
       Map<String, String> floatingIps,
       VirtualNetworkFunctionRecord vnfr) {
     VNFCInstance vnfcInstance = new VNFCInstance();
-    vnfcInstance.setHostname(hostname);
-    vnfcInstance.setVc_id(server.getExtId());
-    vnfcInstance.setVim_id(vimInstance.getId());
+    if (server != null) {
+      vnfcInstance.setHostname(hostname);
+      vnfcInstance.setVc_id(server.getExtId());
+      vnfcInstance.setVim_id(vimInstance.getId());
 
-    vnfcInstance.setConnection_point(new HashSet<VNFDConnectionPoint>());
+      vnfcInstance.setConnection_point(new HashSet<VNFDConnectionPoint>());
 
-    for (VNFDConnectionPoint connectionPoint : vnfComponent.getConnection_point()) {
-      VNFDConnectionPoint connectionPoint_vnfci = new VNFDConnectionPoint();
-      connectionPoint_vnfci.setVirtual_link_reference(connectionPoint.getVirtual_link_reference());
-      connectionPoint_vnfci.setType(connectionPoint.getType());
-      for (Entry<String, String> entry : server.getFloatingIps().entrySet())
-        if (entry.getKey().equals(connectionPoint.getVirtual_link_reference()))
-          connectionPoint_vnfci.setFloatingIp(entry.getValue());
-      vnfcInstance.getConnection_point().add(connectionPoint_vnfci);
-    }
+      for (VNFDConnectionPoint connectionPoint : vnfComponent.getConnection_point()) {
+        VNFDConnectionPoint connectionPoint_vnfci = new VNFDConnectionPoint();
+        connectionPoint_vnfci.setVirtual_link_reference(
+            connectionPoint.getVirtual_link_reference());
+        connectionPoint_vnfci.setType(connectionPoint.getType());
+        if (server.getFloatingIps() != null)
+          for (Entry<String, String> entry : server.getFloatingIps().entrySet())
+            if (entry.getKey().equals(connectionPoint.getVirtual_link_reference()))
+              connectionPoint_vnfci.setFloatingIp(entry.getValue());
+        vnfcInstance.getConnection_point().add(connectionPoint_vnfci);
+      }
 
-    if (vdu.getVnfc_instance() == null) vdu.setVnfc_instance(new HashSet<VNFCInstance>());
+      if (vdu.getVnfc_instance() == null) vdu.setVnfc_instance(new HashSet<VNFCInstance>());
 
-    vnfcInstance.setVnfComponent(vnfComponent);
+      vnfcInstance.setVnfComponent(vnfComponent);
 
-    vnfcInstance.setIps(new HashSet<Ip>());
-    vnfcInstance.setFloatingIps(new HashSet<Ip>());
+      vnfcInstance.setIps(new HashSet<Ip>());
+      vnfcInstance.setFloatingIps(new HashSet<Ip>());
 
-    if (!floatingIps.isEmpty()) {
-      for (Entry<String, String> fip : server.getFloatingIps().entrySet()) {
+      if (!floatingIps.isEmpty()) {
+        for (Entry<String, String> fip : server.getFloatingIps().entrySet()) {
+          Ip ip = new Ip();
+          ip.setNetName(fip.getKey());
+          ip.setIp(fip.getValue());
+          vnfcInstance.getFloatingIps().add(ip);
+        }
+      }
+
+      for (Entry<String, List<String>> network : server.getIps().entrySet()) {
         Ip ip = new Ip();
-        ip.setNetName(fip.getKey());
-        ip.setIp(fip.getValue());
-        vnfcInstance.getFloatingIps().add(ip);
+        ip.setNetName(network.getKey());
+        ip.setIp(network.getValue().iterator().next());
+        vnfcInstance.getIps().add(ip);
+        for (String ip1 : server.getIps().get(network.getKey())) {
+          vnfr.getVnf_address().add(ip1);
+        }
       }
     }
-
-    for (Entry<String, List<String>> network : server.getIps().entrySet()) {
-      Ip ip = new Ip();
-      ip.setNetName(network.getKey());
-      ip.setIp(network.getValue().iterator().next());
-      vnfcInstance.getIps().add(ip);
-      for (String ip1 : server.getIps().get(network.getKey())) {
-        vnfr.getVnf_address().add(ip1);
-      }
-    }
-
     return vnfcInstance;
   }
 }
