@@ -18,6 +18,8 @@ export UBUNTU_EMS_REPOSITORY_PATH="repos/apt/debian/"
 export CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
 export CENTOS_EMS_REPOSITORY_PATH="repos/rpm/"
 
+export OS_DISTRIBUTION_RELEASE_MAJOR=
+
 
 ################
 #### Ubuntu ####
@@ -31,7 +33,7 @@ install_ems_on_ubuntu () {
         wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
         apt-get update
         cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        apt-get install git -y
+        apt-get install -y git
         apt-get install -y --force-yes ems-$EMS_VERSION
     else
         echo "EMS is already installed"
@@ -39,12 +41,16 @@ install_ems_on_ubuntu () {
 }
 
 install_zabbix_on_ubuntu () {
-    echo "Installing zabbix-agent for server at $MONITORING_IP"
-    apt-get install -y zabbix-agent
-    sed -i -e "s/ServerActive=127.0.0.1/ServerActive=$MONITORING_IP:10051/g" -e "s/Server=127.0.0.1/Server=$MONITORING_IP/g" -e "s/Hostname=Zabbix server/#Hostname=/g" /etc/zabbix/zabbix_agentd.conf
-    service zabbix-agent restart
-    rm zabbix-release_2.2-1+precise_all.deb
-    echo "finished installing zabbix-agent!"
+    result=$(dpkg -l | grep "zabbix-agent" | wc -l)
+    if [ ${result} -eq 0 ]; then
+        echo "Installing zabbix-agent for server at $MONITORING_IP"
+        apt-get install -y zabbix-agent
+        sed -i -e "s/ServerActive=127.0.0.1/ServerActive=$MONITORING_IP:10051/g" -e "s/Server=127.0.0.1/Server=$MONITORING_IP/g" -e "s/Hostname=Zabbix server/#Hostname=/g" /etc/zabbix/zabbix_agentd.conf
+        service zabbix-agent restart
+        rm zabbix-release_2.2-1+precise_all.deb
+    else
+        echo "Zabbix-agent is already installed"
+    fi
 }
 
 
@@ -64,12 +70,26 @@ install_ems_on_centos () {
         cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
         yum install -y git
         yum install -y ems
-        service ems start
+        systemctl enable ems
+        #systemctl start ems
     else
         echo "EMS is already installed"
     fi
 }
 
+install_zabbix_on_centos () {
+    result=$( yum list installed | grep zabbix-agent | wc -l )
+    if [ ${result} -eq 0 ]; then
+        echo "Adding repository .."
+        rpm -Uvh http://repo.zabbix.com/zabbix/3.0/rhel/${OS_DISTRIBUTION_RELEASE_MAJOR}/x86_64/zabbix-release-3.0-1.el${OS_DISTRIBUTION_RELEASE_MAJOR}.noarch.rpm
+        echo "Installing zabbix-agent .."
+        yum install -y zabbix zabbix-agent
+        sed -i -e "s/ServerActive=127.0.0.1/ServerActive=${MONITORING_IP}:10051/g" -e "s/Server=127.0.0.1/Server=${MONITORING_IP}/g" -e "s/Hostname=Zabbix server/#Hostname=/g" /etc/zabbix/zabbix_agentd.conf
+        service zabbix-agent restart
+    else
+        echo "Zabbix-agent is already installed"
+    fi
+}
 
 #############
 #### EMS ####
@@ -103,6 +123,13 @@ case ${os} in
 	    ;;
     centos)
 	    install_ems_on_centos
+        if [ -z "$MONITORING_IP" ]; then
+            echo "No MONITORING_IP is defined, I will not download zabbix-agent"
+        else
+            yum install -y */lsb-release
+            OS_DISTRIBUTION_RELEASE_MAJOR=$( lsb_release -a | grep "Release:" | awk -F'\t' '{ print $2 }' | awk -F'.' '{ print $1 }' )
+            install_zabbix_on_centos
+        fi
 	    ;;
     *)
 	    echo "OS not recognized"
