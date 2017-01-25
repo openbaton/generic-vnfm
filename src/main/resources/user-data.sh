@@ -20,6 +20,12 @@ export CENTOS_EMS_REPOSITORY_PATH="repos/rpm/"
 
 export OS_DISTRIBUTION_RELEASE_MAJOR=
 
+export LANG=en_US.UTF-8
+export LANGUAGE=en_US.UTF-8
+export LC_COLLATE=C
+export LC_CTYPE=en_US.UTF-8
+source /etc/bashrc
+
 
 ################
 #### Ubuntu ####
@@ -45,9 +51,6 @@ install_zabbix_on_ubuntu () {
     if [ ${result} -eq 0 ]; then
         echo "Installing zabbix-agent for server at $MONITORING_IP"
         apt-get install -y zabbix-agent
-        sed -i -e "s/ServerActive=127.0.0.1/ServerActive=$MONITORING_IP:10051/g" -e "s/Server=127.0.0.1/Server=$MONITORING_IP/g" -e "s/Hostname=Zabbix server/#Hostname=/g" /etc/zabbix/zabbix_agentd.conf
-        service zabbix-agent restart
-        rm zabbix-release_2.2-1+precise_all.deb
     else
         echo "Zabbix-agent is already installed"
     fi
@@ -84,25 +87,47 @@ install_zabbix_on_centos () {
         rpm -Uvh http://repo.zabbix.com/zabbix/3.0/rhel/${OS_DISTRIBUTION_RELEASE_MAJOR}/x86_64/zabbix-release-3.0-1.el${OS_DISTRIBUTION_RELEASE_MAJOR}.noarch.rpm
         echo "Installing zabbix-agent .."
         yum install -y zabbix zabbix-agent
-        sed -i -e "s/ServerActive=127.0.0.1/ServerActive=${MONITORING_IP}:10051/g" -e "s/Server=127.0.0.1/Server=${MONITORING_IP}/g" -e "s/Hostname=Zabbix server/#Hostname=/g" /etc/zabbix/zabbix_agentd.conf
-        service zabbix-agent restart
     else
         echo "Zabbix-agent is already installed"
     fi
 }
 
+
 #############
 #### EMS ####
 #############
 
-export LANG=en_US.UTF-8
-export LANGUAGE=en_US.UTF-8
-export LC_COLLATE=C
-export LC_CTYPE=en_US.UTF-8
-source /etc/bashrc
+configure_ems () {
+    mkdir -p /etc/openbaton/ems
+    echo [ems] > /etc/openbaton/ems/conf.ini
+    echo broker_ip=$BROKER_IP >> /etc/openbaton/ems/conf.ini
+    echo broker_port=$BROKER_PORT >> /etc/openbaton/ems/conf.ini
+    echo username=$USERNAME >> /etc/openbaton/ems/conf.ini
+    echo password=$PASSWORD >> /etc/openbaton/ems/conf.ini
+    echo exchange=$EXCHANGE_NAME >> /etc/openbaton/ems/conf.ini
+    echo heartbeat=$EMS_HEARTBEAT >> /etc/openbaton/ems/conf.ini
+    echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
+    export hn=`hostname`
+    echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
+    echo hostname=$hn >> /etc/openbaton/ems/conf.ini
 
-#adduser user
-#echo -e "password\\npassword" | (passwd user)
+    service ems restart
+}
+
+
+################
+#### Zabbix ####
+################
+
+configure_zabbix () {
+    sed -i -e "s|ServerActive=127.0.0.1|ServerActive=${MONITORING_IP}:10051|g" -e "s|Server=127.0.0.1|Server=${MONITORING_IP}|g" -e "s|Hostname=Zabbix server|#Hostname=|g" /etc/zabbix/zabbix_agentd.conf
+    service zabbix-agent restart
+}
+
+
+##############
+#### Main ####
+##############
 
 if [ $(cat /etc/os-release | grep -i "ubuntu" | wc -l) -gt 0 ]; then
     os=ubuntu
@@ -115,7 +140,7 @@ fi
 case ${os} in
     ubuntu) 
 	    install_ems_on_ubuntu
-        if [ -z "$MONITORING_IP" ]; then
+        if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
 	        install_zabbix_on_ubuntu
@@ -123,7 +148,7 @@ case ${os} in
 	    ;;
     centos)
 	    install_ems_on_centos
-        if [ -z "$MONITORING_IP" ]; then
+        if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
             yum install -y */lsb-release
@@ -137,18 +162,7 @@ case ${os} in
 	    ;;
 esac	
 
-
-mkdir -p /etc/openbaton/ems
-echo [ems] > /etc/openbaton/ems/conf.ini
-echo broker_ip=$BROKER_IP >> /etc/openbaton/ems/conf.ini
-echo broker_port=$BROKER_PORT >> /etc/openbaton/ems/conf.ini
-echo username=$USERNAME >> /etc/openbaton/ems/conf.ini
-echo password=$PASSWORD >> /etc/openbaton/ems/conf.ini
-echo exchange=$EXCHANGE_NAME >> /etc/openbaton/ems/conf.ini
-echo heartbeat=$EMS_HEARTBEAT >> /etc/openbaton/ems/conf.ini
-echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
-export hn=`hostname`
-echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
-echo hostname=$hn >> /etc/openbaton/ems/conf.ini
-
-service ems restart
+configure_ems
+if [ -n "${MONITORING_IP}" ]; then
+    configure_zabbix
+fi
