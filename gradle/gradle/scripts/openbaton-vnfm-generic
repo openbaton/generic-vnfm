@@ -33,7 +33,7 @@ set -u
 
 OPENBATON_COMPONENT_NAME_FANCY="VNFM Generic (VNFMG)"
 OPENBATON_COMPONENT_NAME=vnfm-generic
-OPENBATON_COMPONENT_RELATIVE_SUBPATH=vnfm-generic
+OPENBATON_COMPONENT_RELATIVE_SUBPATH=vnfm/generic
 
 OPENBATON_COMPONENT_CONFIG_FILE=/etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties
 OPENBATON_COMPONENT_JAR_FILE_NAME=openbaton-${OPENBATON_COMPONENT_NAME}
@@ -87,7 +87,7 @@ check_already_running () {
 
 set_jar_version () {
 	openbaton_component_jar_file_name_versioned=$(ls -ct ${OPENBATON_COMPONENT_JAR_INSTALL_DIR} | grep "${OPENBATON_COMPONENT_JAR_FILE_NAME}" | grep "jar" | head -n 1)
-	if [ ${openbaton_component_jar_file_name_versioned} = "" ]; then
+	if [ "${openbaton_component_jar_file_name_versioned}" = "" ]; then
         log_failure_msg "The Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} is not installed (jar-file not found)"
 		exit 1	
     fi
