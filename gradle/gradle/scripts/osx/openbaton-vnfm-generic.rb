@@ -2,7 +2,7 @@ class OpenbatonVnfmGeneric < Formula
   desc "Formula of Open Baton VNFM Generic"
   homepage "http://www.openbaton.org"
   url "https://codeload.github.com/openbaton/generic-vnfm/legacy.tar.gz/develop"
-  version "3.1.1-SNAPSHOT"
+  version "3.2.0-SNAPSHOT"
   # sha256 "7a6fde8dd84f09b935b75d85cb1e58327007f677ebc05f8b31d8e46132725fc5"
 
   depends_on :java => "1.7+"
