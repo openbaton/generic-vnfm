@@ -25,10 +25,10 @@ ext {
     jarSubpathName = "${componentName}".replaceAll("-", "/")
 }
 
-task makedeb(type: Deb, dependsOn: [jar, build]) {
-    packageName = (applicationRelease) ? "${fullName}" : "${fullName}-nightly"
+task makeDeb(type: Deb, dependsOn: [jar, build]) {
+    packageName = (applicationRelease) ? "${fullName}-${version}" : "${fullName}-${version}-nightly"
     version = debianApplicationVersionFull
-    //release = 1 
+    //release = 1
     priority = 'optional'
     arch = 'all'
     maintainer = 'Open Baton Team <info@open-baton.org>'
@@ -60,5 +60,21 @@ task makedeb(type: Deb, dependsOn: [jar, build]) {
     from("gradle/gradle/scripts/systemd/${fullName}.service")           { into "/usr/lib/systemd/system/"}                      // executable to run the Component as a service (Systemd)
     from("gradle/gradle/scripts/systemd/${fullName}.env")               { into "/usr/lib/openbaton/systemd/env/"}               // environment file to run the Component as a service (Systemd)
     from("gradle/gradle/scripts/systemd/${fullName}.preexecstart")      { into "/usr/lib/openbaton/systemd/preexecstart/"}      // preexecstart file to run the Component as a service (Systemd)
+}
+
+task makeMetaDeb(type: Deb) {
+    packageName = (applicationRelease) ? "${fullName}" : "${fullName}-nightly"
+    version = debianApplicationVersionFull
+    //release = 1
+    priority = 'optional'
+    arch = 'all'
+    maintainer = 'Open Baton Team <info@open-baton.org>'
+    vendor = 'Open Source (Implemented by Fraunhofer FOKUS and TUB)'
+    license = 'Apache 2.0 License'
+    url = 'http://openbaton.github.io/index.html'
+    summary = 'Open Baton Generic VNF Manager (VNFMG) (metapackage depending on the latest version)'
+    packageDescription = 'The Generic Virtual Network Function Manager (VNFMG) is a component of the Open Baton project which is an ETSI compliant implementation of a NFV Management and Orchestration (MANO) System'
+
+    requires("${fullName}-${version}")
 }
 
