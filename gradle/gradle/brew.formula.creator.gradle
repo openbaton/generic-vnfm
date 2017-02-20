@@ -1,18 +1,28 @@
-//apply from: 'gradle/gradle/command.line.helper.gradle'
-
-// to be executed just before the new release so that it gets the right version
+// Create the brew formula for a specific git branch and version
+// This task accepts two arguments:
+// -   "b": git branch for which you want to create the Brew formula
+// -   "v": version
+// e.q. ./gradlew makeBrewFormula -Pb=3.2.0 -Pv=3.2.0
+// e.q. ./gradlew mBF -Pb=develop -Pv=3.2.1-SNAPSHOT
 task makeBrewFormula() {
     doLast {
         def brewFormula = new File("${rootProject.projectDir}/gradle/gradle/scripts/osx/openbaton-vnfm-generic.rb")
         String brewFormulaText = brewFormula.text
         String brewFormulaTextNew = ""
-        String currentBranch = version.toString().contains("-SNAPSHOT") ? "develop" : version
+        String b = project.hasProperty('b') ? project.property('b') : ""
+        String v = project.hasProperty('v') ? project.property('v') : ""
+        if(b.isEmpty() || v.isEmpty()){
+            println "ERROR: Please specify the branch and version for which you want to create the Brew formula"
+            println "e.q. ./gradlew makeBrewFormula -Pb=3.2.0 -Pv=3.2.0"
+            println "e.q. ./gradlew mBF -Pb=develop -Pv=3.2.1-SNAPSHOT"
+            return
+        }
         brewFormulaText.readLines().each {
             line ->
                 if (line.trim().startsWith("version")) {
-                    brewFormulaTextNew += "  version \"" + version + "\"" + '\n'
+                    brewFormulaTextNew += "  version \"" + v + "\"" + '\n'
                 } else if (line.trim().startsWith("url")) {
-                    brewFormulaTextNew += "  url \"https://codeload.github.com/openbaton/generic-vnfm/legacy.tar.gz/" + currentBranch + "\"" + '\n'
+                    brewFormulaTextNew += "  url \"https://codeload.github.com/openbaton/generic-vnfm/legacy.tar.gz/" + b + "\"" + '\n'
                 } else {
                     brewFormulaTextNew += line + '\n'
                 }
