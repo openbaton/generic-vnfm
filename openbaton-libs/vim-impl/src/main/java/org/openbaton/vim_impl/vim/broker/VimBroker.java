@@ -28,10 +28,7 @@ import org.openbaton.exceptions.PluginException;
 import org.openbaton.exceptions.VimException;
 import org.openbaton.nfvo.vim_interfaces.vim.Vim;
 import org.openbaton.vim.drivers.interfaces.ClientInterfaces;
-import org.openbaton.vim_impl.vim.AmazonVIM;
 import org.openbaton.vim_impl.vim.GenericVIM;
-import org.openbaton.vim_impl.vim.OpenstackVIM;
-import org.openbaton.vim_impl.vim.TestVIM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,25 +117,16 @@ public class VimBroker implements org.openbaton.nfvo.vim_interfaces.vim.VimBroke
       type = split[0];
       name = split[1];
     }
-    switch (type) {
-      case "test":
-        //                return (Vim) context.getBean("testVIM", this.port);
-        if (name != null) return new TestVIM(name, 5672, this.managementPort);
-        return new TestVIM(this.managementPort);
-      case "openstack":
-        //                return (Vim) context.getBean("openstackVIM", this.port, context);
-        if (name != null)
-          return new OpenstackVIM(name, 5672, this.managementPort, context, brokerIp);
-        return new OpenstackVIM(this.managementPort, context);
-
-      case "amazon":
-        //                return (Vim) context.getBean("amazonVIM", this.port);
-        return new AmazonVIM(this.managementPort);
-      default:
-        if (name != null)
-          return new GenericVIM(type + "." + name, brokerIp, this.managementPort, context);
-        return new GenericVIM(type, context);
-    }
+    return new GenericVIM(
+        type,
+        rabbitUsername,
+        rabbitPassword,
+        brokerIp,
+        Integer.parseInt(port),
+        this.managementPort,
+        context,
+        pluginName,
+        Integer.parseInt(pluginTimeout));
   }
 
   @Override
