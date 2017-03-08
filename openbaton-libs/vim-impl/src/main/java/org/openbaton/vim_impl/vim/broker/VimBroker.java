@@ -50,64 +50,13 @@ public class VimBroker implements org.openbaton.nfvo.vim_interfaces.vim.VimBroke
   @Value("${nfvo.rabbit.brokerIp:localhost}")
   private String brokerIp;
 
-  public String getBrokerIp() {
-    return brokerIp;
-  }
-
-  public void setBrokerIp(String brokerIp) {
-    this.brokerIp = brokerIp;
-  }
-
-  public String getPluginTimeout() {
-    return pluginTimeout;
-  }
-
-  public void setPluginTimeout(String pluginTimeout) {
-    this.pluginTimeout = pluginTimeout;
-  }
-
-  public String getRabbitUsername() {
-    return rabbitUsername;
-  }
-
-  public void setRabbitUsername(String rabbitUsername) {
-    this.rabbitUsername = rabbitUsername;
-  }
-
-  public String getRabbitPassword() {
-    return rabbitPassword;
-  }
-
-  public void setRabbitPassword(String rabbitPassword) {
-    this.rabbitPassword = rabbitPassword;
-  }
-
-  public String getPort() {
-    return port;
-  }
-
-  public void setPort(String port) {
-    this.port = port;
-  }
-
-  @Value("${nfvo.plugin.timeout:120000}")
-  private String pluginTimeout;
-
-  @Value("${spring.rabbitmq.username:admin}")
-  private String rabbitUsername;
-
-  @Value("${spring.rabbitmq.password:openbaton}")
-  private String rabbitPassword;
-
   @Value("${nfvo.vim.drivers.allowInfiniteQuota:false}")
   private String allowInfiniteQuota;
-
-  @Value("${spring.rabbitmq.port:5672}")
-  private String port;
 
   private Logger log = LoggerFactory.getLogger(this.getClass());
 
   @Autowired private ConfigurableApplicationContext context;
+
   private HashMap<String, ClientInterfaces> clientInterfaces;
 
   public String getAllowInfiniteQuota() {
@@ -142,42 +91,31 @@ public class VimBroker implements org.openbaton.nfvo.vim_interfaces.vim.VimBroke
     return this.clientInterfaces.get(type);
   }
 
-  //  @Deprecated
-  //  @Override
-  //  public Vim getVim(String type, String name) throws PluginException {
-  //    if (type.contains(".")) {
-  //      type = type.split("\\.")[0];
-  //    }
-  //    switch (type) {
-  //      case "test":
-  //        return (Vim) context.getBean("testVIM", type, name, this.managementPort);
-  //      case "openstack":
-  //        return (Vim) context.getBean("openstackVIM", type, name, this.managementPort, context);
-  //      case "amazon":
-  //        return (Vim) context.getBean("amazonVIM", type, name, this.managementPort);
-  //      default:
-  //        return new GenericVIM(name, type, context);
-  //    }
-  //  }
+  @Deprecated
+  @Override
+  public Vim getVim(String type, String name) throws PluginException {
+    if (type.contains(".")) {
+      type = type.split("\\.")[0];
+    }
+    switch (type) {
+      case "test":
+        return (Vim) context.getBean("testVIM", type, name, this.managementPort);
+      case "openstack":
+        return (Vim) context.getBean("openstackVIM", type, name, this.managementPort, context);
+      case "amazon":
+        return (Vim) context.getBean("amazonVIM", type, name, this.managementPort);
+      default:
+        return new GenericVIM(name, type, context);
+    }
+  }
 
   @Override
   public Vim getVim(String type) throws PluginException {
-    /** Needed only for test */
-    try {
-      port = String.valueOf(Integer.parseInt(port));
-    } catch (NumberFormatException e) {
-      port = "5672";
-    }
-    try {
-      pluginTimeout = String.valueOf(Integer.parseInt(pluginTimeout));
-    } catch (NumberFormatException e) {
-      pluginTimeout = "120000";
-    }
-    String pluginName = null;
+    String name = null;
     if (type.contains(".")) {
       String[] split = type.split("\\.");
       type = split[0];
-      pluginName = split[1];
+      name = split[1];
     }
     return new GenericVIM(
         type,
@@ -191,44 +129,44 @@ public class VimBroker implements org.openbaton.nfvo.vim_interfaces.vim.VimBroke
         Integer.parseInt(pluginTimeout));
   }
 
-  //  @Override
-  //  public Vim getVim(String type, int port) throws PluginException {
-  //    String name = null;
-  //    if (type.contains(".")) {
-  //      String[] split = type.split("\\.");
-  //      type = split[0];
-  //      name = split[1];
-  //    }
-  //    switch (type) {
-  //      case "test":
-  //        return (Vim) context.getBean("testVIM", port, this.managementPort);
-  //      case "openstack":
-  //        return (Vim) context.getBean("openstackVIM", port, this.managementPort, context);
-  //      case "amazon":
-  //        return (Vim) context.getBean("amazonVIM", port, this.managementPort);
-  //      default:
-  //        return new GenericVIM(type + "." + name, this.brokerIp, port, this.managementPort, context);
-  //    }
-  //  }
+  @Override
+  public Vim getVim(String type, int port) throws PluginException {
+    String name = null;
+    if (type.contains(".")) {
+      String[] split = type.split("\\.");
+      type = split[0];
+      name = split[1];
+    }
+    switch (type) {
+      case "test":
+        return (Vim) context.getBean("testVIM", port, this.managementPort);
+      case "openstack":
+        return (Vim) context.getBean("openstackVIM", port, this.managementPort, context);
+      case "amazon":
+        return (Vim) context.getBean("amazonVIM", port, this.managementPort);
+      default:
+        return new GenericVIM(type + "." + name, this.brokerIp, port, this.managementPort, context);
+    }
+  }
 
-  //  @Override
-  //  public Vim getVim(String type, String name, String port) {
-  //    if (type.contains(".")) type = type.split("\\.")[0];
-  //    switch (type) {
-  //      case "test":
-  //        return (Vim)
-  //            context.getBean("testVIM", type, name, Integer.parseInt(port), this.managementPort);
-  //      case "openstack":
-  //        return (Vim)
-  //            context.getBean(
-  //                "openstackVIM", type, name, Integer.parseInt(port), this.managementPort, context);
-  //      case "amazon":
-  //        return (Vim)
-  //            context.getBean("amazonVIM", type, name, Integer.parseInt(port), this.managementPort);
-  //      default:
-  //        throw new UnsupportedOperationException();
-  //    }
-  //  }
+  @Override
+  public Vim getVim(String type, String name, String port) {
+    if (type.contains(".")) type = type.split("\\.")[0];
+    switch (type) {
+      case "test":
+        return (Vim)
+            context.getBean("testVIM", type, name, Integer.parseInt(port), this.managementPort);
+      case "openstack":
+        return (Vim)
+            context.getBean(
+                "openstackVIM", type, name, Integer.parseInt(port), this.managementPort, context);
+      case "amazon":
+        return (Vim)
+            context.getBean("amazonVIM", type, name, Integer.parseInt(port), this.managementPort);
+      default:
+        throw new UnsupportedOperationException();
+    }
+  }
 
   @Override
   public Quota getLeftQuota(VimInstance vimInstance) throws VimException, PluginException {
@@ -259,11 +197,9 @@ public class VimBroker implements org.openbaton.nfvo.vim_interfaces.vim.VimBroke
           || maximalQuota.getKeyPairs() < 0
           || maximalQuota.getFloatingIps() < 0) {
         log.error(
-            "Infinite quota are not allowed. Please set nfvo.vim.drivers.allowInfiniteQuota to true or change the "
-                + "quota in your VIM installation");
+            "Infinite quota are not allowed. Please set nfvo.vim.drivers.allowInfiniteQuota to true or change the quota in your VIM installation");
         throw new VimException(
-            "Infinite quota are not allowed. Please set nfvo.vim.drivers.allowInfiniteQuota to true or change the "
-                + "quota in your VIM installation");
+            "Infinite quota are not allowed. Please set nfvo.vim.drivers.allowInfiniteQuota to true or change the quota in your VIM installation");
       }
     }
 
