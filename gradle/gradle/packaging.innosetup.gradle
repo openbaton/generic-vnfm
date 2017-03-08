@@ -16,43 +16,43 @@
  */
 
 // Windows Installer ///////////////////////////////////////////////////////////
-task exe(dependsOn: [dependsOn: [jar, build]]) << {
-	def innoSetupDir = new File("${buildDir}/innosetup")
-	
-	delete innoSetupDir	
-	innoSetupDir.mkdir();
-	copy {
-	from("${rootProject.projectDir}/gradle/innosetup/start.bat")
-	from("${rootProject.projectDir}/gradle/innosetup/iscc.sh")
-	
-	into(innoSetupDir)
-	}	
-	
-	copy {
-		from("${buildDir}/libs/generic-vnfm-${applicationVersion}.jar")
-		rename("generic-vnfm-${applicationVersion}.jar","generic-vnfm.jar")
-		into(innoSetupDir)
-		
-		
-	}
-	
+task exe(dependsOn: [dependsOn: [jar, build]]) {
+	doLast {
+		def innoSetupDir = new File("${buildDir}/innosetup")
 
-	copy {
-		from("${rootProject.projectDir}/gradle/innosetup/innosetup.iss")
-		expand([
-			applicationVersion: "${applicationVersion}",
-			applicationVersionFull: "${applicationVersionFull}",			
-		])
-		into(innoSetupDir)
-	}
-	exec {
-	
-        workingDir innoSetupDir
-	commandLine "./iscc.sh"
-	
-	}
+		delete innoSetupDir
+		innoSetupDir.mkdir();
+		copy {
+			from("${rootProject.projectDir}/gradle/innosetup/start.bat")
+			from("${rootProject.projectDir}/gradle/innosetup/iscc.sh")
 
-	
+			into(innoSetupDir)
+		}
+
+		copy {
+			from("${buildDir}/libs/generic-vnfm-${applicationVersion}.jar")
+			rename("generic-vnfm-${applicationVersion}.jar","generic-vnfm.jar")
+			into(innoSetupDir)
+
+
+		}
+
+
+		copy {
+			from("${rootProject.projectDir}/gradle/innosetup/innosetup.iss")
+			expand([applicationVersion    : "${applicationVersion}",
+					applicationVersionFull: "${applicationVersionFull}",
+			])
+			into(innoSetupDir)
+		}
+		exec {
+
+			workingDir innoSetupDir
+			commandLine "./iscc.sh"
+
+		}
+
+	}
 }
 
 

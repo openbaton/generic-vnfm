@@ -94,7 +94,7 @@ public class ElementManagementSystem implements EmsInterface {
   @Override
   public void unregisterFromMsg(String json) throws BadFormatException {
     this.log.debug("EMSRegister received: " + json);
-    JsonObject object = this.parser.fromJson(json, JsonObject.class);
+    JsonObject object = parser.fromJson(json, JsonObject.class);
     String hostname = object.get("hostname").getAsString();
     String extractedId = extractIdFromHostname(hostname);
     String hostnameToRemove = null;
@@ -139,7 +139,7 @@ public class ElementManagementSystem implements EmsInterface {
   }
 
   private String extractIdFromHostname(String hostname) throws BadFormatException {
-    String extractedId = "";
+    String extractedId;
     Pattern pattern = Pattern.compile("-(\\d+)$");
     Matcher matcher = pattern.matcher(hostname.trim());
     if (matcher.find()) {
@@ -161,12 +161,13 @@ public class ElementManagementSystem implements EmsInterface {
         break;
       }
     }
-    if (registered == false) {
+    if (!registered) {
       throw new RuntimeException("No EMS yet for host with extracted host ID: " + hostId);
     }
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void saveScriptOnEms(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts) throws Exception {
 
@@ -210,6 +211,7 @@ public class ElementManagementSystem implements EmsInterface {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void saveScriptOnEms(
       VNFCInstance vnfcInstance,
       Object scripts,
@@ -228,7 +230,7 @@ public class ElementManagementSystem implements EmsInterface {
           virtualNetworkFunctionRecord,
           vnfcInstance);
     } else if (scripts instanceof Set) {
-      Iterable<Script> scriptSet = (Set<Script>) scripts;
+      Iterable<Script> scriptSet = (Iterable<Script>) scripts;
       for (Script script : scriptSet) {
         log.debug("Sending script encoded base64 ");
         String base64String = Base64.encodeBase64String(script.getPayload());
@@ -265,7 +267,7 @@ public class ElementManagementSystem implements EmsInterface {
       throw new NullPointerException("Response from EMS is null");
     }
 
-    JsonObject jsonObject = this.parser.fromJson(response, JsonObject.class);
+    JsonObject jsonObject = parser.fromJson(response, JsonObject.class);
 
     if (jsonObject.get("status").getAsInt() == 0) {
       try {
