@@ -19,7 +19,12 @@
 
 package org.openbaton.vnfm.generic.core;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.common.Ip;
 import org.openbaton.catalogue.mano.common.LifecycleEvent;
@@ -43,9 +48,10 @@ import org.springframework.stereotype.Service;
 @Scope
 public class LifeCycleManagement {
 
-  protected Logger log = LoggerFactory.getLogger(this.getClass());
+  private Logger log = LoggerFactory.getLogger(this.getClass());
 
   @Autowired private ElementManagementSystem ems;
+  @Autowired private LogUtils logUtils;
 
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event)
@@ -93,8 +99,8 @@ public class LifeCycleManagement {
                     virtualNetworkFunctionRecord,
                     vnfcInstance);
             res.add(output);
-
-            LogUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
+            log.debug("Saving log to file...");
+            logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
             for (String key : tempEnv.keySet()) {
               env.remove(key);
             }
@@ -189,7 +195,7 @@ public class LifeCycleManagement {
                         vnfcInstance);
                 res.add(output);
 
-                LogUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
+                logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
                 for (String key : tempEnv.keySet()) {
                   env.remove(key);
                 }
@@ -285,7 +291,7 @@ public class LifeCycleManagement {
                     vnfcInstance);
             res.add(output);
 
-            LogUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
+            logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
             for (String key : tempEnv.keySet()) {
               env.remove(key);
             }
@@ -342,7 +348,7 @@ public class LifeCycleManagement {
             ems.executeActionOnEMS(
                 vnfcInstance.getHostname(), command, virtualNetworkFunctionRecord, vnfcInstance);
         res.add(output);
-        LogUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
+        logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
         for (String key : tempEnv.keySet()) {
           env.remove(key);
         }
@@ -412,7 +418,7 @@ public class LifeCycleManagement {
                       virtualNetworkFunctionRecord,
                       vnfcInstance);
               res.add(output);
-              LogUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance1, output);
+              logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance1, output);
             }
           }
         } else {
@@ -493,7 +499,7 @@ public class LifeCycleManagement {
                     vnfcInstanceLocal);
             res.add(output);
 
-            LogUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstanceLocal, output);
+            logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstanceLocal, output);
             for (String key : tempEnv.keySet()) {
               env.remove(key);
             }

@@ -36,7 +36,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.concurrent.ScheduledExecutorTask;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -49,7 +48,6 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
   @Value("${vnfm.ems.script.old:60}")
   private int old;
 
-  private ScheduledExecutorTask scheduledExecutorTask;
   @Autowired private Gson gson;
 
   private Logger log = LoggerFactory.getLogger(getClass());
@@ -68,7 +66,7 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
   public String sendLogs(String request) {
     String vnfrName = this.gson.fromJson(request, JsonObject.class).get("vnfrName").getAsString();
     String hostname = this.gson.fromJson(request, JsonObject.class).get("hostname").getAsString();
-
+    log.debug("Received request for retrieving logs for: " + vnfrName);
     Map<String, List<String>> logs = new HashMap<>();
     try {
       logs.put(
@@ -87,11 +85,21 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
           + "\"}";
     }
 
-    return "{ \"answer\": " + this.gson.toJson(logs) + '}';
+    String answer = "{ \"answer\": " + this.gson.toJson(logs) + '}';
+    log.debug("Answering: " + answer);
+    return answer;
   }
 
   @PostConstruct
   private void init() {
+    File logPathFolder = new File(this.logPath);
+    if (!logPathFolder.exists())
+      if (!logPathFolder.mkdirs()) {
+        log.error(
+            "Not able to create folder: "
+                + logPath
+                + " where i would like to store the logs. You won't be able to see the logs from the NFVO if you don't fix that issue. Either you create it on your own, or you give me the permission to create it :)");
+      }
     deleteLogs();
   }
 

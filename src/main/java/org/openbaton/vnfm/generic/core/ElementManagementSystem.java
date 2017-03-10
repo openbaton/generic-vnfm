@@ -39,6 +39,7 @@ import org.openbaton.vnfm.generic.utils.JsonUtils;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -65,15 +66,19 @@ public class ElementManagementSystem implements EmsInterface {
   protected String emsVersion;
 
   //TODO consider using DB in case of failure etc...
-  private Set<String> expectedHostnames;
+  private static Set<String> expectedHostnames;
+
+  private static Set<String> unexpectedHostnames;
 
   private String scriptPath;
 
   private VnfmHelper vnfmHelper;
+  @Autowired private LogUtils logUtils;
 
   public void init(String scriptPath, VnfmHelper vnfmHelper) {
     this.scriptPath = scriptPath;
     this.expectedHostnames = new HashSet<>();
+    this.unexpectedHostnames = new HashSet<>();
     this.vnfmHelper = vnfmHelper;
   }
 
@@ -89,6 +94,7 @@ public class ElementManagementSystem implements EmsInterface {
   public void unregister(String hostname) {
     this.log.debug("EMSRegister removing: " + hostname);
     if (this.expectedHostnames.contains(hostname)) this.expectedHostnames.remove(hostname);
+    if (this.unexpectedHostnames.contains(hostname)) this.unexpectedHostnames.remove(hostname);
   }
 
   @Override
@@ -108,7 +114,11 @@ public class ElementManagementSystem implements EmsInterface {
       this.log.debug("EMSRegister removing: " + hostnameToRemove);
       this.expectedHostnames.remove(hostnameToRemove);
     } else {
-      log.warn("Host " + hostname + " was not found in the list of awaiting hostnames");
+      log.warn(
+          "Host "
+              + hostname
+              + " was not found in the list of awaiting hostnames, adding it to unexpected hostnames, damn... too fast");
+      this.unexpectedHostnames.add(hostname);
     }
   }
 
@@ -155,15 +165,26 @@ public class ElementManagementSystem implements EmsInterface {
   public void checkEmsStarted(String hostId) throws BadFormatException {
     boolean registered = true;
     log.debug("Expected hostnames: " + this.getExpectedHostnames());
+    log.debug("Unexpected hostnames: " + this.unexpectedHostnames);
+    for (String unexpectedHostname : this.unexpectedHostnames) {
+      if (unexpectedHostname.endsWith(hostId)) {
+        log.debug(
+            "Found "
+                + hostId
+                + " in unexpected hostname, this means that it is already registered");
+        return;
+      }
+    }
     for (String expectedHostname : this.getExpectedHostnames()) {
       if (expectedHostname.endsWith(hostId)) {
+        log.debug(
+            "Found " + hostId + " in expected hostname, this means i am still waiting for it");
         registered = false;
         break;
       }
     }
-    if (!registered) {
+    if (!registered)
       throw new RuntimeException("No EMS yet for host with extracted host ID: " + hostId);
-    }
   }
 
   @Override
@@ -280,7 +301,7 @@ public class ElementManagementSystem implements EmsInterface {
       String err = jsonObject.get("err").getAsString();
       log.error(err);
       vnfcInstance.setState("error");
-      LogUtils.saveLogToFile(
+      logUtils.saveLogToFile(
           vnfr,
           parser.fromJson(command, JsonObject.class).get("payload").getAsString(),
           vnfcInstance,
@@ -304,5 +325,13 @@ public class ElementManagementSystem implements EmsInterface {
   @Override
   public String getEmsVersion() {
     return emsVersion;
+  }
+
+  public Set<String> getUnexpectedHostnames() {
+    return unexpectedHostnames;
+  }
+
+  public void setUnexpectedHostnames(Set<String> unexpectedHostnames) {
+    this.unexpectedHostnames = unexpectedHostnames;
   }
 }
