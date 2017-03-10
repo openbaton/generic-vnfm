@@ -76,10 +76,18 @@ function start {
     if [ "${screen_exists}" -eq "0" ]; then
 	    echo "Starting the Generic-VNFM in a new screen session (attach to the screen with screen -x openbaton)"
 	    if [ -f ${_openbaton_config_file} ]; then
-            screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
-        else
-            screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
-        fi
+		if [ $1 == "true" ]; then
+            	    java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+		else
+            	    screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+		fi
+            else
+	        if [ $1 == "true" ]; then
+		    java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
+	        else
+		    screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
+	        fi
+            fi
     else
         echo "Starting the Generic-VNFM in the existing screen session (attach to the screen with screen -x openbaton)"
         if [ -f ${_openbaton_config_file} ]; then
@@ -147,6 +155,8 @@ do
             clean
             compile
             start ;;
+        "start_fg" )
+            start "true" ;;
         "start" )
             start ;;
         "stop" )
