@@ -18,11 +18,7 @@
 package org.openbaton.vnfm.generic;
 
 import com.google.gson.JsonObject;
-import java.io.*;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
+
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.descriptor.VNFComponent;
@@ -48,6 +44,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
+
 /** Created by mob on 16.07.15. */
 @EnableScheduling
 public class GenericVNFM extends AbstractVnfmSpringAmqp {
@@ -58,6 +62,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Value("${vnfm.ems.userdata.filepath:/etc/openbaton/openbaton-vnfm-generic-user-data.sh}")
   private String userDataFilePath;
+
+  @Autowired private LogUtils logUtils;
 
   public static void main(String[] args) {
     SpringApplication.run(GenericVNFM.class, args);
@@ -514,7 +520,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   protected void setup() {
     super.setup();
     String scriptPath = properties.getProperty("script-path", "/opt/openbaton/scripts");
-    LogUtils.init();
+    logUtils.init();
     ems.init(scriptPath, vnfmHelper);
   }
 
