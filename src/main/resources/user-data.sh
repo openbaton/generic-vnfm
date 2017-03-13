@@ -32,7 +32,7 @@ source /etc/bashrc
 ################
 
 install_ems_on_ubuntu () {
-    result=$(dpkg -l | grep "ems" | wc -l)
+    result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
     if [ ${result} -eq 0 ]; then
         echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
         echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
@@ -62,7 +62,7 @@ install_zabbix_on_ubuntu () {
 ################
 
 install_ems_on_centos () {
-    result=$(yum list installed | grep "ems" | wc -l)
+    result=$(yum list installed | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
     if [ ${result} -eq 0 ]; then
         echo "Downloading EMS from ${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}"
         echo "[openbaton]" >> /etc/yum.repos.d/OpenBaton.repo
