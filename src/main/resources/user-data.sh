@@ -32,8 +32,8 @@ source /etc/bashrc
 ################
 
 install_ems_on_ubuntu () {
-    result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
+    dpkg -l "ems-$EMS_VERSION"
+    if [ $? -ne 0 ]; then
         echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
         echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
         wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
