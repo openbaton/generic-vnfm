@@ -13,7 +13,7 @@ class OpenbatonVnfmGeneric < Formula
     system "./generic-vnfm.sh", "compile"
     system "./gradlew", "installDist"
     # Change external path with /usr/local/etc instead /etc (due to brew internal directories)
-    inreplace "build/install/generic-vnfm/bin/openbaton-vnfm-generic", "CONFIG_FILE=/config/file/path", "CONFIG_FILE=#{etc}/openbaton/vnfm/generic/application.properties"
+    inreplace "build/install/generic-vnfm/bin/openbaton-vnfm-generic", "^CONFIG_FILE=.*", "CONFIG_FILE=#{etc}/openbaton/vnfm/generic/application.properties"
     # Change application path
     inreplace "build/install/generic-vnfm/bin/openbaton-vnfm-generic", /APP_HOME="`pwd -P`"/, %Q(APP_HOME="#{libexec}")
 

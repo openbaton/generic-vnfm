@@ -16,6 +16,14 @@
  */
 apply plugin: "application"
 
+distributions {
+    main {
+        contents {
+            from { 'src/main/resources' }
+        }
+    }
+}
+
 startScripts {
     doLast {
         def unixFile = file getUnixScript()
