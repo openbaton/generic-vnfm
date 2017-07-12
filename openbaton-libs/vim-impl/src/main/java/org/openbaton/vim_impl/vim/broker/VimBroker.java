@@ -53,6 +53,72 @@ public class VimBroker implements org.openbaton.nfvo.vim_interfaces.vim.VimBroke
   @Value("${nfvo.vim.drivers.allowInfiniteQuota:false}")
   private String allowInfiniteQuota;
 
+  public String getBrokerIp() {
+    return brokerIp;
+  }
+
+  public void setBrokerIp(String brokerIp) {
+    this.brokerIp = brokerIp;
+  }
+
+  public String getPluginTimeout() {
+    return pluginTimeout;
+  }
+
+  public void setPluginTimeout(String pluginTimeout) {
+    this.pluginTimeout = pluginTimeout;
+  }
+
+  public String getRabbitUsername() {
+    return rabbitUsername;
+  }
+
+  public void setRabbitUsername(String rabbitUsername) {
+    this.rabbitUsername = rabbitUsername;
+  }
+
+  public String getRabbitPassword() {
+    return rabbitPassword;
+  }
+
+  public void setRabbitPassword(String rabbitPassword) {
+    this.rabbitPassword = rabbitPassword;
+  }
+
+  public String getPort() {
+    return port;
+  }
+
+  public void setPort(String port) {
+    this.port = port;
+  }
+
+  public String getVirtualHost() {
+    return virtualHost;
+  }
+
+  public void setVirtualHost(String virtualHost) {
+    this.virtualHost = virtualHost;
+  }
+
+  @Value("${nfvo.plugin.timeout:120000}")
+  private String pluginTimeout;
+
+  @Value("${spring.rabbitmq.username:admin}")
+  private String rabbitUsername;
+
+  @Value("${spring.rabbitmq.password:openbaton}")
+  private String rabbitPassword;
+
+  @Value("${nfvo.vim.drivers.allowInfiniteQuota:false}")
+  private String allowInfiniteQuota;
+
+  @Value("${spring.rabbitmq.port:5672}")
+  private String port;
+
+  @Value("${spring.rabbitmq.virtual-host:/}")
+  private String virtualHost;
+  
   private Logger log = LoggerFactory.getLogger(this.getClass());
 
   @Autowired private ConfigurableApplicationContext context;
@@ -123,6 +189,7 @@ public class VimBroker implements org.openbaton.nfvo.vim_interfaces.vim.VimBroke
         rabbitPassword,
         brokerIp,
         Integer.parseInt(port),
+        virtualHost,
         this.managementPort,
         context,
         pluginName,
