@@ -26,7 +26,7 @@ buildscript {
 
 plugins {
     id 'net.researchgate.release' version '2.5.0'
-    id "nebula.os-package" version "4.3.0"
+    id "nebula.ospackage" version "4.3.0"
     id "com.github.sherter.google-java-format" version "0.6"
     id 'com.github.ben-manes.versions' version '0.13.0'
     //id 'org.springframework.boot' version '1.4.3.RELEASE'
@@ -40,7 +40,7 @@ apply plugin: 'eclipse'
 apply from: 'openbaton-libs/gradle/gradle/git.helpers.gradle'
 apply from: 'openbaton-libs/gradle/gradle/command.line.helper.gradle'
 
-.ext {
+ext {
     //------------------------------------------------//
     /**
      * Spring Related Variables
@@ -66,6 +66,7 @@ apply from: 'openbaton-libs/gradle/gradle/command.line.helper.gradle'
      * gradle Related Vars
      */
     mainClass = 'org.openbaton.vnfm.generic.GenericVNFM'
+    //------------------------------------------------//
     //------------------------------------------------//
     /**
      * Junit Version
