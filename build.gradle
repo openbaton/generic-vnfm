@@ -20,30 +20,30 @@ buildscript {
     }
     dependencies {
         classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
+        classpath 'se.transmode.gradle:gradle-docker:1.2'
     }
 }
 
 plugins {
-    id 'net.researchgate.release' version '2.5.0'
-    id "nebula.ospackage" version "4.3.0"
-    id "com.github.sherter.google-java-format" version "0.6"
-    id 'com.github.ben-manes.versions' version '0.13.0'
-    //id 'org.springframework.boot' version '1.4.3.RELEASE'
+    id 'net.researchgate.release' version '2.1.2'
+    id "nebula.os-package" version "2.2.6"
+    id "com.github.sherter.google-java-format" version "0.5"
 }
 
 apply plugin: 'java'
+apply plugin: 'docker'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 apply from: 'openbaton-libs/gradle/gradle/git.helpers.gradle'
 apply from: 'openbaton-libs/gradle/gradle/command.line.helper.gradle'
 
-ext {
+project.ext {
     //------------------------------------------------//
     /**
      * Spring Related Variables
      */
-    springVersion = '4.3.5.RELEASE'
+    springVersion = '4.2.2.RELEASE'
     springBootVersion = '1.2.5.RELEASE'
     //------------------------------------------------//
     //------------------------------------------------//
@@ -65,11 +65,6 @@ ext {
      */
     mainClass = 'org.openbaton.vnfm.generic.GenericVNFM'
     //------------------------------------------------//
-    //------------------------------------------------//
-    /**
-     * Junit Version
-     */
-    junitVersion = "4.12"
 }
 
 apply from: 'openbaton-libs/gradle/gradle/application.java.gradle'
@@ -77,6 +72,7 @@ apply from: 'openbaton-libs/gradle/gradle/run.application.java.gradle'
 apply from: 'openbaton-libs/gradle/gradle/git.release.gradle'
 
 apply from: 'gradle/gradle/packaging.vnfm-generic.debian.gradle'
+apply from: 'gradle/gradle/packaging.vnfm-generic.docker.gradle'
 apply from: 'gradle/gradle/packaging.innosetup.gradle'
 apply from: 'gradle/gradle/distribution.gradle'
 apply from: 'gradle/gradle/brew.formula.creator.gradle'
@@ -122,7 +118,7 @@ javadoc {
 dependencies {
     compile project(':vnfm-sdk-amqp')
     compile 'commons-codec:commons-codec:1.10'
-    compile 'org.hibernate:hibernate-core:5.2.6.Final'
+    compile 'org.hibernate:hibernate-core:4.3.10.Final'
 }
 
 // Force code formatting
