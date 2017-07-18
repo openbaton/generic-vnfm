@@ -16,6 +16,14 @@
  */
 apply plugin: "application"
 
+distributions {
+    main {
+        contents {
+            from { 'src/main/resources' }
+        }
+    }
+}
+
 startScripts {
     doLast {
         def unixFile = file getUnixScript()
@@ -36,3 +44,5 @@ startScripts {
         unixFile.renameTo("${startScripts.outputDir}/openbaton-vnfm-generic")
     }
 }
+
+applicationDefaultJvmArgs = ["-Djava.security.egd=file:/dev/./urandom"]

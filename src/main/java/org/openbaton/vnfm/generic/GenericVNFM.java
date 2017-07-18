@@ -18,7 +18,13 @@
 package org.openbaton.vnfm.generic;
 
 import com.google.gson.JsonObject;
-
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.descriptor.VNFComponent;
@@ -43,14 +49,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
 
 /** Created by mob on 16.07.15. */
 @EnableScheduling
