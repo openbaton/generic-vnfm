@@ -18,7 +18,6 @@
 package org.openbaton.vnfm.generic.utils;
 
 import com.google.gson.Gson;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -26,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import javax.annotation.PostConstruct;
-
 import org.openbaton.catalogue.nfvo.messages.OrVnfmLogMessage;
 import org.openbaton.catalogue.nfvo.messages.VnfmOrLogMessage;
 import org.slf4j.Logger;
@@ -61,7 +59,6 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
     //        return new String(encoded, encoding);
   }
 
-
   @Override
   public VnfmOrLogMessage getLogs(OrVnfmLogMessage request) {
     String vnfrName = request.getVnfrName();
@@ -69,7 +66,8 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
     log.debug("Received request for retrieving logs for: " + vnfrName);
     VnfmOrLogMessage message = new VnfmOrLogMessage();
     try {
-      message.setOutputLog(readFile(this.logPath + vnfrName + '/' + hostname + ".log", Charset.defaultCharset()));
+      message.setOutputLog(
+          readFile(this.logPath + vnfrName + '/' + hostname + ".log", Charset.defaultCharset()));
       message.setErrorLog(
           readFile(
               this.logPath + vnfrName + '/' + hostname + "-error.log", Charset.defaultCharset()));
@@ -124,6 +122,4 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
       }
     }
   }
-
-
 }

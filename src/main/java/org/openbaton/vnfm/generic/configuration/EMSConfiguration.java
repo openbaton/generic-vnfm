@@ -25,8 +25,6 @@ import javax.annotation.PostConstruct;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
@@ -62,17 +60,17 @@ public class EMSConfiguration {
   private int minConcurrency;
   private int maxConcurrency;
 
-    @Value("${spring.rabbitmq.host}")
-    private String brokerIp;
+  @Value("${spring.rabbitmq.host}")
+  private String brokerIp;
 
-    @Value("${spring.rabbitmq.port}")
-    private int rabbitPort;
+  @Value("${spring.rabbitmq.port}")
+  private int rabbitPort;
 
-    @Value("${vnfm.ems.username}")
-    private String emsRabbitUsername;
+  @Value("${vnfm.ems.username}")
+  private String emsRabbitUsername;
 
-    @Value("${vnfm.ems.password}")
-    private String emsRabbitPassword;
+  @Value("${vnfm.ems.password}")
+  private String emsRabbitPassword;
 
   @Autowired(required = false)
   private EmsInterface registrator;
@@ -128,52 +126,52 @@ public class EMSConfiguration {
     log.info("Initialization of RabbitConfiguration");
 
     emsConnectionFactory = new CachingConnectionFactory();
-      ((CachingConnectionFactory)emsConnectionFactory).setHost(brokerIp);
-      ((CachingConnectionFactory)emsConnectionFactory).setPort(rabbitPort);
-      ((CachingConnectionFactory)emsConnectionFactory).setUsername(emsRabbitUsername);
-      ((CachingConnectionFactory)emsConnectionFactory).setPassword(emsRabbitPassword);
+    ((CachingConnectionFactory) emsConnectionFactory).setHost(brokerIp);
+    ((CachingConnectionFactory) emsConnectionFactory).setPort(rabbitPort);
+    ((CachingConnectionFactory) emsConnectionFactory).setUsername(emsRabbitUsername);
+    ((CachingConnectionFactory) emsConnectionFactory).setPassword(emsRabbitPassword);
 
     rabbitAdmin = new RabbitAdmin(emsConnectionFactory);
     TopicExchange topicExchange = new TopicExchange("openbaton-exchange");
     rabbitAdmin.declareExchange(topicExchange);
     log.info("exchange declared");
 
-      Properties properties = new Properties();
+    Properties properties = new Properties();
 
-      try {
-          properties.load(this.getClass().getClassLoader().getResourceAsStream("conf.properties"));
-      } catch (IOException e) {
-          e.printStackTrace();
-      }
-      queueName_emsRegistrator = "ems." + properties.getProperty("type") + ".register";
-      rabbitAdmin.declareQueue(new Queue("ems.generic.register", durable, exclusive, autodelete));
+    try {
+      properties.load(this.getClass().getClassLoader().getResourceAsStream("conf.properties"));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    queueName_emsRegistrator = "ems." + properties.getProperty("type") + ".register";
+    rabbitAdmin.declareQueue(new Queue("ems.generic.register", durable, exclusive, autodelete));
   }
 
-//  @Bean
-//  Queue queue_emsRegistrator() {
-//    Properties properties = new Properties();
-//
-//    try {
-//      properties.load(this.getClass().getClassLoader().getResourceAsStream("conf.properties"));
-//    } catch (IOException e) {
-//      e.printStackTrace();
-//    }
-//    queueName_emsRegistrator = "ems." + properties.getProperty("type") + ".register";
-//    rabbitAdmin.declareQueue(new Queue("ems.generic.register", durable, exclusive, autodelete));
-//
-//    return new Queue(queueName_emsRegistrator, durable, exclusive, autodelete);
-//  }
+  //  @Bean
+  //  Queue queue_emsRegistrator() {
+  //    Properties properties = new Properties();
+  //
+  //    try {
+  //      properties.load(this.getClass().getClassLoader().getResourceAsStream("conf.properties"));
+  //    } catch (IOException e) {
+  //      e.printStackTrace();
+  //    }
+  //    queueName_emsRegistrator = "ems." + properties.getProperty("type") + ".register";
+  //    rabbitAdmin.declareQueue(new Queue("ems.generic.register", durable, exclusive, autodelete));
+  //
+  //    return new Queue(queueName_emsRegistrator, durable, exclusive, autodelete);
+  //  }
 
-//  @Bean
-//  TopicExchange exchange() {
-//    TopicExchange topicExchange = new TopicExchange("openbaton-exchange");
-//    return topicExchange;
-//  }
+  //  @Bean
+  //  TopicExchange exchange() {
+  //    TopicExchange topicExchange = new TopicExchange("openbaton-exchange");
+  //    return topicExchange;
+  //  }
 
-//  @Bean
-//  Binding binding_vnfmCoreActionReply(TopicExchange exchange) {
-//    return BindingBuilder.bind(queue_emsRegistrator()).to(exchange).with(queueName_emsRegistrator);
-//  }
+  //  @Bean
+  //  Binding binding_vnfmCoreActionReply(TopicExchange exchange) {
+  //    return BindingBuilder.bind(queue_emsRegistrator()).to(exchange).with(queueName_emsRegistrator);
+  //  }
 
   @Bean
   MessageListenerAdapter listenerAdapter_emsRegistrator() {
