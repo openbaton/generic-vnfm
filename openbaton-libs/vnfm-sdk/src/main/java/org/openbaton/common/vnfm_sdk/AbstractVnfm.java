@@ -486,9 +486,7 @@ public abstract class AbstractVnfm
             // if the VNFM does not support log requests (i.e. no LogDispatcher is implemented), it will return a default "error" OrVnfmLogMessage
             if (logDispatcher != null) {
               nfvMessage = new VnfmOrLogMessage();
-              Map<String, List<String>> logs = logDispatcher.getLogs(orVnfmLogMessage);
-              ((VnfmOrLogMessage) nfvMessage).setErrorLog(logs.get("error"));
-              ((VnfmOrLogMessage) nfvMessage).setOutputLog(logs.get("output"));
+              nfvMessage = logDispatcher.getLogs(orVnfmLogMessage);
             } else {
               List<String> errorList = new LinkedList<>();
               errorList.add("This VNFM does not support the requesting of log files.");
