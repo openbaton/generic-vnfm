@@ -38,10 +38,12 @@ import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.openbaton.vnfm.generic.core.ElementManagementSystem;
 import org.openbaton.vnfm.generic.core.LifeCycleManagement;
 import org.openbaton.vnfm.generic.utils.JsonUtils;
+import org.openbaton.vnfm.generic.utils.LogDispatcher;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.FileInputStream;
@@ -64,6 +66,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   private String userDataFilePath;
 
   @Autowired private LogUtils logUtils;
+
+    @Autowired private LogDispatcher logDispatcher;
 
   public static void main(String[] args) {
     SpringApplication.run(GenericVNFM.class, args);
@@ -522,6 +526,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     String scriptPath = properties.getProperty("script-path", "/opt/openbaton/scripts");
     logUtils.init();
     ems.init(scriptPath, vnfmHelper);
+    super.logDispatcher = this.logDispatcher;
   }
 
   @Override

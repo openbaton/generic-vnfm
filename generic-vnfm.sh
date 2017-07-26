@@ -2,7 +2,7 @@
 
 source gradle.properties
 
-_openbaton_base="/opt/openbaton"
+_openbaton_base="/opt/openbaton/service_agent"
 _generic_base="${_openbaton_base}/generic-vnfm"
 _openbaton_config_file="/etc/openbaton/generic-vnfm.properties"
 _version=${version}
