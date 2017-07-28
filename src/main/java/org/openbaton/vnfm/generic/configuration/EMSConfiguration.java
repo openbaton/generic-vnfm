@@ -19,9 +19,6 @@
 
 package org.openbaton.vnfm.generic.configuration;
 
-import java.io.IOException;
-import java.util.Properties;
-import javax.annotation.PostConstruct;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +38,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+
+import java.io.IOException;
+import java.util.Properties;
+
+import javax.annotation.PostConstruct;
 
 /** Created by lto on 09/11/15. */
 @Configuration
@@ -66,10 +68,10 @@ public class EMSConfiguration {
   @Value("${spring.rabbitmq.port}")
   private int rabbitPort;
 
-  @Value("${vnfm.ems.username}")
+  @Value("${vnfm.ems.username:admin}")
   private String emsRabbitUsername;
 
-  @Value("${vnfm.ems.password}")
+  @Value("${vnfm.ems.password:openbaton}")
   private String emsRabbitPassword;
 
   @Autowired(required = false)
