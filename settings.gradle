@@ -17,3 +17,4 @@
 
 apply from: 'openbaton-libs/vnfm-sdk/gradle/gradle/settings-parent-vnfm-sdk-amqp.gradle'
 rootProject.name = 'generic-vnfm'
+

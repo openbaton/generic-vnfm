@@ -18,18 +18,15 @@
 package org.openbaton.vnfm.generic.utils;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.annotation.PostConstruct;
+import org.openbaton.catalogue.nfvo.messages.OrVnfmLogMessage;
+import org.openbaton.catalogue.nfvo.messages.VnfmOrLogMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,31 +60,27 @@ public class LogDispatcher implements org.openbaton.common.vnfm_sdk.interfaces.L
   }
 
   @Override
-  public String sendLogs(String request) {
-    String vnfrName = this.gson.fromJson(request, JsonObject.class).get("vnfrName").getAsString();
-    String hostname = this.gson.fromJson(request, JsonObject.class).get("hostname").getAsString();
+  public VnfmOrLogMessage getLogs(OrVnfmLogMessage request) {
+    String vnfrName = request.getVnfrName();
+    String hostname = request.getHostname();
     log.debug("Received request for retrieving logs for: " + vnfrName);
-    Map<String, List<String>> logs = new HashMap<>();
+    VnfmOrLogMessage message = new VnfmOrLogMessage();
     try {
-      logs.put(
-          "output",
+      message.setOutputLog(
           readFile(this.logPath + vnfrName + '/' + hostname + ".log", Charset.defaultCharset()));
-      logs.put(
-          "error",
+      message.setErrorLog(
           readFile(
               this.logPath + vnfrName + '/' + hostname + "-error.log", Charset.defaultCharset()));
     } catch (IOException exception) {
       exception.printStackTrace();
       this.log.error("Unable to retrieve logs: " + exception.getLocalizedMessage());
-      return "{ \"answer\": \""
-          + "Unable to retrieve logs: "
-          + exception.getLocalizedMessage()
-          + "\"}";
+      List<String> errorList = new LinkedList<>();
+      errorList.add("Unable to retrieve logs: " + exception.getLocalizedMessage());
+      message.setErrorLog(errorList);
+      return message;
     }
 
-    String answer = "{ \"answer\": " + this.gson.toJson(logs) + '}';
-    log.debug("Answering: " + answer);
-    return answer;
+    return message;
   }
 
   @PostConstruct
