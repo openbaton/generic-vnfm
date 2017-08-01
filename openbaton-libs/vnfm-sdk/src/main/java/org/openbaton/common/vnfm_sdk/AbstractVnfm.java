@@ -551,6 +551,7 @@ public abstract class AbstractVnfm
     brokerPort = extension.get("brokerPort");
     monitoringIp = extension.get("monitoringIp");
     timezone = extension.get("timezone");
+
     username = extension.get("username");
     password = extension.get("password");
     exchangeName = extension.get("exchangeName");

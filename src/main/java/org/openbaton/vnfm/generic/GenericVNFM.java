@@ -49,13 +49,21 @@ import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /** Created by mob on 16.07.15. */
 @EnableScheduling
+@ConfigurationProperties
 public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Autowired private ElementManagementSystem ems;
+
+  @Value("${vnfm.ems.username:admin}")
+  private String emsRabbitUsername;
+
+  @Value("${vnfm.ems.password:openbaton}")
+  private String emsRabbitPassword;
 
   @Autowired private LifeCycleManagement lcm;
 
@@ -549,8 +557,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     result = result.replace("export TIMEZONE=", "export TIMEZONE=" + timezone);
     result = result.replace("export BROKER_IP=", "export BROKER_IP=" + brokerIp);
     result = result.replace("export BROKER_PORT=", "export BROKER_PORT=" + brokerPort);
-    result = result.replace("export USERNAME=", "export USERNAME=" + username);
-    result = result.replace("export PASSWORD=", "export PASSWORD=" + password);
+    result = result.replace("export USERNAME=", "export USERNAME=" + emsRabbitUsername);
+    result = result.replace("export PASSWORD=", "export PASSWORD=" + emsRabbitPassword);
     result = result.replace("export EXCHANGE_NAME=", "export EXCHANGE_NAME=" + exchangeName);
     result =
         result.replace("export EMS_HEARTBEAT=", "export EMS_HEARTBEAT=" + ems.getEmsHeartbeat());

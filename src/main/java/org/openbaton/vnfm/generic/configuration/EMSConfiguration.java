@@ -19,6 +19,9 @@
 
 package org.openbaton.vnfm.generic.configuration;
 
+import java.io.IOException;
+import java.util.Properties;
+import javax.annotation.PostConstruct;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +41,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-
-import java.io.IOException;
-import java.util.Properties;
-
-import javax.annotation.PostConstruct;
 
 /** Created by lto on 09/11/15. */
 @Configuration
