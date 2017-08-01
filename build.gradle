@@ -37,8 +37,8 @@ apply plugin: 'docker'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
-apply from: 'openbaton-libs/gradle/gradle/git.helpers.gradle'
-apply from: 'openbaton-libs/gradle/gradle/command.line.helper.gradle'
+apply from: 'gradle/gradle/git.helpers.gradle'
+apply from: 'gradle/gradle/command.line.helper.gradle'
 
 ext {
     //------------------------------------------------//
@@ -74,9 +74,9 @@ ext {
     junitVersion = "4.12"
 }
 
-apply from: 'openbaton-libs/gradle/gradle/application.java.gradle'
-apply from: 'openbaton-libs/gradle/gradle/run.application.java.gradle'
-apply from: 'openbaton-libs/gradle/gradle/git.release.gradle'
+apply from: 'gradle/gradle/application.java.gradle'
+apply from: 'gradle/gradle/run.application.java.gradle'
+apply from: 'gradle/gradle/git.release.gradle'
 
 apply from: 'gradle/gradle/packaging.vnfm-generic.debian.gradle'
 apply from: 'gradle/gradle/packaging.vnfm-generic.docker.gradle'
@@ -87,6 +87,9 @@ apply from: 'gradle/gradle/brew.formula.creator.gradle'
 repositories {
     mavenCentral()
     mavenLocal()
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
 }
 
 allprojects {
@@ -123,7 +126,7 @@ javadoc {
 }
 
 dependencies {
-    compile project(':vnfm-sdk-amqp')
+    compile 'org.openbaton:vnfm-sdk-amqp:4.0.1-SNAPSHOT'
     compile 'commons-codec:commons-codec:1.10'
     compile 'org.hibernate:hibernate-core:5.2.6.Final'
 }
