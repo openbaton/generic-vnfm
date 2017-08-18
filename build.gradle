@@ -85,8 +85,8 @@ apply from: 'gradle/gradle/distribution.gradle'
 apply from: 'gradle/gradle/brew.formula.creator.gradle'
 
 repositories {
-    mavenCentral()
     mavenLocal()
+    mavenCentral()
     maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots/'
     }
