@@ -29,7 +29,7 @@ plugins {
     id "nebula.ospackage" version "4.3.0"
     id "com.github.sherter.google-java-format" version "0.6"
     id 'com.github.ben-manes.versions' version '0.13.0'
-    //id 'org.springframework.boot' version '1.4.3.RELEASE'
+    id 'org.springframework.boot' version '1.5.6.RELEASE'
 }
 
 apply plugin: 'java'
@@ -45,8 +45,7 @@ ext {
     /**
      * Spring Related Variables
      */
-    springVersion = '4.3.5.RELEASE'
-    springBootVersion = '1.2.5.RELEASE'
+    springBootVersion = '1.5.6.RELEASE'
     //------------------------------------------------//
     //------------------------------------------------//
     /**
@@ -75,7 +74,6 @@ ext {
 }
 
 apply from: 'gradle/gradle/application.java.gradle'
-apply from: 'gradle/gradle/run.application.java.gradle'
 apply from: 'gradle/gradle/git.release.gradle'
 
 apply from: 'gradle/gradle/packaging.vnfm-generic.debian.gradle'
@@ -127,8 +125,6 @@ javadoc {
 
 dependencies {
     compile 'org.openbaton:vnfm-sdk-amqp:4.0.1-SNAPSHOT'
-    compile 'commons-codec:commons-codec:1.10'
-    compile 'org.hibernate:hibernate-core:5.2.6.Final'
 }
 
 // Force code formatting

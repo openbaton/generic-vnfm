@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-apply plugin: "application"
+apply plugin: 'application'
 
 distributions {
     main {
