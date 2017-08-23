@@ -4,7 +4,7 @@ source gradle.properties
 
 _openbaton_base="/opt/openbaton"
 _generic_base="${_openbaton_base}/generic-vnfm"
-_openbaton_config_file="/etc/openbaton/generic-vnfm.properties"
+_openbaton_config_file="/etc/openbaton/openbaton-vnfm-generic.properties"
 _version=${version}
 _screen_name="generic-vnfm"
 
