@@ -1,0 +1,95 @@
+#cloud-config
+
+package_upgrade: true
+
+packages:
+  - git
+  - zabbix-agent
+  - python-pip
+  - ems
+
+write_files:
+  - path: /etc/openbaton/ems/conf.ini.dyn
+    content: |
+      [ems]
+      broker_ip=$BROKER_IP
+      broker_port=$BROKER_PORT
+      username=$USERNAME
+      password=$PASSWORD
+      exchange=$EXCHANGE_NAME
+      heartbeat=$EMS_HEARTBEAT
+      autodelete=$EMS_AUTODELETE
+      type=$ENDPOINT
+      hostname=$SERVICE_ID
+
+runcmd:
+  - mv /etc/openbaton/ems/conf.ini.dyn /etc/openbaton/ems/conf.ini
+  - systemctl restart ems
+  - sed -i -e "s|ServerActive=127.0.0.1|ServerActive=${MONITORING_IP}:10051|g" -e "s|Server=127.0.0.1|Server=${MONITORING_IP}|g" -e "s|Hostname=Zabbix server|#Hostname=|g" /etc/zabbix/zabbix_agentd.conf
+  - service zabbix-agent restart
+#  - mkdir -p /etc/openbaton/ems
+
+apt:
+  sources:
+    openbaton:
+      source: "deb http://get.openbaton.org/repos/apt/debian/ ems main"
+      key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+        Version: GnuPG v1
+
+        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
+        =amxC
+        -----END PGP PUBLIC KEY BLOCK-----
+
+
+yum_repos:
+    openbaton:
+        baseurl: get.openbaton.org/repos/rpm/
+        enabled: true
+        gpgcheck: false
+        name: Open Baton EMS rpm repo
