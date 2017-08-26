@@ -4,7 +4,7 @@ source gradle.properties
 
 _openbaton_base="/opt/openbaton"
 _generic_base="${_openbaton_base}/generic-vnfm"
-_openbaton_config_file="/etc/openbaton/generic-vnfm.properties"
+_openbaton_config_file="/etc/openbaton/openbaton-vnfm-generic.properties"
 _version=${version}
 _screen_name="generic-vnfm"
 
@@ -76,14 +76,14 @@ function start {
     if [ "${screen_exists}" -eq "0" ]; then
 
 	    if [ -f ${_openbaton_config_file} ]; then
-            if [ $1 == "true" ]; then
+            if [ "${1}" == "true" ]; then
                 java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
             else
                 echo "Starting the Generic-VNFM in a new screen session (attach to the screen with screen -x openbaton)"
                 screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
             fi
         else
-	        if [ $1 == "true" ]; then
+	        if [ "${1}" == "true" ]; then
 		        java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
 	        else
 		        screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
