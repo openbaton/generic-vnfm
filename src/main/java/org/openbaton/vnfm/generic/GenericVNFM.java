@@ -49,12 +49,14 @@ import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /** Created by mob on 16.07.15. */
 @EnableScheduling
 @ConfigurationProperties
+@SpringBootApplication
 public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Autowired private ElementManagementSystem ems;

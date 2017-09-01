@@ -11,6 +11,7 @@ export EMS_HEARTBEAT=
 export EMS_AUTODELETE=
 export EMS_VERSION=
 export ENDPOINT=
+export OFFLINE_EMS=1
 
 # Hostname/IP and path of the EMS repository
 export UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
@@ -32,17 +33,25 @@ source /etc/bashrc
 ################
 
 install_ems_on_ubuntu () {
-    result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
-        wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
-        apt-get update
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        apt-get install -y git
-        apt-get install -y --force-yes ems-$EMS_VERSION
+    if [ ${OFFLINE_EMS} -eq 0 ]; then
+        result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
+       if [ ${result} -eq 0 ]; then
+            echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
+            echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
+            wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
+            apt-get update
+            cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+            apt-get install -y git
+            apt-get install -y --force-yes ems-$EMS_VERSION
+        else
+            echo "EMS is already installed"
+        fi
+
     else
-        echo "EMS is already installed"
+        echo "Installing ems directly from generic vnfm"
+        wget http://${BROKER_IP}:9999/api/v1/download/ems.deb
+        dpkg -i ems.deb
+        apt-get install -y --force-yes -f
     fi
 }
 
