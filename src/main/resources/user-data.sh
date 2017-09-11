@@ -49,8 +49,8 @@ install_ems_on_ubuntu () {
 
     else
         echo "Installing ems directly from generic vnfm"
-        wget http://${BROKER_IP}:9999/api/v1/download/ems.deb
-        dpkg -i ems.deb
+        python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems.deb');ems = response.read();file = open('ems.deb', 'w');file.write(ems);file.close();"
+        dpkg --ignore-depends=git -i ems.deb
         #apt-get install -y --force-yes -f
     fi
 }
@@ -92,9 +92,10 @@ install_ems_on_centos () {
         echo "Installing ems directly from generic vnfm"
 
         #yum install -y wget
-        wget http://${BROKER_IP}:9999/api/v1/download/ems.rpm
+        #wget http://${BROKER_IP}:9999/api/v1/download/ems.rpm
+        python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems.rpm');ems = response.read();file = open('ems.rpm', 'w');file.write(ems);file.close();"
         #yum install -y git
-        rpm -i ems.rpm
+        rpm -i ems.rpm --nodeps
     fi
 }
 
