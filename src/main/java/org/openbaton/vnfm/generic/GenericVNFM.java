@@ -40,6 +40,7 @@ import org.openbaton.catalogue.nfvo.VimInstance;
 import org.openbaton.common.vnfm_sdk.AbstractVnfm;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
+import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.openbaton.vnfm.generic.core.ElementManagementSystem;
 import org.openbaton.vnfm.generic.core.LifeCycleManagement;
@@ -102,7 +103,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         try {
           ems.checkEms(vnfcInstance.getHostname());
         } catch (BadFormatException e) {
-          throw new Exception(e.getMessage());
+          throw new VnfmSdkException(e.getMessage());
         }
       }
     }
@@ -145,7 +146,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         ems.register(vnfcInstance.getHostname());
         ems.checkEms(vnfcInstance.getHostname());
       } catch (BadFormatException e) {
-        throw new Exception(e.getMessage());
+        throw new VnfmSdkException(e.getMessage());
       }
       ems.saveScriptOnEms(vnfcInstance, scripts, virtualNetworkFunctionRecord);
       String output = "\n--------------------\n--------------------\n";
