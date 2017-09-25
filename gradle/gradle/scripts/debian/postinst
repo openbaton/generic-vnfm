@@ -39,9 +39,58 @@ OPENBATON_COMPONENT_EXE_DIR=${OPENBATON_BASE_DIR}/bin
 
 OPENBATON_BASE_CONFIG_DIR=/etc/openbaton
 OPENBATON_COMPONENT_CONFIG_FILE=openbaton-${OPENBATON_COMPONENT_NAME}.properties
+OPENBATON_NFVO_CONFIG_FILE=openbaton-nfvo.properties
+
+CONFIGURE_RABBITMQ_FOR_OPENBATON_DEFAULT=true
+CONFIGURE_RABBITMQ_FOR_OPENBATON=${CONFIGURE_RABBITMQ_FOR_OPENBATON:-$CONFIGURE_RABBITMQ_FOR_OPENBATON_DEFAULT}
 
 OPENBATON_COMPONENT_AUTOSTART_DEFAULT=true
 OPENBATON_COMPONENT_AUTOSTART=${OPENBATON_COMPONENT_AUTOSTART:-$OPENBATON_COMPONENT_AUTOSTART_DEFAULT}
+
+RABBITMQ_EMS_USER="openbaton-ems-user"
+
+
+##################
+#### RabbitMQ ####
+##################
+
+configure_rabbitmq () {
+    log_success_msg "Configuring RabbitMQ for the Open Baton Generic VNFM"
+    result=$(ps aux | grep -v 'grep' | grep 'rabbitmq' | wc -l)
+    if [ ${result} -gt 0 ]; then
+        result=$(rabbitmqctl list_users | grep "^${RABBITMQ_EMS_USER}" | wc -l)
+        if [ ${result} -eq 0 ]; then
+            rabbitmq_ems_user_password=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+
+            rabbitmqctl add_user ${RABBITMQ_EMS_USER} ${rabbitmq_ems_user_password}
+            rabbitmqctl set_user_tags ${RABBITMQ_EMS_USER} administrator
+            rabbitmqctl set_permissions -p / ${RABBITMQ_EMS_USER} ".*" ".*" ".*"
+            service rabbitmq-server restart
+            if [ "$?" != "0" ]; then
+                log_failure_msg "rabbitmq is not running properly (check the problem in /var/log/rabbitmq)"
+                exit 1
+            fi
+
+            # Set the rabbitmq 'RABBITMQ_EMS_USER' username
+            export RABBITMQ_EMS_USER=${RABBITMQ_EMS_USER}
+            log_success_msg "Setting the username for the RabbitMQ EMS user: ${RABBITMQ_EMS_USER}"
+            sed -i "s|vnfm.ems.username\s*=\s*.*|vnfm.ems.username=${RABBITMQ_EMS_USER}|g" /etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties
+
+            # Set the rabbitmq 'RABBITMQ_EMS_USER' password
+            export rabbitmq_ems_user_password=${rabbitmq_ems_user_password}
+            log_success_msg "Setting new '${RABBITMQ_EMS_USER}' password: ${rabbitmq_ems_user_password}"
+            log_warning_msg "The '${RABBITMQ_EMS_USER}' password has been randomly generated and you can find it in the '/etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties' properties file as the value of the 'spring.rabbitmq.password' property"
+            sed -i "s|vnfm.ems.password\s*=\s*.*|vnfm.ems.password=${rabbitmq_ems_user_password}|g" /etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties
+        fi
+
+        # Set the rabbitmq broker ip retrieving its value from the NFVO properties file
+        rabbitmq_broker_ip=$(cat "${OPENBATON_BASE_CONFIG_DIR}"/"${OPENBATON_NFVO_CONFIG_FILE}" | grep "nfvo.rabbit.brokerIp" | head  -1 | awk -F'=' '{ print $2}' | sed s/\ //g)
+        echo "$rabbitmq_broker_ip"
+        export rabbitmq_broker_ip=${rabbitmq_broker_ip}
+        log_success_msg "Setting new broker IP: ${rabbitmq_broker_ip}"
+        sed -i "s|vnfm.rabbitmq.brokerIp\s*=\s*.*|vnfm.rabbitmq.brokerIp=${rabbitmq_broker_ip}|g" /etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties
+    fi
+}
 
 
 ####################
@@ -51,6 +100,12 @@ OPENBATON_COMPONENT_AUTOSTART=${OPENBATON_COMPONENT_AUTOSTART:-$OPENBATON_COMPON
 configure_new_installation () {
     log_success_msg "Configuring Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} installation .."
     chmod a+x ${OPENBATON_COMPONENT_EXE_DIR}/openbaton-${OPENBATON_COMPONENT_NAME}
+
+    # Allow the use of the .deb package to install Open Baton with Docker (because of issues when installing and configuring RabbitMQ during a docker image build)
+    if [ "${CONFIGURE_RABBITMQ_FOR_OPENBATON}" = "true" ]; then
+        configure_rabbitmq
+    fi
+
     log_success_msg "Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} installation completed"
 }
 
