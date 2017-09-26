@@ -120,7 +120,6 @@ javadoc {
 
 dependencies {
     compile 'org.openbaton:vnfm-sdk-amqp:4.0.1-SNAPSHOT'
-    //compile 'commons-codec:commons-codec:1.10'
     compile("com.h2database:h2")
 }
 
