@@ -54,11 +54,22 @@ public class EMSConfiguration {
 
   ConnectionFactory emsConnectionFactory;
 
-  private boolean autodelete = true;
   private boolean durable;
   private boolean exclusive;
   private int minConcurrency;
   private int maxConcurrency;
+
+  @Value("${vnfm.ems.start.timeout:500}")
+  private int waitForEms;
+
+  @Value("${vnfm.ems.queue.heartbeat}")
+  protected String heartbeat;
+
+  @Value("${vnfm.ems.queue.autodelete:true}")
+  protected boolean autodelete;
+
+  @Value("${vnfm.ems.version}")
+  protected String version;
 
   @Value("${spring.rabbitmq.host}")
   private String brokerIp;
@@ -97,14 +108,6 @@ public class EMSConfiguration {
     this.minConcurrency = minConcurrency;
   }
 
-  public boolean isAutodelete() {
-    return autodelete;
-  }
-
-  public void setAutodelete(boolean autodelete) {
-    this.autodelete = autodelete;
-  }
-
   public boolean isDurable() {
     return durable;
   }
@@ -119,6 +122,38 @@ public class EMSConfiguration {
 
   public void setExclusive(boolean exclusive) {
     this.exclusive = exclusive;
+  }
+
+  public int getWaitForEms() {
+    return waitForEms;
+  }
+
+  public void setWaitForEms(int waitForEms) {
+    this.waitForEms = waitForEms;
+  }
+
+  public String getHeartbeat() {
+    return heartbeat;
+  }
+
+  public void setHeartbeat(String heartbeat) {
+    this.heartbeat = heartbeat;
+  }
+
+  public boolean isAutodelete() {
+    return autodelete;
+  }
+
+  public void setAutodelete(boolean autodelete) {
+    this.autodelete = autodelete;
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
+  public void setVersion(String version) {
+    this.version = version;
   }
 
   @PostConstruct

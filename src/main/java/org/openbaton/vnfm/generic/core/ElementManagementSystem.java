@@ -34,13 +34,13 @@ import org.openbaton.catalogue.nfvo.Script;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
 import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
+import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.openbaton.vnfm.generic.utils.JsonUtils;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
@@ -53,17 +53,7 @@ public class ElementManagementSystem implements EmsInterface {
 
   private Logger log = LoggerFactory.getLogger(getClass());
 
-  @Value("${vnfm.ems.start.timeout:500}")
-  private int waitForEms;
-
-  @Value("${vnfm.ems.queue.heartbeat}")
-  protected String emsHeartbeat;
-
-  @Value("${vnfm.ems.queue.autodelete}")
-  protected String emsAutodelete;
-
-  @Value("${vnfm.ems.version}")
-  protected String emsVersion;
+  @Autowired private EMSConfiguration emsConfiguration;
 
   //TODO consider using DB in case of failure etc...
   private static Set<String> expectedHostnames;
@@ -136,7 +126,7 @@ public class ElementManagementSystem implements EmsInterface {
         checkEmsStarted(extractedId);
         break;
       } catch (RuntimeException e) {
-        if (i == this.waitForEms / 5) {
+        if (i == emsConfiguration.getWaitForEms() / 5) {
           throw e;
         }
         try {
@@ -314,17 +304,17 @@ public class ElementManagementSystem implements EmsInterface {
 
   @Override
   public String getEmsHeartbeat() {
-    return emsHeartbeat;
+    return emsConfiguration.getHeartbeat();
   }
 
   @Override
   public String getEmsAutodelete() {
-    return emsAutodelete;
+    return Boolean.toString(emsConfiguration.isAutodelete());
   }
 
   @Override
   public String getEmsVersion() {
-    return emsVersion;
+    return emsConfiguration.getVersion();
   }
 
   public Set<String> getUnexpectedHostnames() {
