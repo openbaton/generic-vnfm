@@ -10,6 +10,7 @@ export EXCHANGE_NAME=
 export EMS_HEARTBEAT=
 export EMS_AUTODELETE=
 export EMS_VERSION=
+export #Hostname=
 export ENDPOINT=
 
 # Hostname/IP and path of the EMS repository
@@ -107,9 +108,8 @@ configure_ems () {
     echo exchange=$EXCHANGE_NAME >> /etc/openbaton/ems/conf.ini
     echo heartbeat=$EMS_HEARTBEAT >> /etc/openbaton/ems/conf.ini
     echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
-    export hn=`hostname`
     echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
-    echo hostname=$hn >> /etc/openbaton/ems/conf.ini
+    echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
 
     service ems restart
 }
