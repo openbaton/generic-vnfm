@@ -10,8 +10,9 @@ export EXCHANGE_NAME=
 export EMS_HEARTBEAT=
 export EMS_AUTODELETE=
 export EMS_VERSION=
+export #Hostname=
 export ENDPOINT=
-export OFFLINE_EMS=1
+export OFFLINE_EMS=0
 
 # Hostname/IP and path of the EMS repository
 export UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
@@ -51,7 +52,6 @@ install_ems_on_ubuntu () {
         echo "Installing ems directly from generic vnfm"
         python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems.deb');ems = response.read();file = open('ems.deb', 'w');file.write(ems);file.close();"
         dpkg --ignore-depends=git -i ems.deb
-        #apt-get install -y --force-yes -f
     fi
 }
 
@@ -126,9 +126,8 @@ configure_ems () {
     echo exchange=$EXCHANGE_NAME >> /etc/openbaton/ems/conf.ini
     echo heartbeat=$EMS_HEARTBEAT >> /etc/openbaton/ems/conf.ini
     echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
-    export hn=`hostname`
     echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
-    echo hostname=$hn >> /etc/openbaton/ems/conf.ini
+    echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
 
     service ems restart
 }
