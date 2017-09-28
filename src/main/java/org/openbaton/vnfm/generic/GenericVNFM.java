@@ -560,7 +560,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     result = result.replace("export BROKER_PORT=", "export BROKER_PORT=" + brokerPort);
     result = result.replace("export USERNAME=", "export USERNAME=" + emsRabbitUsername);
     result = result.replace("export PASSWORD=", "export PASSWORD=" + emsRabbitPassword);
-    result = result.replace("export EXCHANGE_NAME=", "export EXCHANGE_NAME=" + exchangeName);
+    result =
+        result.replace("export EXCHANGE_NAME=", "export EXCHANGE_NAME=" + "openbaton-exchange");
     result =
         result.replace("export EMS_HEARTBEAT=", "export EMS_HEARTBEAT=" + ems.getEmsHeartbeat());
     result =
