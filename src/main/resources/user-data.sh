@@ -35,13 +35,15 @@ source /etc/bashrc
 install_ems_on_ubuntu () {
     result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
     if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
-        wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
         apt-get update
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        apt-get install -y git
-        apt-get install -y --force-yes ems-$EMS_VERSION
+            apt-get install -y python-pip
+            pip install --upgrade pip
+            pip install pika
+            pip install gitpython
+            cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+            apt-get install -y git
+            mkdir /opt/openbaton
+            pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --allow-external openbaton-generic-ems openbaton-generic-ems
     else
         echo "EMS is already installed"
     fi
@@ -111,7 +113,7 @@ configure_ems () {
     echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
     echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
 
-    service ems restart
+    openbaton-ems
 }
 
 
