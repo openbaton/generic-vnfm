@@ -38,12 +38,11 @@ install_ems_on_ubuntu () {
         apt-get update
         apt-get install -y python-pip
         apt-get install -y git
-        pip install --upgrade pip
         pip install pika
         pip install gitpython
         cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
         mkdir /opt/openbaton
-        pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --allow-external openbaton-generic-ems5 openbaton-generic-ems5
+        pip install openbaton-ems
         add-upstart-ems
     else
         echo "EMS is already installed"
@@ -74,7 +73,7 @@ install_ems_on_centos () {
     pip install gitpython
     cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
     mkdir /opt/openbaton
-    pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --allow-external openbaton-generic-ems5 openbaton-generic-ems5
+    pip install openbaton-ems
     add-upstart-ems
 }
 
