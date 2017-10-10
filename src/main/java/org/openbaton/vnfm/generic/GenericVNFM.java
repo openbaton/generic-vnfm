@@ -68,7 +68,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Autowired private LifeCycleManagement lcm;
 
-  @Value("${vnfm.ems.userdata.filepath:/etc/openbaton/openbaton-vnfm-generic-user-data.sh}")
+  @Value("${vnfm.ems.userdata.filepath:/etc/openbaton/openbatonmo-vnfm-generic-user-data.sh}")
   private String userDataFilePath;
 
   @Autowired private LogUtils logUtils;
