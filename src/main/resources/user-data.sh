@@ -35,13 +35,15 @@ source /etc/bashrc
 install_ems_on_ubuntu () {
     result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
     if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
-        wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
         apt-get update
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+        apt-get install -y python-pip
         apt-get install -y git
-        apt-get install -y --force-yes ems-$EMS_VERSION
+        pip install pika
+        pip install gitpython
+        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+        mkdir /opt/openbaton
+        pip install openbaton-ems
+        add-upstart-ems
     else
         echo "EMS is already installed"
     fi
@@ -63,22 +65,16 @@ install_zabbix_on_ubuntu () {
 ################
 
 install_ems_on_centos () {
-    result=$(yum list installed | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "[openbaton]" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "name=Open Baton Repository" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "baseurl=http://${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}/${CENTOS_EMS_REPOSITORY_PATH}" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "gpgcheck=0" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "enabled=1" >> /etc/yum.repos.d/OpenBaton.repo
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        yum install -y git
-        yum install -y ems
-        systemctl enable ems
-        #systemctl start ems
-    else
-        echo "EMS is already installed"
-    fi
+    yum --enablerepo=extras install -y epel-release
+    yum install -y python-pip python-wheel
+    yum upgrade -y python-setuptools
+    yum install -y git
+    pip install pika
+    pip install gitpython
+    cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+    mkdir /opt/openbaton
+    pip install openbaton-ems
+    add-upstart-ems
 }
 
 install_zabbix_on_centos () {
@@ -111,7 +107,7 @@ configure_ems () {
     echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
     echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
 
-    service ems restart
+    service openbaton-ems restart
 }
 
 
