@@ -18,13 +18,7 @@
 package org.openbaton.vnfm.generic;
 
 import com.google.gson.JsonObject;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
+
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.descriptor.VNFComponent;
@@ -52,6 +46,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
 
 /** Created by mob on 16.07.15. */
 @EnableScheduling
@@ -186,7 +188,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         }
       }
 
-      log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHb_version());
+      log.trace("HB_VERSION == " + virtualNetworkFunctionRecord.getHbVersion());
       return virtualNetworkFunctionRecord;
     } else { // SCALE_IN
 
@@ -298,7 +300,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFRecordDependency dependency)
       throws Exception {
     log.trace(
-        "VirtualNetworkFunctionRecord VERSION is: " + virtualNetworkFunctionRecord.getHb_version());
+        "VirtualNetworkFunctionRecord VERSION is: " + virtualNetworkFunctionRecord.getHbVersion());
     log.info("executing modify for VNFR: " + virtualNetworkFunctionRecord.getName());
 
     log.debug("Got dependency: " + dependency);
