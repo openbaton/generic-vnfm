@@ -38,6 +38,12 @@ install_ems_on_ubuntu () {
         echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
         echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
         wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
+	echo "Checking for running apt-get processes"
+	while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
+	    echo "Waiting for running apt-get processes to finish"
+	    sleep 5s
+	done
+	echo "Finished waiting for running apt-get processes"
         apt-get update
         cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
         apt-get install -y git
