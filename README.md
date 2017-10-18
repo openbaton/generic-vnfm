@@ -20,7 +20,7 @@ Please refer to [our documentation][generic-vnfm] for more details about this pr
  
 ## Technical Requirements
 
-* openjdk 7+ or oracle JDK 7+
+* openjdk 8+ or oracle JDK 8+
 * a [NFVO](https://github.com/openbaton/NFVO) running instance
 * The VMs need to have access to the openbaton repository (internet) thus to be able to dynamically download the [EMS](https://github.com/openbaton/ems)
 
