@@ -89,6 +89,9 @@ repositories {
     maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots/'
     }
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/releases/'
+    }
 }
 
 allprojects {
@@ -125,7 +128,7 @@ javadoc {
 }
 
 dependencies {
-    compile 'org.openbaton:vnfm-sdk-amqp:4.0.1-SNAPSHOT'
+    compile 'org.openbaton:vnfm-sdk-amqp:5.0.0-RC1'
 }
 
 // Force code formatting
