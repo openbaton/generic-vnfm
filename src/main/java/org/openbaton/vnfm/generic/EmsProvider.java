@@ -15,43 +15,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/download")
 public class EmsProvider {
-  @Value("${vnfm.ems.debian.path:/opt/openbaton/ems/ems-0.22.deb}")
-  private String emsPathDebian;
-  @Value("${vnfm.ems.rpm.path:/opt/openbaton/ems/ems.rpm}")
-  private String emsPathRpm;
+  @Value("${vnfm.ems.package.path:/opt/openbaton/ems/ems-0.22.deb}")
+  private String emsPath;
 
-  @RequestMapping(value = "ems.deb", method = RequestMethod.GET)
+  @RequestMapping(value = "ems-package.tar.gz", method = RequestMethod.GET)
   public ResponseEntity fetchEmsDebian() {
     FileInputStream fi;
     try {
-      fi = new FileInputStream(emsPathDebian);
+      fi = new FileInputStream(emsPath);
     } catch (FileNotFoundException e) {
       return new ResponseEntity<>(
-          "EMS debian package does not exist in the path that is set in properties",
-          HttpStatus.FAILED_DEPENDENCY);
-    }
-    return ResponseEntity.ok()
-        .header("Accept-Ranges", "bytes")
-        .eTag("\"" + "ems.deb" + "\"")
-        .contentType(MediaType.parseMediaType("application/octet-stream"))
-        .header("content-disposition", "attachment; filename=\"" + "ems.deb" + "\"")
-        .body(new InputStreamResource(fi));
-  }
-  @RequestMapping(value = "ems.rpm", method = RequestMethod.GET)
-  public ResponseEntity fetchEmsRPM() {
-    FileInputStream fi;
-    try {
-      fi = new FileInputStream(emsPathRpm);
-    } catch (FileNotFoundException e) {
-      return new ResponseEntity<>(
-              "EMS rpm package does not exist in the path that is set in properties",
+              "EMS package does not exist in the path that is set in properties",
               HttpStatus.FAILED_DEPENDENCY);
     }
     return ResponseEntity.ok()
             .header("Accept-Ranges", "bytes")
-            .eTag("\"" + "ems.rpm" + "\"")
+            .eTag("\"" + "ems.deb" + "\"")
             .contentType(MediaType.parseMediaType("application/octet-stream"))
-            .header("content-disposition", "attachment; filename=\"" + "ems.rpm" + "\"")
+            .header("content-disposition", "attachment; filename=\"" + "ems-package.tar.gz" + "\"")
             .body(new InputStreamResource(fi));
   }
 }

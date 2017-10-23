@@ -21,7 +21,6 @@ buildscript {
     dependencies {
         classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
         classpath 'se.transmode.gradle:gradle-docker:1.2'
-//        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.6.RELEASE")
     }
 }
 
@@ -30,7 +29,7 @@ plugins {
     id "nebula.ospackage" version "4.3.0"
     id "com.github.sherter.google-java-format" version "0.6"
     id 'com.github.ben-manes.versions' version '0.13.0'
-    //id 'org.springframework.boot' version '1.4.3.RELEASE'
+    id 'org.springframework.boot' version '1.5.8.RELEASE'
 }
 
 apply plugin: 'java'
@@ -38,16 +37,11 @@ apply plugin: 'docker'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
+
 apply from: 'gradle/gradle/git.helpers.gradle'
 apply from: 'gradle/gradle/command.line.helper.gradle'
 
 ext {
-    //------------------------------------------------//
-    /**
-     * Spring Related Variables
-     */
-    springVersion = '4.3.5.RELEASE'
-    springBootVersion = '1.2.5.RELEASE'
     //------------------------------------------------//
     //------------------------------------------------//
     /**
@@ -75,8 +69,9 @@ ext {
     junitVersion = "4.12"
 }
 
+
+
 apply from: 'gradle/gradle/application.java.gradle'
-apply from: 'gradle/gradle/run.application.java.gradle'
 apply from: 'gradle/gradle/git.release.gradle'
 
 apply from: 'gradle/gradle/packaging.vnfm-generic.debian.gradle'
@@ -85,11 +80,17 @@ apply from: 'gradle/gradle/packaging.innosetup.gradle'
 apply from: 'gradle/gradle/distribution.gradle'
 apply from: 'gradle/gradle/brew.formula.creator.gradle'
 
+mainClassName = mainClass
+
+
 repositories {
     mavenLocal()
     mavenCentral()
     maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/releases/'
     }
 }
 
@@ -122,13 +123,12 @@ allprojects {
 }
 
 javadoc {
-	source = sourceSets.main.allJava
-	classpath = configurations.compile
+    source = sourceSets.main.allJava
+    classpath = configurations.compile
 }
 
 dependencies {
-    compile 'org.openbaton:vnfm-sdk-amqp:4.0.1-SNAPSHOT'
-    compile 'commons-codec:commons-codec:1.10'
+    compile 'org.openbaton:vnfm-sdk-amqp:5.0.0-RC1'
     compile("org.springframework.boot:spring-boot-starter-web:1.5.6.RELEASE")
     compile("org.springframework.boot:spring-boot-starter-tomcat:1.5.6.RELEASE")
 }
