@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.descriptor.VNFComponent;
@@ -67,6 +69,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Value("${vnfm.ems.password:openbaton}")
   private String emsRabbitPassword;
+
+  @Value("${vnfm.ems.offline: false}")
+  private boolean emsOffline;
 
   @Autowired private LifeCycleManagement lcm;
 
@@ -556,7 +561,11 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     }
 
     log.debug(ems.getEmsVersion());
-
+    if (emsOffline) {
+      result = result.replace("export OFFLINE_EMS=", "export OFFLINE_EMS=1");
+    } else {
+      result = result.replace("export OFFLINE_EMS=", "export OFFLINE_EMS=0");
+    }
     result = result.replace("export MONITORING_IP=", "export MONITORING_IP=" + monitoringIp);
     result = result.replace("export TIMEZONE=", "export TIMEZONE=" + timezone);
     result = result.replace("export BROKER_IP=", "export BROKER_IP=" + brokerIp);
