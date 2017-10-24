@@ -76,16 +76,24 @@ install_zabbix_on_ubuntu () {
 ################
 
 install_ems_on_centos () {
-   yum --enablerepo=extras install -y epel-release
-   yum install -y python-pip python-wheel
-   yum upgrade -y python-setuptools
-   yum install -y git
-   pip install pika
-   pip install gitpython
-   cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-   mkdir /opt/openbaton
-   pip install openbaton-ems
-   add-upstart-ems
+    if [ ${OFFLINE_EMS} -eq 1 ]; then
+        mkdir -p /opt/openbaton/
+        python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems-package.tar.gz');ems = response.read();file = open('ems-package.tar.gz', 'w');file.write(ems);file.close();"
+        tar -xf ems-package.tar.gz --directory /opt/openbaton/
+        bash /opt/openbaton/ems-package/install-ems-with-dependencies.sh
+        add-upstart-ems
+    else
+       yum --enablerepo=extras install -y epel-release
+       yum install -y python-pip python-wheel
+       yum upgrade -y python-setuptools
+       yum install -y git
+       pip install pika
+       pip install gitpython
+       cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+       mkdir /opt/openbaton
+       pip install openbaton-ems
+       add-upstart-ems
+    fi
 }
 
 install_zabbix_on_centos () {
