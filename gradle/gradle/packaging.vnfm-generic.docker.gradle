@@ -17,6 +17,7 @@
 ext {
     baseName = 'openbaton'
     componentName = "vnfm-generic"
+    fullName = "${baseName}-${componentName}"
     versionName = "${version}".replaceAll("-SNAPSHOT", "")
 }
 
@@ -30,8 +31,8 @@ task buildDocker(type: Docker) {
         rename {"${componentName}.jar"}
     }
     runCommand('mkdir -p /var/log/openbaton')
-    addFile("src/main/resources/application.properties", "/etc/openbaton/${componentName}.properties")
-    entryPoint(["java", "-jar", "/${componentName}.jar", "--spring.config.location=file:/etc/openbaton/${componentName}.properties"])
+    addFile("src/main/resources/${fullName}.properties", "/etc/openbaton/${fullName}.properties")
+    entryPoint(["java", "-jar", "/${componentName}.jar", "--spring.config.location=file:/etc/openbaton/${fullName}.properties"])
 }
 
 buildDocker.dependsOn(build)
