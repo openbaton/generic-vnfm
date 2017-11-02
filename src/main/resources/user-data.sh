@@ -157,7 +157,7 @@ case ${os} in
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
-            yum install -y */lsb-release
+            yum install -y redhat-lsb-core
             OS_DISTRIBUTION_RELEASE_MAJOR=$( lsb_release -a | grep "Release:" | awk -F'\t' '{ print $2 }' | awk -F'.' '{ print $1 }' )
             install_zabbix_on_centos
         fi
