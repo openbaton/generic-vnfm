@@ -47,6 +47,9 @@ CONFIGURE_RABBITMQ_FOR_OPENBATON=${CONFIGURE_RABBITMQ_FOR_OPENBATON:-$CONFIGURE_
 OPENBATON_COMPONENT_AUTOSTART_DEFAULT=true
 OPENBATON_COMPONENT_AUTOSTART=${OPENBATON_COMPONENT_AUTOSTART:-$OPENBATON_COMPONENT_AUTOSTART_DEFAULT}
 
+DEBIAN_FRONTEND_DEFAULT=dialog
+DEBIAN_FRONTEND=${DEBIAN_FRONTEND:-$DEBIAN_FRONTEND_DEFAULT}
+
 RABBITMQ_EMS_USER="openbaton-ems-user"
 
 
@@ -82,14 +85,23 @@ configure_rabbitmq () {
             log_warning_msg "The '${RABBITMQ_EMS_USER}' password has been randomly generated and you can find it in the '/etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties' properties file as the value of the 'spring.rabbitmq.password' property"
             sed -i "s|vnfm.ems.password\s*=\s*.*|vnfm.ems.password=${rabbitmq_ems_user_password}|g" /etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties
         fi
-
-        # Set the rabbitmq broker ip retrieving its value from the NFVO properties file
-        rabbitmq_broker_ip=$(cat "${OPENBATON_BASE_CONFIG_DIR}"/"${OPENBATON_NFVO_CONFIG_FILE}" | grep "nfvo.rabbit.brokerIp" | head  -1 | awk -F'=' '{ print $2}' | sed s/\ //g)
-        echo "$rabbitmq_broker_ip"
-        export rabbitmq_broker_ip=${rabbitmq_broker_ip}
-        log_success_msg "Setting new broker IP: ${rabbitmq_broker_ip}"
-        sed -i "s|vnfm.rabbitmq.brokerIp\s*=\s*.*|vnfm.rabbitmq.brokerIp=${rabbitmq_broker_ip}|g" /etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties
     fi
+
+    # Set the rabbitmq broker ip retrieving its value from the NFVO properties file
+    if [ "${DEBIAN_FRONTEND}" != "Noninteractive" -a "${DEBIAN_FRONTEND}" != "noninteractive" -a ! -f "${OPENBATON_BASE_CONFIG_DIR}"/"${OPENBATON_NFVO_CONFIG_FILE}" ]; then
+        rabbitmq_broker_ip=$(whiptail --inputbox "\nEnter the RabbitMQ broker IP:" 8 140 localhost --title "Open Baton ${OPENBATON_COMPONENT_NAME_FANCY} configuration" 3>&1 1>&2 2>&3)
+        exit_status="$?"
+        if [ ${exit_status} != 0 ]; then
+            echo ""
+            log_warning_msg "Aborting Open Baton installation"
+            exit 1
+        fi
+    else
+        rabbitmq_broker_ip=$(cat "${OPENBATON_BASE_CONFIG_DIR}"/"${OPENBATON_NFVO_CONFIG_FILE}" | grep "nfvo.rabbit.brokerIp" | head  -1 | awk -F'=' '{ print $2}' | sed s/\ //g)
+    fi
+    export rabbitmq_broker_ip=${rabbitmq_broker_ip}
+    log_success_msg "Setting new broker IP: ${rabbitmq_broker_ip}"
+    sed -i "s|vnfm.rabbitmq.brokerIp\s*=\s*.*|vnfm.rabbitmq.brokerIp=${rabbitmq_broker_ip}|g" /etc/openbaton/openbaton-${OPENBATON_COMPONENT_NAME}.properties
 }
 
 
