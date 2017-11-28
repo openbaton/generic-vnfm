@@ -48,7 +48,7 @@ import org.springframework.core.annotation.Order;
 @ConfigurationProperties(prefix = "vnfm.rabbitmq")
 @Order(value = Ordered.HIGHEST_PRECEDENCE)
 public class EMSConfiguration {
-  public static String queueName_emsRegistrator = "ems.generic.register";
+  public static String queueName_emsRegistrator;
 
   private RabbitAdmin rabbitAdmin;
 
@@ -178,35 +178,9 @@ public class EMSConfiguration {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    queueName_emsRegistrator = "ems." + properties.getProperty("type") + ".register";
-    rabbitAdmin.declareQueue(new Queue("ems.generic.register", durable, exclusive, autodelete));
+    queueName_emsRegistrator = "ems." + properties.getProperty("endpoint") + ".register";
+    rabbitAdmin.declareQueue(new Queue(queueName_emsRegistrator, durable, exclusive, autodelete));
   }
-
-  //  @Bean
-  //  Queue queue_emsRegistrator() {
-  //    Properties properties = new Properties();
-  //
-  //    try {
-  //      properties.load(this.getClass().getClassLoader().getResourceAsStream("conf.properties"));
-  //    } catch (IOException e) {
-  //      e.printStackTrace();
-  //    }
-  //    queueName_emsRegistrator = "ems." + properties.getProperty("type") + ".register";
-  //    rabbitAdmin.declareQueue(new Queue("ems.generic.register", durable, exclusive, autodelete));
-  //
-  //    return new Queue(queueName_emsRegistrator, durable, exclusive, autodelete);
-  //  }
-
-  //  @Bean
-  //  TopicExchange exchange() {
-  //    TopicExchange topicExchange = new TopicExchange("openbaton-exchange");
-  //    return topicExchange;
-  //  }
-
-  //  @Bean
-  //  Binding binding_vnfmCoreActionReply(TopicExchange exchange) {
-  //    return BindingBuilder.bind(queue_emsRegistrator()).to(exchange).with(queueName_emsRegistrator);
-  //  }
 
   @Bean
   MessageListenerAdapter listenerAdapter_emsRegistrator() {

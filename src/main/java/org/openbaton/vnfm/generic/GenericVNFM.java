@@ -36,7 +36,7 @@ import org.openbaton.catalogue.nfvo.Action;
 import org.openbaton.catalogue.nfvo.ConfigurationParameter;
 import org.openbaton.catalogue.nfvo.DependencyParameters;
 import org.openbaton.catalogue.nfvo.Script;
-import org.openbaton.catalogue.nfvo.VimInstance;
+import org.openbaton.catalogue.nfvo.viminstances.BaseVimInstance;
 import org.openbaton.common.vnfm_sdk.AbstractVnfm;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
@@ -88,11 +88,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   public VirtualNetworkFunctionRecord instantiate(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
       Object scripts,
-      Map<String, Collection<VimInstance>> vimInstances)
+      Map<String, Collection<BaseVimInstance>> vimInstances)
       throws Exception {
 
     log.info(
         "Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
+
     for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
       for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
         ems.register(vnfcInstance.getHostname());
@@ -117,13 +118,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       }
     }
 
-    String output = "\n--------------------\n--------------------\n";
+    StringBuilder output = new StringBuilder("\n--------------------\n");
     for (String result :
         lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.INSTANTIATE)) {
-      output += JsonUtils.parse(result);
-      output += "\n--------------------\n";
+      output.append(JsonUtils.parse(result));
+      output.append("\n--------------------\n");
     }
-    output += "\n--------------------\n";
+
     log.info("Executed script for INSTANTIATE. Output was: \n\n" + output);
     return virtualNetworkFunctionRecord;
   }
@@ -567,7 +568,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     result =
         result.replace("export EMS_AUTODELETE=", "export EMS_AUTODELETE=" + ems.getEmsAutodelete());
     result = result.replace("export EMS_VERSION=", "export EMS_VERSION=" + ems.getEmsVersion());
-    result = result.replace("export ENDPOINT=", "export ENDPOINT=" + type);
+    result = result.replace("export ENDPOINT=", "export ENDPOINT=" + endpoint);
 
     return result;
   }
