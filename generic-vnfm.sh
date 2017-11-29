@@ -6,6 +6,7 @@ _openbaton_base="/opt/openbaton"
 _generic_base="${_openbaton_base}/generic-vnfm"
 _openbaton_config_file="/etc/openbaton/openbaton-vnfm-generic.properties"
 _version=${version}
+_screen_session_name="openbaton"
 _screen_name="generic-vnfm"
 
 
@@ -72,7 +73,7 @@ function start {
     fi
     check_rabbitmq
     check_already_running
-    screen_exists=$(screen -ls | grep openbaton | wc -l);
+    screen_exists=$(screen -ls | grep "\.${_screen_session_name}" | wc -l);
     if [ "${screen_exists}" -eq "0" ]; then
 
 	    if [ -f ${_openbaton_config_file} ]; then
@@ -80,28 +81,28 @@ function start {
                 java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
             else
                 echo "Starting the Generic-VNFM in a new screen session (attach to the screen with screen -x openbaton)"
-                screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+                screen -c screenrc -d -m -S ${_screen_session_name} -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
             fi
         else
 	        if [ "${1}" == "true" ]; then
 		        java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
 	        else
-		        screen -c screenrc -d -m -S openbaton -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
+		        screen -c screenrc -d -m -S ${_screen_session_name} -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
 	        fi
         fi
     else
         echo "Starting the Generic-VNFM in the existing screen session (attach to the screen with screen -x openbaton)"
         if [ -f ${_openbaton_config_file} ]; then
-            screen -S openbaton -X screen -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
+            screen -S ${_screen_session_name} -X screen -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar" --spring.config.location=file:${_openbaton_config_file}
         else
-            screen -S openbaton -X screen -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
+            screen -S ${_screen_session_name} -X screen -t ${_screen_name} java -jar "${_generic_base}/build/libs/generic-vnfm-${_version}.jar"
         fi
     fi
 }
 
 function stop {
-    if screen -list | grep "openbaton" > /dev/null ; then
-	    screen -S openbaton -p ${_screen_name} -X stuff '\003'
+    if screen -list | grep "\.${_screen_session_name}" > /dev/null ; then
+	    screen -S ${_screen_session_name} -p ${_screen_name} -X stuff '\003'
     fi
 }
 
