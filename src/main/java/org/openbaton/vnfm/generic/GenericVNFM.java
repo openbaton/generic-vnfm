@@ -66,6 +66,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Value("${vnfm.ems.password:openbaton}")
   private String emsRabbitPassword;
 
+  @Value("${vnfm.endpoint:generic}")
+  private String endpointProp;
+
+  @Value("${vnfm.type:generic}")
+  private String type;
+
   @Autowired private LifeCycleManagement lcm;
 
   @Value("${vnfm.ems.userdata.filepath:/etc/openbaton/openbatonmo-vnfm-generic-user-data.sh}")
@@ -553,8 +559,6 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       }
     }
 
-    log.debug(ems.getEmsVersion());
-
     result = result.replace("export MONITORING_IP=", "export MONITORING_IP=" + monitoringIp);
     result = result.replace("export TIMEZONE=", "export TIMEZONE=" + timezone);
     result = result.replace("export BROKER_IP=", "export BROKER_IP=" + brokerIp);
@@ -568,7 +572,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     result =
         result.replace("export EMS_AUTODELETE=", "export EMS_AUTODELETE=" + ems.getEmsAutodelete());
     result = result.replace("export EMS_VERSION=", "export EMS_VERSION=" + ems.getEmsVersion());
-    result = result.replace("export ENDPOINT=", "export ENDPOINT=" + endpoint);
+    result = result.replace("export ENDPOINT=", "export ENDPOINT=" + this.endpointProp);
 
     return result;
   }

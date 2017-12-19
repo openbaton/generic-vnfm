@@ -19,9 +19,9 @@
 
 package org.openbaton.vnfm.generic.configuration;
 
-import java.io.IOException;
-import java.util.Properties;
 import javax.annotation.PostConstruct;
+import org.openbaton.common.vnfm_sdk.VnfmHelper;
+import org.openbaton.common.vnfm_sdk.amqp.VnfmSpringHelperRabbit;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +91,7 @@ public class EMSConfiguration {
   private MessageListenerAdapter listenerAdapter_emsRegistrator;
 
   private Logger log = LoggerFactory.getLogger(this.getClass());
+  @Autowired private VnfmHelper vnfmHelper;
 
   public int getMaxConcurrency() {
     return maxConcurrency;
@@ -171,14 +172,8 @@ public class EMSConfiguration {
     rabbitAdmin.declareExchange(topicExchange);
     log.info("exchange declared");
 
-    Properties properties = new Properties();
-
-    try {
-      properties.load(this.getClass().getClassLoader().getResourceAsStream("conf.properties"));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    queueName_emsRegistrator = "ems." + properties.getProperty("endpoint") + ".register";
+    queueName_emsRegistrator =
+        "ems." + ((VnfmSpringHelperRabbit) vnfmHelper).getVnfmEndpoint() + ".register";
     rabbitAdmin.declareQueue(new Queue(queueName_emsRegistrator, durable, exclusive, autodelete));
   }
 
