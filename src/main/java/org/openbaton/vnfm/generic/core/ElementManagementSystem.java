@@ -265,11 +265,11 @@ public class ElementManagementSystem implements EmsInterface {
       VirtualNetworkFunctionRecord vnfr,
       VNFCInstance vnfcInstance)
       throws Exception {
-    log.debug("Sending message and waiting: " + command + " to " + vduHostname);
     log.info("Waiting answer from EMS - " + vduHostname);
 
-    String response =
-        vnfmHelper.sendAndReceive(command, "vnfm." + vduHostname.replace("_", "-") + ".actions");
+    String queueName = "vnfm." + vduHostname + ".actions";
+    log.debug(String.format("Sending message %s to %s and waiting", command, queueName));
+    String response = vnfmHelper.sendAndReceive(command, queueName);
 
     log.debug("Received from EMS (" + vduHostname + "): " + response);
 

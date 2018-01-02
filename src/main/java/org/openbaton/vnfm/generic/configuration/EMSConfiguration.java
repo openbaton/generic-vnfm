@@ -21,7 +21,6 @@ package org.openbaton.vnfm.generic.configuration;
 
 import javax.annotation.PostConstruct;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
-import org.openbaton.common.vnfm_sdk.amqp.VnfmSpringHelperRabbit;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,8 +171,7 @@ public class EMSConfiguration {
     rabbitAdmin.declareExchange(topicExchange);
     log.info("exchange declared");
 
-    queueName_emsRegistrator =
-        "ems." + ((VnfmSpringHelperRabbit) vnfmHelper).getVnfmEndpoint() + ".register";
+    queueName_emsRegistrator = "ems." + vnfmHelper.getVnfmEndpoint() + ".register";
     rabbitAdmin.declareQueue(new Queue(queueName_emsRegistrator, durable, exclusive, autodelete));
   }
 
