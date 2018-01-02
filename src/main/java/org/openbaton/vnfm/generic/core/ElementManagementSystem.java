@@ -270,7 +270,7 @@ public class ElementManagementSystem implements EmsInterface {
 
     String response =
         vnfmHelper.sendAndReceive(
-            command, "vnfm." + vduHostname.toLowerCase().replace("_", "-") + ".actions");
+            command, "vnfm." + vduHostname.replace("_", "-") + ".actions");
 
     log.debug("Received from EMS (" + vduHostname + "): " + response);
 
