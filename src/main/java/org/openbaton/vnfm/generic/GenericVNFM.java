@@ -163,7 +163,11 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     if (scaleInOrOut.ordinal() == Action.SCALE_OUT.ordinal()) {
       log.info("Created VNFComponent");
       EmsRegistrationUnit registrationUnit = ems.addRegistrationUnit(vnfcInstance.getHostname());
-      ems.waitForEms(() -> registrationUnit.waitForEms(emsConfiguration.getWaitForEms() * 1000));
+      EmsRegistrationUnit finalRegistrationUnit = registrationUnit;
+      registrationUnit =
+          ems.waitForEms(
+                  () -> finalRegistrationUnit.waitForEms(emsConfiguration.getWaitForEms() * 1000))
+              .get();
       if (registrationUnit.isCanceled()) return null;
       else log.info(String.format("Registered EMS: %s", registrationUnit.getValue()));
       ems.saveScriptOnEms(vnfcInstance, scripts, virtualNetworkFunctionRecord);
