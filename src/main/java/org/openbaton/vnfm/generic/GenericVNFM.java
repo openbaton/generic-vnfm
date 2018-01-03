@@ -22,9 +22,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.concurrent.Future;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.descriptor.VNFComponent;
@@ -40,10 +43,11 @@ import org.openbaton.catalogue.nfvo.viminstances.BaseVimInstance;
 import org.openbaton.common.vnfm_sdk.AbstractVnfm;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
-import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
+import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.core.ElementManagementSystem;
 import org.openbaton.vnfm.generic.core.LifeCycleManagement;
+import org.openbaton.vnfm.generic.model.EmsRegistrationUnit;
 import org.openbaton.vnfm.generic.utils.JsonUtils;
 import org.openbaton.vnfm.generic.utils.LogDispatcher;
 import org.openbaton.vnfm.generic.utils.LogUtils;
@@ -80,6 +84,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Autowired private LogUtils logUtils;
 
   @Autowired private LogDispatcher logDispatcher;
+  @Autowired private EMSConfiguration emsConfiguration;
 
   public static void main(String[] args) {
     SpringApplication.run(GenericVNFM.class, args);
@@ -100,18 +105,26 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     log.info(
         "Instantiation of VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
+    Set<EmsRegistrationUnit> registrationUnits = new HashSet<>();
     for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
       for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
-        ems.register(vnfcInstance.getHostname());
+        registrationUnits.add(ems.addRegistrationUnit(vnfcInstance.getHostname()));
       }
     }
-    for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
-      for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
-        try {
-          ems.checkEms(vnfcInstance.getHostname());
-        } catch (BadFormatException e) {
-          throw new VnfmSdkException(e.getMessage());
-        }
+    Set<Future<EmsRegistrationUnit>> waiters = new HashSet<>();
+    registrationUnits.forEach(
+        u ->
+            waiters.add(
+                ems.waitForEms(() -> u.waitForEms(emsConfiguration.getWaitForEms() * 1000))));
+
+    for (Future<EmsRegistrationUnit> unitFuture : waiters) {
+      EmsRegistrationUnit unit = unitFuture.get();
+      ems.removeRegistrationUnit(unit);
+      if (unit.isCanceled()) {
+        log.info(String.format("Cancelled: %s", unit.getValue()));
+        return null;
+      } else {
+        log.info(String.format("Registered EMS: %s", unit.getValue()));
       }
     }
     if (null != scripts) {
@@ -149,32 +162,30 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     VNFCInstance vnfcInstance = (VNFCInstance) component;
     if (scaleInOrOut.ordinal() == Action.SCALE_OUT.ordinal()) {
       log.info("Created VNFComponent");
-      try {
-        ems.register(vnfcInstance.getHostname());
-        ems.checkEms(vnfcInstance.getHostname());
-      } catch (BadFormatException e) {
-        throw new VnfmSdkException(e.getMessage());
-      }
+      EmsRegistrationUnit registrationUnit = ems.addRegistrationUnit(vnfcInstance.getHostname());
+      ems.waitForEms(() -> registrationUnit.waitForEms(emsConfiguration.getWaitForEms() * 1000));
+      if (registrationUnit.isCanceled()) return null;
+      else log.info(String.format("Registered EMS: %s", registrationUnit.getValue()));
       ems.saveScriptOnEms(vnfcInstance, scripts, virtualNetworkFunctionRecord);
-      String output = "\n--------------------\n--------------------\n";
+      StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
       for (String result :
           lcm.executeScriptsForEvent(
               virtualNetworkFunctionRecord, vnfcInstance, Event.INSTANTIATE)) {
-        output += JsonUtils.parse(result);
-        output += "\n--------------------\n";
+        output.append(JsonUtils.parse(result));
+        output.append("\n--------------------\n");
       }
-      output += "\n--------------------\n";
+      output.append("\n--------------------\n");
       log.info("Executed script for INSTANTIATE. Output was: \n\n" + output);
 
       if (dependency != null) {
-        output = "\n--------------------\n--------------------\n";
+        output = new StringBuilder("\n--------------------\n--------------------\n");
         for (String result :
             lcm.executeScriptsForEvent(
                 virtualNetworkFunctionRecord, vnfcInstance, Event.CONFIGURE, dependency)) {
-          output += JsonUtils.parse(result);
-          output += "\n--------------------\n";
+          output.append(JsonUtils.parse(result));
+          output.append("\n--------------------\n");
         }
-        output += "\n--------------------\n";
+        output.append("\n--------------------\n");
         log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
       }
 
@@ -182,13 +193,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         if (VnfmUtils.getLifecycleEvent(
                 virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
             != null) {
-          output = "\n--------------------\n--------------------\n";
+          output = new StringBuilder("\n--------------------\n--------------------\n");
           for (String result :
               lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
-            output += JsonUtils.parse(result);
-            output += "\n--------------------\n";
+            output.append(JsonUtils.parse(result));
+            output.append("\n--------------------\n");
           }
-          output += "\n--------------------\n";
+          output.append("\n--------------------\n");
           log.info("Executed script for START. Output was: \n\n" + output);
         }
       }
@@ -197,14 +208,14 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       return virtualNetworkFunctionRecord;
     } else { // SCALE_IN
 
-      String output = "\n--------------------\n--------------------\n";
+      StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
       for (String result :
           lcm.executeScriptsForEventOnVnfr(
               virtualNetworkFunctionRecord, vnfcInstance, Event.SCALE_IN)) {
-        output += JsonUtils.parse(result);
-        output += "\n--------------------\n";
+        output.append(JsonUtils.parse(result));
+        output.append("\n--------------------\n");
       }
-      output += "\n--------------------\n";
+      output.append("\n--------------------\n");
       log.info("Executed script for SCALE_IN. Output was: \n\n" + output);
 
       return virtualNetworkFunctionRecord;
@@ -253,14 +264,14 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
           != null) {
         log.debug("Heal method started");
         log.info("-----------------------------------------------------------------------");
-        String output = "\n--------------------\n--------------------\n";
+        StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
         for (String result :
             lcm.executeScriptsForEvent(
                 virtualNetworkFunctionRecord, component, Event.HEAL, cause)) {
-          output += JsonUtils.parse(result);
-          output += "\n--------------------\n";
+          output.append(JsonUtils.parse(result));
+          output.append("\n--------------------\n");
         }
-        output += "\n--------------------\n";
+        output.append("\n--------------------\n");
         log.info("Executed script for HEAL. Output was: \n\n" + output);
         log.info("-----------------------------------------------------------------------");
       }
@@ -324,13 +335,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                       virtualNetworkFunctionRecord.getLifecycle_event(), Event.CONFIGURE)
                   .getLifecycle_events());
       log.info("-----------------------------------------------------------------------");
-      String output = "\n--------------------\n--------------------\n";
+      StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
       for (String result :
           lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.CONFIGURE, dependency)) {
-        output += JsonUtils.parse(result);
-        output += "\n--------------------\n";
+        output.append(JsonUtils.parse(result));
+        output.append("\n--------------------\n");
       }
-      output += "\n--------------------\n";
+      output.append("\n--------------------\n");
       log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
       log.info("-----------------------------------------------------------------------");
     } else {
@@ -348,21 +359,22 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     if (VnfmUtils.getLifecycleEvent(
             virtualNetworkFunctionRecord.getLifecycle_event(), Event.TERMINATE)
         != null) {
-      String output = "\n--------------------\n--------------------\n";
+      StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
       for (String result :
           lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.TERMINATE)) {
-        output += JsonUtils.parse(result);
-        output += "\n--------------------\n";
+        output.append(JsonUtils.parse(result));
+        output.append("\n--------------------\n");
       }
-      output += "\n--------------------\n";
+      output.append("\n--------------------\n");
       log.info("Executed script for TERMINATE. Output was: \n\n" + output);
     }
 
     for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
       for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
-        if (ems.getExpectedHostnames().contains(vnfci.getHostname())) {
-          log.warn("Canceling wait of EMS for: " + vnfci.getHostname());
-          ems.unregister(vnfci.getHostname());
+        try {
+          ems.removeRegistrationUnit(vnfci.getHostname());
+        } catch (BadFormatException e) {
+          e.printStackTrace();
         }
       }
     }
@@ -375,18 +387,18 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     log.error("Received Error for VNFR " + virtualNetworkFunctionRecord.getName());
     if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.ERROR)
         != null) {
-      String output = "\n--------------------\n--------------------\n";
+      StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
       try {
         for (String result :
             lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.ERROR)) {
-          output += JsonUtils.parse(result);
-          output += "\n--------------------\n";
+          output.append(JsonUtils.parse(result));
+          output.append("\n--------------------\n");
         }
       } catch (Exception e) {
         e.printStackTrace();
         log.error("Exception executing Error handling");
       }
-      output += "\n--------------------\n";
+      output.append("\n--------------------\n");
       log.info("Executed script for ERROR. Output was: \n\n" + output);
     }
   }
@@ -418,13 +430,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                   virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
               .getLifecycle_events()
           != null) {
-        String output = "\n--------------------\n--------------------\n";
+        StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
         for (String result :
             lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.START)) {
-          output += JsonUtils.parse(result);
-          output += "\n--------------------\n";
+          output.append(JsonUtils.parse(result));
+          output.append("\n--------------------\n");
         }
-        output += "\n--------------------\n";
+        output.append("\n--------------------\n");
         log.info("Executed script for START. Output was: \n\n" + output);
       }
     }
@@ -442,12 +454,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.STOP)
               .getLifecycle_events()
           != null) {
-        String output = "\n--------------------\n--------------------\n";
+        StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
         for (String result : lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.STOP)) {
-          output += JsonUtils.parse(result);
-          output += "\n--------------------\n";
+          output.append(JsonUtils.parse(result));
+          output.append("\n--------------------\n");
         }
-        output += "\n--------------------\n";
+        output.append("\n--------------------\n");
         log.info("Executed script for STOP. Output was: \n\n" + output);
       }
     }
@@ -467,13 +479,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                   virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
               .getLifecycle_events()
           != null) {
-        String output = "\n--------------------\n--------------------\n";
+        StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
         for (String result :
             lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.START)) {
-          output += JsonUtils.parse(result);
-          output += "\n--------------------\n";
+          output.append(JsonUtils.parse(result));
+          output.append("\n--------------------\n");
         }
-        output += "\n--------------------\n";
+        output.append("\n--------------------\n");
         log.info(
             "Executed script for START on VNFC Instance "
                 + vnfcInstance.getHostname()
@@ -497,13 +509,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.STOP)
               .getLifecycle_events()
           != null) {
-        String output = "\n--------------------\n--------------------\n";
+        StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
         for (String result :
             lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfcInstance, Event.STOP)) {
-          output += JsonUtils.parse(result);
-          output += "\n--------------------\n";
+          output.append(JsonUtils.parse(result));
+          output.append("\n--------------------\n");
         }
-        output += "\n--------------------\n";
+        output.append("\n--------------------\n");
         log.info(
             "Executed script for STOP on VNFC Instance "
                 + vnfcInstance.getHostname()
@@ -517,7 +529,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Override
   public VirtualNetworkFunctionRecord configure(
-      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) {
     return virtualNetworkFunctionRecord;
   }
 
@@ -525,8 +537,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   public VirtualNetworkFunctionRecord resume(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
       VNFCInstance vnfcInstance,
-      VNFRecordDependency dependency)
-      throws Exception {
+      VNFRecordDependency dependency) {
     return virtualNetworkFunctionRecord;
   }
 

@@ -22,10 +22,17 @@ package org.openbaton.vnfm.generic.core;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
@@ -36,6 +43,7 @@ import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
 import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
+import org.openbaton.vnfm.generic.model.EmsRegistrationUnit;
 import org.openbaton.vnfm.generic.utils.JsonUtils;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.slf4j.Logger;
@@ -44,7 +52,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-/** Created by lto on 15/09/15. */
 @Service
 @Scope
 public class ElementManagementSystem implements EmsInterface {
@@ -56,9 +63,8 @@ public class ElementManagementSystem implements EmsInterface {
   @Autowired private EMSConfiguration emsConfiguration;
 
   //TODO consider using DB in case of failure etc...
-  private static Set<String> expectedHostnames;
-
-  private static Set<String> unexpectedHostnames;
+  private static Set<EmsRegistrationUnit> registrationUnits;
+  private ThreadPoolExecutor executor;
 
   private String scriptPath;
 
@@ -67,75 +73,81 @@ public class ElementManagementSystem implements EmsInterface {
 
   public void init(String scriptPath, VnfmHelper vnfmHelper) {
     this.scriptPath = scriptPath;
-    this.expectedHostnames = new HashSet<>();
-    this.unexpectedHostnames = new HashSet<>();
+    registrationUnits = ConcurrentHashMap.newKeySet();
+    executor =
+        new ThreadPoolExecutor(5, 10, 5000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
     this.vnfmHelper = vnfmHelper;
   }
 
-  public Set<String> getExpectedHostnames() {
-    return this.expectedHostnames;
-  }
-
-  public void register(String hostname) {
+  @Override
+  public synchronized EmsRegistrationUnit addRegistrationUnit(String hostname, boolean registered) {
     this.log.debug("EMSRegister adding: " + hostname);
-    this.expectedHostnames.add(hostname);
-  }
-
-  public void unregister(String hostname) {
-    this.log.debug("EMSRegister removing: " + hostname);
-    if (this.expectedHostnames.contains(hostname)) this.expectedHostnames.remove(hostname);
-    if (this.unexpectedHostnames.contains(hostname)) this.unexpectedHostnames.remove(hostname);
+    Optional<EmsRegistrationUnit> unit =
+        registrationUnits
+            .stream()
+            .filter(
+                h -> {
+                  try {
+                    return h.getValue().contains(extractIdFromHostname(hostname));
+                  } catch (BadFormatException e) {
+                    e.printStackTrace();
+                    return false;
+                  }
+                })
+            .findAny();
+    if (!unit.isPresent()) {
+      EmsRegistrationUnit registrationUnit = new EmsRegistrationUnit();
+      registrationUnit.setRegistered(registered);
+      registrationUnit.setCanceled(false);
+      registrationUnit.setValue(hostname);
+      registrationUnits.add(registrationUnit);
+      return registrationUnit;
+    } else {
+      return unit.get();
+    }
   }
 
   @Override
-  public void unregisterFromMsg(String json) throws BadFormatException {
+  public synchronized EmsRegistrationUnit addRegistrationUnit(String hostname) {
+    return addRegistrationUnit(hostname, false);
+  }
+
+  @Override
+  public synchronized void removeRegistrationUnit(String hostname) throws BadFormatException {
+    this.log.debug("EMSRegister removing: " + hostname);
+    String extractedId = extractIdFromHostname(hostname);
+    registrationUnits =
+        registrationUnits
+            .stream()
+            .filter(
+                h -> {
+                  if (h.getValue().contains(extractedId)) {
+                    h.cancelAndNotify();
+                  }
+                  return !h.getValue().contains(extractedId);
+                })
+            .collect(Collectors.toSet());
+  }
+
+  @Override
+  public void registerFromEms(String json) throws BadFormatException {
     this.log.debug("EMSRegister received: " + json);
     JsonObject object = parser.fromJson(json, JsonObject.class);
     String hostname = object.get("hostname").getAsString();
     String extractedId = extractIdFromHostname(hostname);
-    String hostnameToRemove = null;
-    for (String expectedHostname : expectedHostnames) {
-      if (expectedHostname.endsWith(extractedId)) {
-        hostnameToRemove = expectedHostname;
-        break;
+    addRegistrationUnit(hostname);
+    for (EmsRegistrationUnit registrationUnit : registrationUnits) {
+      if (registrationUnit.getValue().endsWith(extractedId)) {
+        registrationUnit.registerAndNotify();
+        return;
       }
-    }
-    if (hostnameToRemove != null) {
-      this.log.debug("EMSRegister removing: " + hostnameToRemove);
-      this.expectedHostnames.remove(hostnameToRemove);
-    } else {
-      log.warn(
-          "Host "
-              + hostname
-              + " was not found in the list of awaiting hostnames, adding it to unexpected hostnames, damn... too fast");
-      this.unexpectedHostnames.add(hostname);
     }
   }
 
-  @Override
-  public void checkEms(String hostname) throws BadFormatException {
-    log.debug("Starting wait of EMS for: " + hostname);
-    String extractedId = extractIdFromHostname(hostname);
-    log.trace("Extracted host ID: " + extractedId);
-    int i = 0;
-    while (true) {
-      log.debug("Number of expected EMS hostnames: " + this.getExpectedHostnames().size());
-      log.debug("Waiting for " + hostname + " EMS to be started... (" + i * 5 + " secs)");
-      i++;
-      try {
-        checkEmsStarted(extractedId);
-        break;
-      } catch (RuntimeException e) {
-        if (i == emsConfiguration.getWaitForEms() / 5) {
-          throw e;
-        }
-        try {
-          Thread.sleep(5000);
-        } catch (InterruptedException e1) {
-          e1.printStackTrace();
-        }
-      }
-    }
+  public Future<EmsRegistrationUnit> waitForEms(
+      Callable<EmsRegistrationUnit> registrationUnitCallable) {
+
+    return executor.submit(registrationUnitCallable);
   }
 
   private String extractIdFromHostname(String hostname) throws BadFormatException {
@@ -149,32 +161,6 @@ public class ElementManagementSystem implements EmsInterface {
           "Hostname does not fit the expected format. Must fit: '.*-[1-9]+$'");
     }
     return extractedId;
-  }
-
-  @Override
-  public void checkEmsStarted(String hostId) throws BadFormatException {
-    boolean registered = true;
-    log.debug("Expected hostnames: " + this.getExpectedHostnames());
-    log.debug("Unexpected hostnames: " + this.unexpectedHostnames);
-    for (String unexpectedHostname : this.unexpectedHostnames) {
-      if (unexpectedHostname.endsWith(hostId)) {
-        log.debug(
-            "Found "
-                + hostId
-                + " in unexpected hostname, this means that it is already registered");
-        return;
-      }
-    }
-    for (String expectedHostname : this.getExpectedHostnames()) {
-      if (expectedHostname.endsWith(hostId)) {
-        log.debug(
-            "Found " + hostId + " in expected hostname, this means i am still waiting for it");
-        registered = false;
-        break;
-      }
-    }
-    if (!registered)
-      throw new RuntimeException("No EMS yet for host with extracted host ID: " + hostId);
   }
 
   @Override
@@ -302,6 +288,16 @@ public class ElementManagementSystem implements EmsInterface {
   }
 
   @Override
+  public void removeRegistrationUnit(EmsRegistrationUnit unit) {
+    this.log.debug("EMSRegister removing: " + unit);
+    registrationUnits =
+        registrationUnits
+            .stream()
+            .filter(h -> !h.getValue().equals(unit.getValue()))
+            .collect(Collectors.toSet());
+  }
+
+  @Override
   public String getEmsHeartbeat() {
     return emsConfiguration.getHeartbeat();
   }
@@ -314,13 +310,5 @@ public class ElementManagementSystem implements EmsInterface {
   @Override
   public String getEmsVersion() {
     return emsConfiguration.getVersion();
-  }
-
-  public Set<String> getUnexpectedHostnames() {
-    return unexpectedHostnames;
-  }
-
-  public void setUnexpectedHostnames(Set<String> unexpectedHostnames) {
-    this.unexpectedHostnames = unexpectedHostnames;
   }
 }

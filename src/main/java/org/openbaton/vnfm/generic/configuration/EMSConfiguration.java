@@ -177,7 +177,7 @@ public class EMSConfiguration {
 
   @Bean
   MessageListenerAdapter listenerAdapter_emsRegistrator() {
-    if (registrator != null) return new MessageListenerAdapter(registrator, "unregisterFromMsg");
+    if (registrator != null) return new MessageListenerAdapter(registrator, "registerFromEms");
     else return null;
   }
 
