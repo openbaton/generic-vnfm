@@ -103,9 +103,7 @@ public class LogUtils {
       log.debug("The full log path is: " + path);
       if (!f.exists()) {
         f.getParentFile().mkdirs();
-        if (!f.createNewFile()) {
-          log.error("Not able to create log file");
-        }
+	f.createNewFile();
       }
 
       if (!error) {
