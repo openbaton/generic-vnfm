@@ -76,6 +76,9 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Value("${vnfm.type:generic}")
   private String type;
 
+  @Value("${vnfm.ems.offline: false}")
+  private boolean emsOffline;
+
   @Autowired private LifeCycleManagement lcm;
 
   @Value("${vnfm.ems.userdata.filepath:/etc/openbaton/openbatonmo-vnfm-generic-user-data.sh}")
@@ -574,6 +577,12 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       }
     }
 
+    log.debug(ems.getEmsVersion());
+    if (emsOffline) {
+      result = result.replace("export OFFLINE_EMS=", "export OFFLINE_EMS=1");
+    } else {
+      result = result.replace("export OFFLINE_EMS=", "export OFFLINE_EMS=0");
+    }
     result = result.replace("export MONITORING_IP=", "export MONITORING_IP=" + monitoringIp);
     result = result.replace("export TIMEZONE=", "export TIMEZONE=" + timezone);
     result = result.replace("export BROKER_IP=", "export BROKER_IP=" + brokerIp);

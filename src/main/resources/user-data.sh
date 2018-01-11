@@ -12,7 +12,7 @@ export EMS_AUTODELETE=
 export EMS_VERSION=
 export #Hostname=
 export ENDPOINT=
-
+export OFFLINE_EMS=
 # Hostname/IP and path of the EMS repository
 export UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
 export UBUNTU_EMS_REPOSITORY_PATH="repos/apt/debian/"
@@ -28,28 +28,37 @@ export LC_CTYPE=en_US.UTF-8
 source /etc/bashrc
 
 
+
 ################
 #### Ubuntu ####
 ################
 
 install_ems_on_ubuntu () {
-    result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
-        wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
-	echo "Checking for running apt-get processes"
-	while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
-	    echo "Waiting for running apt-get processes to finish"
-	    sleep 5s
-	done
-	echo "Finished waiting for running apt-get processes"
-        apt-get update
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        apt-get install -y git
-        apt-get install -y --force-yes ems-$EMS_VERSION
+    if [ ${OFFLINE_EMS} -eq 1 ]; then
+        mkdir -p /opt/openbaton/
+        python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems-package.tar.gz');ems = response.read();file = open('ems-package.tar.gz', 'w');file.write(ems);file.close();"
+        tar -xf ems-package.tar.gz --directory /opt/openbaton/
+        bash /opt/openbaton/ems-package/install-ems-with-dependencies.sh
+        add-upstart-ems
     else
-        echo "EMS is already installed"
+        echo "Checking for running apt-get processes"
+        while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
+        echo "Waiting for running apt-get processes to finish"
+        sleep 5s
+        done
+        echo "Finished waiting for running apt-get processes"
+        apt-get update
+        apt-get install -y python
+        wget https://bootstrap.pypa.io/get-pip.py
+        python get-pip.py
+        apt-get install -y git
+        pip install pika
+        pip install gitpython
+        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+        mkdir /opt/openbaton
+        pip install openbaton-ems
+        add-upstart-ems
+
     fi
 }
 
@@ -69,21 +78,24 @@ install_zabbix_on_ubuntu () {
 ################
 
 install_ems_on_centos () {
-    result=$(yum list installed | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "[openbaton]" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "name=Open Baton Repository" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "baseurl=http://${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}/${CENTOS_EMS_REPOSITORY_PATH}" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "gpgcheck=0" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "enabled=1" >> /etc/yum.repos.d/OpenBaton.repo
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        yum install -y git
-        yum install -y ems
-        systemctl enable ems
-        #systemctl start ems
+    if [ ${OFFLINE_EMS} -eq 1 ]; then
+        mkdir -p /opt/openbaton/
+        python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems-package.tar.gz');ems = response.read();file = open('ems-package.tar.gz', 'w');file.write(ems);file.close();"
+        tar -xf ems-package.tar.gz --directory /opt/openbaton/
+        bash /opt/openbaton/ems-package/install-ems-with-dependencies.sh
+        add-upstart-ems
     else
-        echo "EMS is already installed"
+       yum --enablerepo=extras install -y epel-release
+       yum install -y wget
+       wget https://bootstrap.pypa.io/get-pip.py
+       python get-pip.py
+       yum install -y git
+       pip install pika
+       pip install gitpython
+       cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+       mkdir /opt/openbaton
+       pip install openbaton-ems
+       add-upstart-ems
     fi
 }
 
@@ -117,7 +129,7 @@ configure_ems () {
     echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
     echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
 
-    service ems restart
+    service openbaton-ems restart
 }
 
 
