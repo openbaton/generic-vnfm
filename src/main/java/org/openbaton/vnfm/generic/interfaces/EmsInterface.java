@@ -19,34 +19,29 @@
 
 package org.openbaton.vnfm.generic.interfaces;
 
-import java.util.Set;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
+import org.openbaton.vnfm.generic.model.EmsRegistrationUnit;
 
-/** Created by lto on 10/11/15. */
 public interface EmsInterface {
 
   void init(String scriptPath, VnfmHelper vnfmHelper);
 
-  Set<String> getExpectedHostnames();
+  EmsRegistrationUnit addRegistrationUnit(String hostname, boolean registered);
 
-  void register(String hostname);
+  EmsRegistrationUnit addRegistrationUnit(String hostname);
 
-  void unregister(String hostname);
+  void removeRegistrationUnit(String hostname) throws BadFormatException;
 
-  void unregisterFromMsg(String json) throws BadFormatException;
+  void registerFromEms(String json) throws BadFormatException;
 
   String getEmsHeartbeat();
 
   String getEmsAutodelete();
 
   String getEmsVersion();
-
-  void checkEmsStarted(String hostname) throws BadFormatException;
-
-  void checkEms(String hostname) throws BadFormatException;
 
   void saveScriptOnEms(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts)
       throws Exception;
@@ -63,4 +58,6 @@ public interface EmsInterface {
       VirtualNetworkFunctionRecord vnfr,
       VNFCInstance vnfcInstance)
       throws Exception;
+
+  void removeRegistrationUnit(EmsRegistrationUnit unit);
 }

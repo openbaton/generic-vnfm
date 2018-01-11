@@ -6,7 +6,6 @@ _openbaton_base="/opt/openbaton"
 _generic_base="${_openbaton_base}/generic-vnfm"
 _openbaton_config_file="/etc/openbaton/openbaton-vnfm-generic.properties"
 _version=${version}
-_version="5.1.1-SNAPSHOT"
 _screen_session_name="openbaton"
 _screen_name="generic-vnfm"
 
