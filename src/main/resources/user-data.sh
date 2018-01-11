@@ -48,7 +48,9 @@ install_ems_on_ubuntu () {
         done
         echo "Finished waiting for running apt-get processes"
         apt-get update
-        apt-get install -y python-pip
+        apt-get install -y python
+        wget https://bootstrap.pypa.io/get-pip.py
+        python get-pip.py
         apt-get install -y git
         pip install pika
         pip install gitpython
@@ -84,8 +86,9 @@ install_ems_on_centos () {
         add-upstart-ems
     else
        yum --enablerepo=extras install -y epel-release
-       yum install -y python-pip python-wheel
-       yum upgrade -y python-setuptools
+       yum install -y wget
+       wget https://bootstrap.pypa.io/get-pip.py
+       python get-pip.py
        yum install -y git
        pip install pika
        pip install gitpython
