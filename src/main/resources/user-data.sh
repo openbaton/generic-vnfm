@@ -68,7 +68,7 @@ install_zabbix_on_ubuntu () {
 #### CentOS ####
 ################
 
-install_ems_on_centos () {
+install_ems_on_rhel_based () {
     result=$(yum list installed | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
     if [ ${result} -eq 0 ]; then
         echo "Downloading EMS from ${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}"
@@ -87,7 +87,7 @@ install_ems_on_centos () {
     fi
 }
 
-install_zabbix_on_centos () {
+install_zabbix_on_rhel_based () {
     result=$( yum list installed | grep zabbix-agent | wc -l )
     if [ ${result} -eq 0 ]; then
         echo "Adding repository .."
@@ -152,14 +152,14 @@ case ${os} in
 	        install_zabbix_on_ubuntu
         fi
 	    ;;
-    centos)
-	    install_ems_on_centos
+    centos|rhel)
+	    install_ems_on_rhel_based
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
             yum install -y redhat-lsb-core
             OS_DISTRIBUTION_RELEASE_MAJOR=$( lsb_release -a | grep "Release:" | awk -F'\t' '{ print $2 }' | awk -F'.' '{ print $1 }' )
-            install_zabbix_on_centos
+            install_zabbix_on_rhel_based
         fi
 	    ;;
     *)
