@@ -193,4 +193,12 @@ public class EMSConfiguration {
       return container;
     } else return null;
   }
+
+  public String getBrokerIp() {
+    return brokerIp;
+  }
+
+  public int getRabbitPort() {
+    return rabbitPort;
+  }
 }
