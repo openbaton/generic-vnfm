@@ -134,7 +134,13 @@ public class ElementManagementSystem implements EmsInterface {
     this.log.debug("EMSRegister received: " + json);
     JsonObject object = parser.fromJson(json, JsonObject.class);
     String hostname = object.get("hostname").getAsString();
-    String extractedId = extractIdFromHostname(hostname);
+    String extractedId = "";
+    try {
+      extractedId = extractIdFromHostname(hostname);
+    } catch (BadFormatException e) {
+      log.info(e.getMessage());
+      return;
+    }
     addRegistrationUnit(hostname);
     for (EmsRegistrationUnit registrationUnit : registrationUnits) {
       if (registrationUnit.getValue().endsWith(extractedId)) {
