@@ -21,12 +21,8 @@ import com.google.gson.JsonObject;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Scanner;
-import java.util.Set;
 import java.util.concurrent.Future;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
@@ -43,23 +39,30 @@ import org.openbaton.catalogue.nfvo.viminstances.BaseVimInstance;
 import org.openbaton.common.vnfm_sdk.AbstractVnfm;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
+import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.core.ElementManagementSystem;
 import org.openbaton.vnfm.generic.core.LifeCycleManagement;
 import org.openbaton.vnfm.generic.model.EmsRegistrationUnit;
+import org.openbaton.vnfm.generic.model.VNFRErrorStatus;
+import org.openbaton.vnfm.generic.repository.VNFRErrorRepository;
 import org.openbaton.vnfm.generic.utils.JsonUtils;
 import org.openbaton.vnfm.generic.utils.LogDispatcher;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /** Created by mob on 16.07.15. */
 @EnableScheduling
 @ConfigurationProperties
+@SpringBootApplication
+@EnableJpaRepositories("org.openbaton.vnfm.generic.repository")
 public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Autowired private ElementManagementSystem ems;
@@ -85,6 +88,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Autowired private LogDispatcher logDispatcher;
   @Autowired private EMSConfiguration emsConfiguration;
+
+  @Autowired private VNFRErrorRepository vnfrErrorRepository;
 
   public static void main(String[] args) {
     SpringApplication.run(GenericVNFM.class, args);
@@ -540,9 +545,61 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Override
   public VirtualNetworkFunctionRecord resume(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
-      VNFCInstance vnfcInstance,
-      VNFRecordDependency dependency) {
+      VNFCInstance vnfcInstance,    // --null here
+      VNFRecordDependency dependency) throws Exception {
+    String vnfrId = virtualNetworkFunctionRecord.getId();
+    VNFRErrorStatus vnfrErrorStatus = vnfrErrorRepository.findFirstByVnfrId(vnfrId);
+    Integer vnfciCount = vnfrErrorStatus.getVnfciId().size();
+    try {
+      if (vnfciCount == 0 || vnfciCount > 0) {   // if vnfciCount =0, then script not executed for any vnfci. If vnfciCount=n, then it got executed for the vnfci in db, so re-execute for rest.
+        for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+          for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
+            // to be executed for all except the one in db
+            if(vnfciCount == 0) {
+//              for (String id : vnfrErrorStatus.getVnfciId()) {
+//                if (!id.equals(vnfci.getId())) {
+                  log.info("-----------------------------------------------------------------------");
+                  StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
+                  for (String result :
+                      lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, vnfrErrorStatus.getEvent(), vnfci, vnfrErrorStatus.getScript(), dependency)) {
+                    output.append(JsonUtils.parse(result));
+                    output.append("\n--------------------\n");
+                  }
+                  output.append("\n--------------------\n");
+                  log.info("Executed script for CONFIGURE. Output was: \n\n" + output);
+                  log.info("-----------------------------------------------------------------------");
+//                }
+//              }
+            }
+          }
+        }
+      }      // resume called for all vnfcis
+      //delete vnfrError record
+      log.debug("Deleting error information from database for VNFR: " + vnfrId);
+      vnfrErrorRepository.delete(vnfrId);
+    }
+    catch(Exception e)
+    {
+      throw new VnfmSdkException("VNFR: "+ vnfrId + "has thrown the following error while resume action: " + e);
+    }
     return virtualNetworkFunctionRecord;
+  }
+
+  @Override
+  protected Action getResumedAction(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
+                                    VNFCInstance vnfcInstance){
+    Action action = null;
+    String vnfrId = virtualNetworkFunctionRecord.getId();
+    VNFRErrorStatus erroredVnfr = vnfrErrorRepository.findFirstByVnfrId(vnfrId);
+    String erroredEvent = erroredVnfr.getEvent();
+    for (Action ac : Action.values()){
+      if(ac.name().equals(erroredEvent)) {
+        log.info("Obtained resume action: " + ac.name());
+        action = ac;
+        break;
+      }
+    }
+    return action;
   }
 
   @Override

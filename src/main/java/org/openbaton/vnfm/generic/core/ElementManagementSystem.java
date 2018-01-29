@@ -282,7 +282,8 @@ public class ElementManagementSystem implements EmsInterface {
           vnfcInstance,
           response,
           true);
-      throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
+      throw new Exception(err);
+    //  throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
     }
     return response;
   }
