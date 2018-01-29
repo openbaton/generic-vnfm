@@ -55,7 +55,7 @@ public class LifeCycleManagement {
 
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event)
-      throws Exception { //TODO make it parallel                               // INSTANTIATE, TERMINATE, ERROR, START
+      throws Exception { //TODO make it parallel
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     Collection<String> res = new ArrayList<>();
     LifecycleEvent le =
@@ -108,9 +108,6 @@ public class LifeCycleManagement {
               log.debug("Saving log to file...");
               logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
               vnfr.getVnfciId().add(vnfcInstance.getId());
-//              vnfrErrorRepository.save(vnfr);
-//              VNFRErrorStatus test = vnfrErrorRepository.findFirstById(virtualNetworkFunctionRecord.getVnfrId());
-//              log.debug("VNFR_ERROR_STATUS: "+ test);
            } catch (Exception e) {
               log.debug("Exception for vnfci: " + vnfcInstance.getId());
               vnfrErrorRepository.save(vnfr);
@@ -127,7 +124,7 @@ public class LifeCycleManagement {
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
       Event event,
       VNFRecordDependency dependency)
-      throws Exception {                                      //CONFIGURE
+      throws Exception {
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
@@ -236,7 +233,7 @@ public class LifeCycleManagement {
       VNFCInstance vnfcInstance,
       Event event,
       VNFRecordDependency dependency)
-      throws Exception {                                        //CONFIGURE
+      throws Exception {
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     List<String> res = new ArrayList<>();
     LifecycleEvent le =
@@ -342,7 +339,7 @@ public class LifeCycleManagement {
       VNFCInstance vnfcInstance,
       Event event,
       String cause)
-      throws Exception {                                                //HEAL
+      throws Exception {
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     List<String> res = new LinkedList<>();
     LifecycleEvent le =
@@ -419,7 +416,7 @@ public class LifeCycleManagement {
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
       VNFCInstance vnfcInstance,
       Event event)
-      throws Exception {                                                          //START
+      throws Exception {
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     List<String> res = new ArrayList<>();
     LifecycleEvent le =
@@ -605,12 +602,12 @@ public class LifeCycleManagement {
     }
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), erroredEvent);
-    log.debug("The event in error for "+ virtualNetworkFunctionRecord.getName()+ " is: "+ le);
-    if(le!= null) {                         //find error script based on script id
+    log.debug("The event in error for " + virtualNetworkFunctionRecord.getName() + " is: " + le);
+    if (le != null) {                         //find error script based on script id
       script = le.getLifecycle_events().get(scriptId);
     }
     ////////////   for either case
-    if(vnfcInstance != null) {
+    if (vnfcInstance != null) {
       Map<String, String> tempEnv = new HashMap<>();
       for (Ip ip : vnfcInstance.getIps()) {
         log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
@@ -621,39 +618,39 @@ public class LifeCycleManagement {
         tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
       }
 
-    ////////////   when there is depedency
-    log.debug("DEPENDENCY IS: " + dependency);
-    if(dependency != null) {
-      int indexOf = script.indexOf('_');
-      VNFCDependencyParameters vnfcDependencyParameters = null;
-      String type = null;
-      if (indexOf != -1) {
-        type = script.substring(0, indexOf);
-        vnfcDependencyParameters = dependency.getVnfcParameters().get(type);
-      }
-      log.debug("There are " + vnfcDependencyParameters.getParameters().size() + " VNFCInstanceForeign");
-      for (String vnfcForeignId : vnfcDependencyParameters.getParameters().keySet()) {
-        log.info("Running script: " + script + " for VNFCInstance foreign id " + vnfcForeignId);
-        log.info(
-            "Sending command: " + script + " to adding relation with type: " + type
-                    + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
+      ////////////   when there is depedency
+      log.debug("DEPENDENCY IS: " + dependency);
+      if (dependency != null) {
+        int indexOf = script.indexOf('_');
+        VNFCDependencyParameters vnfcDependencyParameters = null;
+        String type = null;
+        if (indexOf != -1) {
+          type = script.substring(0, indexOf);
+          vnfcDependencyParameters = dependency.getVnfcParameters().get(type);
+        }
+        log.debug("There are " + vnfcDependencyParameters.getParameters().size() + " VNFCInstanceForeign");
+        for (String vnfcForeignId : vnfcDependencyParameters.getParameters().keySet()) {
+          log.info("Running script: " + script + " for VNFCInstance foreign id " + vnfcForeignId);
+          log.info(
+              "Sending command: " + script + " to adding relation with type: " + type
+                  + " from VirtualNetworkFunctionRecord " + virtualNetworkFunctionRecord.getName());
 
-        //Adding foreign parameters such as ip
-        if (script.contains("_")) {
           //Adding foreign parameters such as ip
-          Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
-          for (Map.Entry<String, String> param : parameters.entrySet()) {
-            tempEnv.put(type + "_" + param.getKey(), param.getValue());
-          }
+          if (script.contains("_")) {
+            //Adding foreign parameters such as ip
+            Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+            for (Map.Entry<String, String> param : parameters.entrySet()) {
+              tempEnv.put(type + "_" + param.getKey(), param.getValue());
+            }
 
-          Map<String, String> parametersVNFC =
-              vnfcDependencyParameters.getParameters().get(vnfcForeignId).getParameters();
-          for (Map.Entry<String, String> param : parametersVNFC.entrySet()) {
-            tempEnv.put(type + "_" + param.getKey(), param.getValue());
+            Map<String, String> parametersVNFC =
+                vnfcDependencyParameters.getParameters().get(vnfcForeignId).getParameters();
+            for (Map.Entry<String, String> param : parametersVNFC.entrySet()) {
+              tempEnv.put(type + "_" + param.getKey(), param.getValue());
+            }
           }
         }
       }
-    }
 
       ////////////   for either case
       tempEnv.put("hostname", vnfcInstance.getHostname());

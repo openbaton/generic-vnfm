@@ -365,6 +365,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   public VirtualNetworkFunctionRecord terminate(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
     log.debug("Termination of VNF: " + virtualNetworkFunctionRecord.getName());
+    String vnfrId = virtualNetworkFunctionRecord.getId();
     if (VnfmUtils.getLifecycleEvent(
             virtualNetworkFunctionRecord.getLifecycle_event(), Event.TERMINATE)
         != null) {
@@ -382,6 +383,11 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
         try {
           ems.removeRegistrationUnit(vnfci.getHostname());
+          if((vnfrErrorRepository.findFirstByVnfrId(vnfrId)) != null)
+          {
+            vnfrErrorRepository.delete(vnfrId);
+            log.info("Error information for terminated VNRF with id: "+ vnfrId + "  deleted from database");
+          }
         } catch (BadFormatException e) {
           e.printStackTrace();
         }
