@@ -130,7 +130,7 @@ public class ElementManagementSystem implements EmsInterface {
   }
 
   @Override
-  public void registerFromEms(String json)  {
+  public void registerFromEms(String json) {
     this.log.debug("EMSRegister received: " + json);
     JsonObject object = parser.fromJson(json, JsonObject.class);
     String hostname = object.get("hostname").getAsString();
