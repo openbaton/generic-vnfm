@@ -69,7 +69,6 @@ install_zabbix_on_ubuntu () {
 ################
 
 install_ems_on_centos () {
-    yum --enablerepo=extras install -y epel-release
     yum install -y wget
     wget https://bootstrap.pypa.io/get-pip.py
     python get-pip.py
