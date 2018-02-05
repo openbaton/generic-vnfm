@@ -28,29 +28,29 @@ export LC_CTYPE=en_US.UTF-8
 source /etc/bashrc
 
 
+
 ################
 #### Ubuntu ####
 ################
 
 install_ems_on_ubuntu () {
-    result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
-        wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
-	echo "Checking for running apt-get processes"
-	while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
-	    echo "Waiting for running apt-get processes to finish"
-	    sleep 5s
-	done
-	echo "Finished waiting for running apt-get processes"
-        apt-get update
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        apt-get install -y git
-        apt-get install -y --force-yes ems-$EMS_VERSION
-    else
-        echo "EMS is already installed"
-    fi
+    echo "Checking for running apt-get processes"
+    while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
+    echo "Waiting for running apt-get processes to finish"
+    sleep 5s
+    done
+    echo "Finished waiting for running apt-get processes"
+    apt-get update
+    apt-get install -y python
+    wget https://bootstrap.pypa.io/get-pip.py
+    python get-pip.py
+    apt-get install -y git
+    pip install pika
+    pip install gitpython
+    cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+    mkdir /opt/openbaton
+    pip install openbaton-ems
+    add-upstart-ems
 }
 
 install_zabbix_on_ubuntu () {
@@ -69,22 +69,17 @@ install_zabbix_on_ubuntu () {
 ################
 
 install_ems_on_centos () {
-    result=$(yum list installed | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "[openbaton]" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "name=Open Baton Repository" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "baseurl=http://${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}/${CENTOS_EMS_REPOSITORY_PATH}" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "gpgcheck=0" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "enabled=1" >> /etc/yum.repos.d/OpenBaton.repo
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        yum install -y git
-        yum install -y ems
-        systemctl enable ems
-        #systemctl start ems
-    else
-        echo "EMS is already installed"
-    fi
+    yum --enablerepo=extras install -y epel-release
+    yum install -y wget
+    wget https://bootstrap.pypa.io/get-pip.py
+    python get-pip.py
+    yum install -y git
+    pip install pika
+    pip install gitpython
+    cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+    mkdir /opt/openbaton
+    pip install openbaton-ems
+    add-upstart-ems
 }
 
 install_zabbix_on_centos () {
@@ -116,8 +111,7 @@ configure_ems () {
     echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
     echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
     echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
-
-    service ems restart
+    service openbaton-ems restart
 }
 
 
@@ -144,7 +138,7 @@ else
 fi
 
 case ${os} in
-    ubuntu) 
+    ubuntu)
 	    install_ems_on_ubuntu
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
@@ -166,7 +160,7 @@ case ${os} in
 	    echo "OS not recognized"
 	    exit 1
 	    ;;
-esac	
+esac
 
 configure_ems
 if [ -n "${MONITORING_IP}" ]; then
