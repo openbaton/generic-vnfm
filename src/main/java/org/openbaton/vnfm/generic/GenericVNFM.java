@@ -57,7 +57,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-/** Created by mob on 16.07.15. */
 @EnableScheduling
 @ConfigurationProperties
 public class GenericVNFM extends AbstractVnfmSpringAmqp {
