@@ -41,7 +41,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
-/** Created by lto on 09/11/15. */
 @Configuration
 @EnableRabbit
 @ConfigurationProperties(prefix = "vnfm.rabbitmq")
@@ -187,8 +186,6 @@ public class EMSConfiguration {
       SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
       container.setConnectionFactory(emsConnectionFactory);
       container.setQueueNames(queueName_emsRegistrator);
-      container.setConcurrentConsumers(1);
-      container.setMaxConcurrentConsumers(15);
       container.setMessageListener(listenerAdapter_emsRegistrator);
       return container;
     } else return null;
