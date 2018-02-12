@@ -100,7 +100,7 @@ javadoc {
 }
 
 dependencies {
-    compile 'org.openbaton:vnfm-sdk-amqp:5.1.3-SNAPSHOT'
+    compile 'org.openbaton:vnfm-sdk-amqp:5.2.0'
 }
 
 // Force code formatting
