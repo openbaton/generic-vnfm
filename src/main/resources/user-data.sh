@@ -31,6 +31,7 @@ prepare_machine_generic () {
     #Installation of pip
     wget https://bootstrap.pypa.io/get-pip.py
     python get-pip.py
+    pip install --upgrade setuptools
 }
 
 install_configure_pip_packages () {
