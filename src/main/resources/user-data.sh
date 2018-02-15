@@ -82,8 +82,6 @@ install_zabbix_on_ubuntu () {
 
 prepare_machine_centos () {
     yum install -y wget
-    wget https://bootstrap.pypa.io/get-pip.py
-    python get-pip.py
     yum install -y git
 }
 
@@ -144,8 +142,6 @@ else
     exit 1
 fi
 
-prepare_machine_generic
-
 case ${os} in
     ubuntu)
             prepare_machine_ubuntu
@@ -171,6 +167,7 @@ case ${os} in
 	    ;;
 esac
 
+prepare_machine_generic
 install_configure_pip_packages
 configure_ems
 if [ -n "${MONITORING_IP}" ]; then
