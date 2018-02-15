@@ -40,7 +40,6 @@ import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.catalogue.nfvo.Script;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
-import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.openbaton.vnfm.generic.model.EmsRegistrationUnit;
@@ -283,7 +282,7 @@ public class ElementManagementSystem implements EmsInterface {
           response,
           true);
       throw new Exception(err);
-    //  throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
+      //  throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
     }
     return response;
   }
