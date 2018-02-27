@@ -285,9 +285,17 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Override
   public VirtualNetworkFunctionRecord updateSoftware(
       Script script, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
-    for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
-      for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-        updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
+    /*
+     * If script is null the "updateSoftware" operation is intended as the execution of the UPDATE lifecycle event
+     * otherwise the content of the script passed is used to update the correspondent script in the VNFC instances
+     *
+     * */
+    if (script == null) lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.UPDATE);
+    else {
+      for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+        for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+          updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
+        }
       }
     }
     return virtualNetworkFunctionRecord;
