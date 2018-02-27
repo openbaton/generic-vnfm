@@ -15,7 +15,7 @@ export ENDPOINT=
 
 # Hostname/IP and path of the EMS repository
 export UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
-export UBUNTU_EMS_REPOSITORY_PATH="repos/apt/debian/"
+export UBUNTU_EMS_REPOSITORY_PATH="repos/openbaton/"
 export CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
 export CENTOS_EMS_REPOSITORY_PATH="repos/rpm/"
 
@@ -33,13 +33,15 @@ source /etc/bashrc
 ################
 
 install_ems_on_ubuntu () {
+    OS_DISTRIBUTION_CODENAME="${1}"
+
     result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
     if [ ${result} -eq 0 ]; then
         echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
-        wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
+        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH}/${OS_DISTRIBUTION_CODENAME}/release ${OS_DISTRIBUTION_CODENAME} main" >> /etc/apt/sources.list
+        wget -O - http://get.openbaton.org/keys/openbaton.public.key| apt-key add -
 	echo "Checking for running apt-get processes"
-	while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
+	while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ]; do
 	    echo "Waiting for running apt-get processes to finish"
 	    sleep 5s
 	done
@@ -145,7 +147,8 @@ fi
 
 case ${os} in
     ubuntu) 
-	    install_ems_on_ubuntu
+        OS_DISTRIBUTION_CODENAME=$( lsb_release -a 2>/dev/null | grep "Codename" | sed "s/[ \t]*//g" | awk -F':' '{ print $2 }' )
+	    install_ems_on_ubuntu "${OS_DISTRIBUTION_CODENAME}"
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
