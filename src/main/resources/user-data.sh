@@ -17,7 +17,10 @@ export ENDPOINT=
 export UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
 export UBUNTU_EMS_REPOSITORY_PATH="repos/openbaton/"
 export CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
-export CENTOS_EMS_REPOSITORY_PATH="repos/rpm/"
+export CENTOS_EMS_REPOSITORY_PATH="repos/openbaton/"
+
+export EMS_PROPERTIES_DIR="/etc/openbaton"
+export EMS_PROPERTIES_FILE="${EMS_PROPERTIES_DIR}/openbaton-ems.properties"
 
 export OS_DISTRIBUTION_RELEASE_MAJOR=
 
@@ -35,7 +38,7 @@ source /etc/bashrc
 install_ems_on_ubuntu () {
     OS_DISTRIBUTION_CODENAME="${1}"
 
-    result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
+    result=$(dpkg -l | grep "openbaton-ems" | wc -l)
     if [ ${result} -eq 0 ]; then
         echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
         echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH}/${OS_DISTRIBUTION_CODENAME}/release ${OS_DISTRIBUTION_CODENAME} main" >> /etc/apt/sources.list
@@ -49,7 +52,11 @@ install_ems_on_ubuntu () {
         apt-get update
         cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
         apt-get install -y git
-        apt-get install -y --force-yes ems-$EMS_VERSION
+        if [ -z "${EMS_VERSION}" ]; then
+            apt-get install -y --force-yes openbaton-ems
+        else
+            apt-get install -y --force-yes openbaton-ems=${EMS_VERSION}
+        fi
     else
         echo "EMS is already installed"
     fi
@@ -71,18 +78,18 @@ install_zabbix_on_ubuntu () {
 ################
 
 install_ems_on_centos () {
-    result=$(yum list installed | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
+    result=$(yum list installed | grep "openbaton-ems" | wc -l)
     if [ ${result} -eq 0 ]; then
         echo "Downloading EMS from ${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}"
         echo "[openbaton]" >> /etc/yum.repos.d/OpenBaton.repo
         echo "name=Open Baton Repository" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "baseurl=http://${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}/${CENTOS_EMS_REPOSITORY_PATH}" >> /etc/yum.repos.d/OpenBaton.repo
+        echo "baseurl=http://${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}/${CENTOS_EMS_REPOSITORY_PATH}/centos" >> /etc/yum.repos.d/OpenBaton.repo
         echo "gpgcheck=0" >> /etc/yum.repos.d/OpenBaton.repo
         echo "enabled=1" >> /etc/yum.repos.d/OpenBaton.repo
         cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
         yum install -y git
-        yum install -y ems
-        systemctl enable ems
+        yum install -y openbaton-ems
+        systemctl enable openbaton-ems
         #systemctl start ems
     else
         echo "EMS is already installed"
@@ -107,19 +114,19 @@ install_zabbix_on_centos () {
 #############
 
 configure_ems () {
-    mkdir -p /etc/openbaton/ems
-    echo [ems] > /etc/openbaton/ems/conf.ini
-    echo broker_ip=$BROKER_IP >> /etc/openbaton/ems/conf.ini
-    echo broker_port=$BROKER_PORT >> /etc/openbaton/ems/conf.ini
-    echo username=$USERNAME >> /etc/openbaton/ems/conf.ini
-    echo password=$PASSWORD >> /etc/openbaton/ems/conf.ini
-    echo exchange=$EXCHANGE_NAME >> /etc/openbaton/ems/conf.ini
-    echo heartbeat=$EMS_HEARTBEAT >> /etc/openbaton/ems/conf.ini
-    echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
-    echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
-    echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
+    mkdir -p "${EMS_PROPERTIES_DIR}"
+    echo [ems] > "${EMS_PROPERTIES_FILE}"
+    echo broker_ip=$BROKER_IP >> "${EMS_PROPERTIES_FILE}"
+    echo broker_port=$BROKER_PORT >> "${EMS_PROPERTIES_FILE}"
+    echo username=$USERNAME >> "${EMS_PROPERTIES_FILE}"
+    echo password=$PASSWORD >> "${EMS_PROPERTIES_FILE}"
+    echo exchange=$EXCHANGE_NAME >> "${EMS_PROPERTIES_FILE}"
+    echo heartbeat=$EMS_HEARTBEAT >> "${EMS_PROPERTIES_FILE}"
+    echo autodelete=$EMS_AUTODELETE >> "${EMS_PROPERTIES_FILE}"
+    echo type=$ENDPOINT >> "${EMS_PROPERTIES_FILE}"
+    echo hostname=$Hostname >> "${EMS_PROPERTIES_FILE}"
 
-    service ems restart
+    service openbaton-ems restart
 }
 
 
