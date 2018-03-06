@@ -20,6 +20,7 @@
 package org.openbaton.vnfm.generic.interfaces;
 
 import org.openbaton.catalogue.mano.record.VNFCInstance;
+import org.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
@@ -50,6 +51,12 @@ public interface EmsInterface {
       VNFCInstance vnfcInstance,
       Object scripts,
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord)
+      throws Exception;
+
+  void saveVNFRecordDependencyOnEms(
+      VirtualNetworkFunctionRecord vnfr,
+      VNFCInstance vnfcInstance,
+      VNFRecordDependency vnfRecordDependency)
       throws Exception;
 
   String executeActionOnEMS(

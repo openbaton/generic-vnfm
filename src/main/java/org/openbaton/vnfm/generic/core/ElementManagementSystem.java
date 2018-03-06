@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
+import org.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.catalogue.nfvo.Script;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
@@ -67,6 +68,9 @@ public class ElementManagementSystem implements EmsInterface {
   private ThreadPoolExecutor executor;
 
   private String scriptPath;
+  // Path of the parameters' file on the EMS
+  // If it is /opt/openbaton/, in such path will be stored the VNFRDependency object
+  private String parametersFilePath;
 
   private VnfmHelper vnfmHelper;
   @Autowired private LogUtils logUtils;
@@ -248,6 +252,22 @@ public class ElementManagementSystem implements EmsInterface {
             vnfcInstance);
       }
     }
+  }
+
+  @Override
+  public void saveVNFRecordDependencyOnEms(
+      VirtualNetworkFunctionRecord vnfr,
+      VNFCInstance vnfcInstance,
+      VNFRecordDependency vnfRecordDependency)
+      throws Exception {
+
+    String vnfRecordDependencyJson = parser.toJson(vnfRecordDependency);
+
+    JsonObject jsonMessage =
+        JsonUtils.getJsonObject(
+            "SAVE_VNFR_DEPENDENCY", vnfRecordDependencyJson, parametersFilePath);
+
+    executeActionOnEMS(vnfcInstance.getHostname(), jsonMessage.toString(), vnfr, vnfcInstance);
   }
 
   @Override

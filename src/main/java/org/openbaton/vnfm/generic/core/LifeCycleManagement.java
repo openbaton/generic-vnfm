@@ -111,6 +111,33 @@ public class LifeCycleManagement {
     return res;
   }
 
+  private Map<String, String> setOwnIpsInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
+    //Adding own ips
+    for (Ip ip : vnfcInstance.getIps()) {
+      log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+      env.put(ip.getNetName(), ip.getIp());
+    }
+
+    //Adding own floating ip
+    for (Ip fip : vnfcInstance.getFloatingIps()) {
+      log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
+      env.put(fip.getNetName() + "_floatingIp", fip.getIp());
+    }
+    return env;
+  }
+
+  private Map<String, String> clearOwnIpsInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
+    //Clearing own ips
+    for (Ip ip : vnfcInstance.getIps()) {
+      env.remove(ip.getNetName());
+    }
+    //Clearing own floating ip
+    for (Ip fip : vnfcInstance.getFloatingIps()) {
+      env.remove(fip.getNetName() + "_floatingIp");
+    }
+    return env;
+  }
+
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
       Event event,
@@ -137,23 +164,23 @@ public class LifeCycleManagement {
 
         for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+
+            // save dependency in the ems
+            ems.saveVNFRecordDependencyOnEms(
+                virtualNetworkFunctionRecord, vnfcInstance, dependency);
+
+            // add own ips and floating ip to env
+            env = setOwnIpsInEnv(env, vnfcInstance);
+            // add hostname to env
+            env.put("hostname", vnfcInstance.getHostname());
+
+            // check if the script starts with type
             if (dependency.getVnfcParameters().get(type) != null) {
+              // send execute for each dependency
               for (String vnfcId :
                   dependency.getVnfcParameters().get(type).getParameters().keySet()) {
 
                 Map<String, String> tempEnv = new HashMap<>();
-
-                //Adding own ips
-                for (Ip ip : vnfcInstance.getIps()) {
-                  log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-                  tempEnv.put(ip.getNetName(), ip.getIp());
-                }
-
-                //Adding own floating ip
-                for (Ip fip : vnfcInstance.getFloatingIps()) {
-                  log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
-                  tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-                }
 
                 if (script.contains("_")) {
                   //Adding foreign parameters such as ip
@@ -181,7 +208,6 @@ public class LifeCycleManagement {
                   }
                 }
 
-                tempEnv.put("hostname", vnfcInstance.getHostname());
                 tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                 env.putAll(tempEnv);
                 log.info("Environment Variables are: " + env);
@@ -201,6 +227,23 @@ public class LifeCycleManagement {
                 }
               }
             }
+            // the script does not begin with "<type>_" so it will be executed only once
+            // like a script in the INSTANTIATE lifecycle event
+            else {
+              String command = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
+              String output =
+                  ems.executeActionOnEMS(
+                      vnfcInstance.getHostname(),
+                      command,
+                      virtualNetworkFunctionRecord,
+                      vnfcInstance);
+              res.add(output);
+              logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
+            }
+
+            // clean own ips and hostname in env
+            env = clearOwnIpsInEnv(env, vnfcInstance);
+            env.remove("hostname");
           }
         }
       }
