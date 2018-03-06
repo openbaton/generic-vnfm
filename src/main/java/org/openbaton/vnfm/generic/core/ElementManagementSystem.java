@@ -77,6 +77,7 @@ public class ElementManagementSystem implements EmsInterface {
 
   public void init(String scriptPath, VnfmHelper vnfmHelper) {
     this.scriptPath = scriptPath;
+    this.parametersFilePath = this.scriptPath;
     registrationUnits = ConcurrentHashMap.newKeySet();
     executor =
         new ThreadPoolExecutor(5, 10, 5000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
