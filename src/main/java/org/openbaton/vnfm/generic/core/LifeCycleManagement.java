@@ -65,22 +65,38 @@ public class LifeCycleManagement {
     } else {
       removingStr = "Adding ";
     }
-    for (NetworkIps networkIps : vnfcInstance.getIps()) {
-      log.debug(
-          removingStr
-              + "net: "
-              + networkIps.getNetName()
-              + " with value: "
-              + networkIps.getSubnetIps().iterator().next().getIp());
-      tempEnv.put(
-          prefix + networkIps.getNetName(), networkIps.getSubnetIps().iterator().next().getIp());
-      log.debug(
-          removingStr
-              + "net: "
-              + networkIps.getNetName()
-              + "_ips with value: "
-              + networkIps.printSubnetIps());
-      tempEnv.put(prefix + networkIps.getNetName() + "_ips", networkIps.printSubnetIps());
+    if (vnfcInstance.getFixedIps().isEmpty()) {
+      // this is the deprecated method but just in case there are instances in the database already do some minor
+      // level of support
+      for (Ip ip : vnfcInstance.getIps()) {
+        log.debug(
+            removingStr
+                + "net: "
+                + ip.getNetName()
+                + " with value: "
+                + ip.getIp());
+        tempEnv.put(
+            prefix + ip.getNetName(), ip.getIp());
+        //NOTE: this means that the list of ips is not getting populated
+      }
+    } else {
+      for (NetworkIps networkIps : vnfcInstance.getFixedIps()) {
+        log.debug(
+            removingStr
+                + "net: "
+                + networkIps.getNetName()
+                + " with value: "
+                + networkIps.getSubnetIps().iterator().next().getIp());
+        tempEnv.put(
+            prefix + networkIps.getNetName(), networkIps.getSubnetIps().iterator().next().getIp());
+        log.debug(
+            removingStr
+                + "net: "
+                + networkIps.getNetName()
+                + "_ips with value: "
+                + networkIps.printSubnetIps());
+        tempEnv.put(prefix + networkIps.getNetName() + "_ips", networkIps.printSubnetIps());
+      }
     }
     log.debug(removingStr + "floatingIp: " + vnfcInstance.getFloatingIps());
     for (Ip fip : vnfcInstance.getFloatingIps()) {
