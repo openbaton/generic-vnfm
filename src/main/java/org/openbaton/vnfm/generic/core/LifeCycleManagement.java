@@ -28,6 +28,7 @@ import java.util.Map;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.common.Ip;
 import org.openbaton.catalogue.mano.common.LifecycleEvent;
+import org.openbaton.catalogue.mano.common.NetworkIps;
 import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VNFRecordDependency;
@@ -53,6 +54,45 @@ public class LifeCycleManagement {
   @Autowired private ElementManagementSystem ems;
   @Autowired private LogUtils logUtils;
 
+  private Map<String, String> addLocalEnvironmentalVariables(
+      VNFCInstance vnfcInstance, boolean removing) {
+    Map<String, String> tempEnv = new HashMap<>();
+    String removingStr = "";
+    String prefix = "";
+    if (removing) {
+      removingStr = "Removing ";
+      prefix = "removing_";
+    } else {
+      removingStr = "Adding ";
+    }
+    for (NetworkIps networkIps : vnfcInstance.getIps()) {
+      log.debug(
+          removingStr
+              + "net: "
+              + networkIps.getNetName()
+              + " with value: "
+              + networkIps.getSubnetIps().iterator().next().getIp());
+      tempEnv.put(
+          prefix + networkIps.getNetName(), networkIps.getSubnetIps().iterator().next().getIp());
+      log.debug(
+          removingStr
+              + "net: "
+              + networkIps.getNetName()
+              + "_ips with value: "
+              + networkIps.printSubnetIps());
+      tempEnv.put(prefix + networkIps.getNetName() + "_ips", networkIps.printSubnetIps());
+    }
+    log.debug(removingStr + "floatingIp: " + vnfcInstance.getFloatingIps());
+    for (Ip fip : vnfcInstance.getFloatingIps()) {
+      tempEnv.put(prefix + fip.getNetName() + "_floatingIp", fip.getIp());
+    }
+
+    tempEnv.put(prefix + "hostname", vnfcInstance.getHostname());
+    tempEnv = modifyUnsafeEnvVarNames(tempEnv);
+
+    return tempEnv;
+  }
+
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event)
       throws Exception { //TODO make it parallel
@@ -76,18 +116,7 @@ public class LifeCycleManagement {
         for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
 
-            Map<String, String> tempEnv = new HashMap<>();
-            for (Ip ip : vnfcInstance.getIps()) {
-              log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-              tempEnv.put(ip.getNetName(), ip.getIp());
-            }
-            log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-            for (Ip fip : vnfcInstance.getFloatingIps()) {
-              tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-            }
-
-            tempEnv.put("hostname", vnfcInstance.getHostname());
-            tempEnv = modifyUnsafeEnvVarNames(tempEnv);
+            Map<String, String> tempEnv = addLocalEnvironmentalVariables(vnfcInstance, false);
             env.putAll(tempEnv);
             log.info("Environment Variables are: " + env);
 
@@ -141,19 +170,7 @@ public class LifeCycleManagement {
               for (String vnfcId :
                   dependency.getVnfcParameters().get(type).getParameters().keySet()) {
 
-                Map<String, String> tempEnv = new HashMap<>();
-
-                //Adding own ips
-                for (Ip ip : vnfcInstance.getIps()) {
-                  log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-                  tempEnv.put(ip.getNetName(), ip.getIp());
-                }
-
-                //Adding own floating ip
-                for (Ip fip : vnfcInstance.getFloatingIps()) {
-                  log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
-                  tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-                }
+                Map<String, String> tempEnv = addLocalEnvironmentalVariables(vnfcInstance, false);
 
                 if (script.contains("_")) {
                   //Adding foreign parameters such as ip
@@ -181,7 +198,6 @@ public class LifeCycleManagement {
                   }
                 }
 
-                tempEnv.put("hostname", vnfcInstance.getHostname());
                 tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                 env.putAll(tempEnv);
                 log.info("Environment Variables are: " + env);
@@ -249,19 +265,8 @@ public class LifeCycleManagement {
                     + " from VirtualNetworkFunctionRecord "
                     + virtualNetworkFunctionRecord.getName());
 
-            Map<String, String> tempEnv = new HashMap<>();
+            Map<String, String> tempEnv = addLocalEnvironmentalVariables(vnfcInstance, false);
 
-            //Adding own ips
-            for (Ip ip : vnfcInstance.getIps()) {
-              log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-              tempEnv.put(ip.getNetName(), ip.getIp());
-            }
-
-            //Adding own floating ip
-            log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-            for (Ip fip : vnfcInstance.getFloatingIps()) {
-              tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-            }
             //Adding foreign parameters such as ip
             if (script.contains("_")) {
               //Adding foreign parameters such as ip
@@ -277,7 +282,6 @@ public class LifeCycleManagement {
               }
             }
 
-            tempEnv.put("hostname", vnfcInstance.getHostname());
             tempEnv = modifyUnsafeEnvVarNames(tempEnv);
             env.putAll(tempEnv);
             log.info("The Environment Variables for script " + script + " are: " + env);
@@ -325,17 +329,8 @@ public class LifeCycleManagement {
                 + script
                 + " to VirtualNetworkFunctionRecord: "
                 + virtualNetworkFunctionRecord.getName());
-        Map<String, String> tempEnv = new HashMap<>();
-        for (Ip ip : vnfcInstance.getIps()) {
-          log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-          tempEnv.put(ip.getNetName(), ip.getIp());
-        }
-        log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-        for (Ip fip : vnfcInstance.getFloatingIps()) {
-          tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-        }
+        Map<String, String> tempEnv = addLocalEnvironmentalVariables(vnfcInstance, false);
 
-        tempEnv.put("hostname", vnfcInstance.getHostname());
         //Add cause to the environment variables
         tempEnv.put("cause", cause);
 
@@ -390,17 +385,7 @@ public class LifeCycleManagement {
                 + script
                 + " to VirtualNetworkFunctionRecord: "
                 + virtualNetworkFunctionRecord.getName());
-        Map<String, String> tempEnv = new HashMap<>();
-        for (Ip ip : vnfcInstance.getIps()) {
-          log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-          tempEnv.put(ip.getNetName(), ip.getIp());
-        }
-        log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-        for (Ip fip : vnfcInstance.getFloatingIps()) {
-          tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-        }
-
-        tempEnv.put("hostname", vnfcInstance.getHostname());
+        Map<String, String> tempEnv = addLocalEnvironmentalVariables(vnfcInstance, false);
 
         tempEnv = modifyUnsafeEnvVarNames(tempEnv);
         env.putAll(tempEnv);
@@ -460,34 +445,17 @@ public class LifeCycleManagement {
                     + virtualNetworkFunctionRecord.getName()
                     + " on VNFCInstance: "
                     + vnfcInstanceLocal.getId());
-            Map<String, String> tempEnv = new HashMap<>();
-            for (Ip ip : vnfcInstanceLocal.getIps()) {
-              log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-              tempEnv.put(ip.getNetName(), ip.getIp());
-            }
-            log.debug("adding floatingIp: " + vnfcInstanceLocal.getFloatingIps());
-            for (Ip fip : vnfcInstanceLocal.getFloatingIps()) {
-              tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-            }
-
-            tempEnv.put("hostname", vnfcInstanceLocal.getHostname());
-
-            if (vnfcInstanceRemote != null) {
-              //TODO what should i put here?
-              for (Ip ip : vnfcInstanceRemote.getIps()) {
-                log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-                tempEnv.put("removing_" + ip.getNetName(), ip.getIp());
-              }
-              log.debug("adding floatingIp: " + vnfcInstanceRemote.getFloatingIps());
-              for (Ip fip : vnfcInstanceRemote.getFloatingIps()) {
-                tempEnv.put("removing_" + fip.getNetName() + "_floatingIp", fip.getIp());
-              }
-
-              tempEnv.put("removing_" + "hostname", vnfcInstanceRemote.getHostname());
-            }
-
+            Map<String, String> tempEnv = addLocalEnvironmentalVariables(vnfcInstanceLocal, false);
             tempEnv = modifyUnsafeEnvVarNames(tempEnv);
             env.putAll(tempEnv);
+
+            if (vnfcInstanceRemote != null) {
+              Map<String, String> tempEnv2 =
+                  addLocalEnvironmentalVariables(vnfcInstanceRemote, true);
+              tempEnv2 = modifyUnsafeEnvVarNames(tempEnv2);
+              env.putAll(tempEnv2);
+            }
+
             log.info("The Environment Variables for script " + script + " are: " + env);
 
             String command = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
