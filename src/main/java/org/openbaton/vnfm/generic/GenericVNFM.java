@@ -566,23 +566,14 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       VNFCInstance vnfcInstance,
       VNFRecordDependency dependency)
       throws Exception {
-    VNFCInstance currVnfci = null;
-    log.debug("Resume method called for VNFR: %s", virtualNetworkFunctionRecord.getId());
+    log.info("Resuming VNFR: " + virtualNetworkFunctionRecord.getId());
     VNFRErrorStatus vnfrErrorStatus =
         vnfrErrorRepository.findFirstByVnfrId(virtualNetworkFunctionRecord.getId());
     if (vnfrErrorStatus != null) {
-      Integer vnfciCount = vnfrErrorStatus.getVnfciId().size();
       try {
         for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
-            if (vnfciCount == 0) {
-              currVnfci = vnfci;
-            }
-            if (vnfciCount > 0) {
-              for (String id : vnfrErrorStatus.getVnfciId()) {
-                if (!id.equals(vnfci.getId())) currVnfci = vnfci;
-              }
-            }
+            log.info("Found Vnfci: " + vnfci.getHostname() + " , Event: " + vnfrErrorStatus.getEvent().name() + " and Script# " + vnfrErrorStatus.getScript());
             log.info("-----------------------------------------------------------------------");
             StringBuilder output =
                 new StringBuilder("\n--------------------\n--------------------\n");
@@ -590,7 +581,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
                 lcm.executeScriptsForEvent(
                     virtualNetworkFunctionRecord,
                     vnfrErrorStatus.getEvent(),
-                    currVnfci,
+                    vnfci,
                     vnfrErrorStatus.getScript(),
                     dependency)) {
               output.append(JsonUtils.parse(result));
