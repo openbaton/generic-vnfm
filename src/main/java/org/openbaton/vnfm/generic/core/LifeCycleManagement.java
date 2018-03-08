@@ -153,8 +153,9 @@ public class LifeCycleManagement {
     log.debug("vnfr dependency: " + parser.toJson(dependency));
 
     if (le != null) {
+      boolean dependencyAlreadySaved = false;
+      boolean dependencySavedForVNFCInstance = false;
       for (String script : le.getLifecycle_events()) {
-        boolean dependencySaved = false;
         String type = null;
         if (script.contains("_")) {
           type = script.substring(0, script.indexOf('_'));
@@ -176,7 +177,7 @@ public class LifeCycleManagement {
             env.put("hostname", vnfcInstance.getHostname());
 
             // check if the script starts with type
-            if (dependency.getVnfcParameters().get(type) != null) {
+            if (type != null && dependency.getVnfcParameters().get(type) != null) {
               // send execute for each dependency
               for (String vnfcId :
                   dependency.getVnfcParameters().get(type).getParameters().keySet()) {
@@ -232,10 +233,10 @@ public class LifeCycleManagement {
             // like a script in the INSTANTIATE lifecycle event
             else {
               // save dependency in the ems
-              if (!dependencySaved) {
+              if (!dependencyAlreadySaved) {
                 ems.saveVNFRecordDependencyOnEms(
                     virtualNetworkFunctionRecord, vnfcInstance, dependency);
-                dependencySaved = true;
+                dependencySavedForVNFCInstance = true;
               }
 
               String command = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
@@ -249,11 +250,14 @@ public class LifeCycleManagement {
               logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
             }
 
-            // clean own ips and hostname in env
+            // clear own ips and hostname in env
             env = clearOwnIpsInEnv(env, vnfcInstance);
             env.remove("hostname");
           }
         }
+        // prevent the saveVNFRecordDependencyOnEms to be called
+        // multiple times for multiple scripts
+        dependencyAlreadySaved = dependencySavedForVNFCInstance;
       }
     }
     return res;
