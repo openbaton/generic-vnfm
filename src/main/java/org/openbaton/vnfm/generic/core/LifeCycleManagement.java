@@ -19,6 +19,8 @@
 
 package org.openbaton.vnfm.generic.core;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,6 +51,7 @@ import org.springframework.stereotype.Service;
 public class LifeCycleManagement {
 
   private Logger log = LoggerFactory.getLogger(this.getClass());
+  private static Gson parser = new GsonBuilder().setPrettyPrinting().create();
 
   @Autowired private ElementManagementSystem ems;
   @Autowired private LogUtils logUtils;
@@ -147,9 +150,11 @@ public class LifeCycleManagement {
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
     List<String> res = new ArrayList<>();
+    log.debug("vnfr dependency: " + parser.toJson(dependency));
+
     if (le != null) {
       for (String script : le.getLifecycle_events()) {
-
+        boolean dependencySaved = false;
         String type = null;
         if (script.contains("_")) {
           type = script.substring(0, script.indexOf('_'));
@@ -164,10 +169,6 @@ public class LifeCycleManagement {
 
         for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-
-            // save dependency in the ems
-            ems.saveVNFRecordDependencyOnEms(
-                virtualNetworkFunctionRecord, vnfcInstance, dependency);
 
             // add own ips and floating ip to env
             env = setOwnIpsInEnv(env, vnfcInstance);
@@ -230,6 +231,13 @@ public class LifeCycleManagement {
             // the script does not begin with "<type>_" so it will be executed only once
             // like a script in the INSTANTIATE lifecycle event
             else {
+              // save dependency in the ems
+              if (!dependencySaved) {
+                ems.saveVNFRecordDependencyOnEms(
+                    virtualNetworkFunctionRecord, vnfcInstance, dependency);
+                dependencySaved = true;
+              }
+
               String command = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
               String output =
                   ems.executeActionOnEMS(
