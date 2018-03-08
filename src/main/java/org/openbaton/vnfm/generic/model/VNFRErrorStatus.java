@@ -22,8 +22,8 @@ public class VNFRErrorStatus {
 
   private Integer Script;
 
-  @ElementCollection(fetch = FetchType.EAGER)
-  private Set<String> vnfciId;
+ // @ElementCollection(fetch = FetchType.EAGER)
+//  private Set<String> vnfciId;
 
   public Long getId() {
     return id;
@@ -33,13 +33,13 @@ public class VNFRErrorStatus {
     this.id = id;
   }
 
-  public Set<String> getVnfciId() {
-    return vnfciId;
-  }
+ // public Set<String> getVnfciId() {
+ //   return vnfciId;
+ // }
 
-  public void setVnfciId(Set<String> vnfciId) {
-    this.vnfciId = vnfciId;
-  }
+ // public void setVnfciId(Set<String> vnfciId) {
+//    this.vnfciId = vnfciId;
+//  }
 
   public Integer getScript() {
     return Script;
@@ -72,7 +72,7 @@ public class VNFRErrorStatus {
         + ", Script="
         + Script
         + ", vnfciId="
-        + vnfciId
+ //       + vnfciId
         + '}';
   }
 

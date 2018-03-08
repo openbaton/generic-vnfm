@@ -50,9 +50,12 @@ public class LifeCycleManagement {
 
   private Logger log = LoggerFactory.getLogger(this.getClass());
 
-  @Autowired private ElementManagementSystem ems;
-  @Autowired private LogUtils logUtils;
-  @Autowired private VNFRErrorRepository vnfrErrorRepository;
+  @Autowired
+  private ElementManagementSystem ems;
+  @Autowired
+  private LogUtils logUtils;
+  @Autowired
+  private VNFRErrorRepository vnfrErrorRepository;
 
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
@@ -63,7 +66,6 @@ public class LifeCycleManagement {
     Collection<String> res = new ArrayList<>();
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
-    List<String> successfulVnfcis = new ArrayList<>();
     if (le != null) {
       log.trace(
           "The number of scripts for "
@@ -108,15 +110,13 @@ public class LifeCycleManagement {
               for (String key : tempEnv.keySet()) {
                 env.remove(key);
               }
-              successfulVnfcis.add(vnfcInstance.getId());
             } catch (Exception e) {
               log.debug("Exception for vnfci: " + vnfcInstance.getId());
               createVnfrErrorRecord(
                   virtualNetworkFunctionRecord.getId(),
                   executingAction,
                   event,
-                  le.getLifecycle_events().indexOf(script),
-                  successfulVnfcis);
+                  le.getLifecycle_events().indexOf(script));
               throw new VnfmSdkException(
                   "EMS (" + vnfcInstance.getHostname() + ") had the following error:" + e);
             }
@@ -136,11 +136,14 @@ public class LifeCycleManagement {
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
-    List<String> successfulVnfcis = new ArrayList<>();
     List<String> res = new ArrayList<>();
     if (le != null) {
       for (String script : le.getLifecycle_events()) {
         String type = null;
+        if((script.contains("mmechess_relation_joined.sh")) || (script.contains("pcscf_relation_joined.sh")))
+        {
+          log.debug("Script: " +script + " Vnfr: " +virtualNetworkFunctionRecord.getName());
+        }
         if (script.contains("_")) {
           type = script.substring(0, script.indexOf('_'));
           log.info(
@@ -218,15 +221,13 @@ public class LifeCycleManagement {
                   for (String key : tempEnv.keySet()) {
                     env.remove(key);
                   }
-                  successfulVnfcis.add(vnfcInstance.getId());
                 } catch (Exception e) {
                   log.debug("Exception for vnfci: " + vnfcInstance.getId());
                   createVnfrErrorRecord(
                       virtualNetworkFunctionRecord.getId(),
                       executingAction,
                       event,
-                      le.getLifecycle_events().indexOf(script),
-                      successfulVnfcis);
+                      le.getLifecycle_events().indexOf(script));
                   throw new VnfmSdkException(
                       "EMS (" + vnfcInstance.getHostname() + ") had the following error:" + e);
                 }
@@ -248,7 +249,6 @@ public class LifeCycleManagement {
       throws Exception {
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     List<String> res = new ArrayList<>();
-    List<String> successfulVnfcis = new ArrayList<>();
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
     log.trace(
@@ -329,15 +329,13 @@ public class LifeCycleManagement {
               for (String key : tempEnv.keySet()) {
                 env.remove(key);
               }
-              successfulVnfcis.add(vnfcInstance.getId());
             } catch (Exception e) {
               log.debug("Exception for vnfci: " + vnfcInstance.getId());
               createVnfrErrorRecord(
                   virtualNetworkFunctionRecord.getId(),
                   executingAction,
                   event,
-                  le.getLifecycle_events().indexOf(script),
-                  successfulVnfcis);
+                  le.getLifecycle_events().indexOf(script));
               throw new VnfmSdkException(
                   "EMS (" + vnfcInstance.getHostname() + ") had the following error:" + e);
             }
@@ -359,7 +357,6 @@ public class LifeCycleManagement {
     List<String> res = new LinkedList<>();
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
-    List<String> successfulVnfcis = new ArrayList<>();
     if (le != null) {
       log.trace(
           "The number of scripts for "
@@ -400,15 +397,13 @@ public class LifeCycleManagement {
           for (String key : tempEnv.keySet()) {
             env.remove(key);
           }
-          successfulVnfcis.add(vnfcInstance.getId());
         } catch (Exception e) {
           log.debug("Exception for vnfci: " + vnfcInstance.getId());
           createVnfrErrorRecord(
               virtualNetworkFunctionRecord.getId(),
               executingAction,
               event,
-              le.getLifecycle_events().indexOf(script),
-              successfulVnfcis);
+              le.getLifecycle_events().indexOf(script));
           throw new VnfmSdkException(
               "EMS (" + vnfcInstance.getHostname() + ") had the following error:" + e);
         }
@@ -438,7 +433,6 @@ public class LifeCycleManagement {
     List<String> res = new ArrayList<>();
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
-    List<String> successfulVnfcis = new ArrayList<>();
     if (le != null) {
       log.trace(
           "The number of scripts for "
@@ -494,15 +488,13 @@ public class LifeCycleManagement {
           for (String key : tempEnv.keySet()) {
             env.remove(key);
           }
-          successfulVnfcis.add(vnfcInstance.getId());
         } catch (Exception e) {
           log.debug("Exception for vnfci: " + vnfcInstance.getId());
           createVnfrErrorRecord(
               virtualNetworkFunctionRecord.getId(),
               executingAction,
               event,
-              le.getLifecycle_events().indexOf(script),
-              successfulVnfcis);
+              le.getLifecycle_events().indexOf(script));
           throw new VnfmSdkException(
               "EMS (" + vnfcInstance.getHostname() + ") had the following error:" + e);
         }
@@ -607,103 +599,126 @@ public class LifeCycleManagement {
       Integer scriptId,
       VNFRecordDependency dependency)
       throws Exception { // Invoked by Resume method
-    String script = null;
 
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     List<String> res = new ArrayList<>();
+    Boolean invokeEMSForScript = true;
 
     LifecycleEvent le =
-        VnfmUtils.getLifecycleEvent(
-            virtualNetworkFunctionRecord.getLifecycle_event(), erroredEvent);
+        VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), erroredEvent);
     if (le != null) {
-      script = le.getLifecycle_events().get(scriptId);
-    }
-    if (vnfcInstance != null) {
-      Map<String, String> tempEnv = new HashMap<>();
-      for (Ip ip : vnfcInstance.getIps()) {
-        log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-        tempEnv.put(ip.getNetName(), ip.getIp());
-      }
-      log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
-      for (Ip fip : vnfcInstance.getFloatingIps()) {
-        tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-      }
-      if (dependency != null && !script.contains("install")) {
-        int indexOf = script.indexOf('_');
-        VNFCDependencyParameters vnfcDependencyParameters = null;
-        String type = null;
-        if (indexOf != -1) {
-          type = script.substring(0, indexOf);
-          vnfcDependencyParameters = dependency.getVnfcParameters().get(type);
-        }
-        log.debug(
-            "There are "
-                + vnfcDependencyParameters.getParameters().size()
-                + " VNFCInstanceForeign");
-        for (String vnfcForeignId : vnfcDependencyParameters.getParameters().keySet()) {
-          log.info("Running script: " + script + " for VNFCInstance foreign id " + vnfcForeignId);
-          log.info(
-              "Sending command: "
-                  + script
-                  + " to adding relation with type: "
-                  + type
-                  + " from VirtualNetworkFunctionRecord "
-                  + virtualNetworkFunctionRecord.getName());
+      for (String script : le.getLifecycle_events()) {
+        if (le.getLifecycle_events().indexOf(script) >= scriptId) {
 
-          //Adding foreign parameters such as ip
-          if (script.contains("_")) {
-            //Adding foreign parameters such as ip
-            Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
-            for (Map.Entry<String, String> param : parameters.entrySet()) {
-              tempEnv.put(type + "_" + param.getKey(), param.getValue());
-            }
+          Map<String, String> tempEnv = new HashMap<>();
 
-            Map<String, String> parametersVNFC =
-                vnfcDependencyParameters.getParameters().get(vnfcForeignId).getParameters();
-            for (Map.Entry<String, String> param : parametersVNFC.entrySet()) {
-              tempEnv.put(type + "_" + param.getKey(), param.getValue());
+          for (Ip ip : vnfcInstance.getIps()) {
+            log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+            tempEnv.put(ip.getNetName(), ip.getIp());
+          }
+
+          for (Ip fip : vnfcInstance.getFloatingIps()) {
+            log.debug("adding floatingIp: " + vnfcInstance.getFloatingIps());
+            tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
+          }
+
+          if ((dependency != null) && (erroredEvent.ordinal() == Event.CONFIGURE.ordinal())) {
+            log.debug("Processing dependencies");
+
+            VNFCDependencyParameters vnfcDependencyParameters = null;
+            String type = null;
+
+            if (script.contains("_"))
+              type = script.substring(0, script.indexOf('_'));
+
+            if (dependency.getVnfcParameters().get(type) != null) {
+              vnfcDependencyParameters = dependency.getVnfcParameters().get(type);
+              log.info(
+                  "Sending command: "
+                      + script
+                      + " to adding relation with type: "
+                      + type
+                      + " from VirtualNetworkFunctionRecord "
+                      + virtualNetworkFunctionRecord.getName());
+
+              log.debug(
+                  "There are "
+                      + vnfcDependencyParameters.getParameters().size()
+                      + " VNFCInstanceForeign");
+
+              for (String vnfcForeignId : vnfcDependencyParameters.getParameters().keySet()) {
+
+                //Adding foreign parameters such as ip
+                Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+
+                for (Map.Entry<String, String> param : parameters.entrySet()) {
+                  tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                }
+
+                Map<String, String> parametersVNFC =
+                    vnfcDependencyParameters.getParameters().get(vnfcForeignId).getParameters();
+
+                for (Map.Entry<String, String> param : parametersVNFC.entrySet()) {
+                  tempEnv.put(type + "_" + param.getKey(), param.getValue());
+                }
+              }
             }
+            else
+              invokeEMSForScript = false;
+          }
+          else
+          {
+            log.info(
+                "Sending script: "
+                    + script
+                    + " to VirtualNetworkFunctionRecord: "
+                    + virtualNetworkFunctionRecord.getName());
+          }
+
+          tempEnv.put("hostname", vnfcInstance.getHostname());
+          tempEnv = modifyUnsafeEnvVarNames(tempEnv);
+          env.putAll(tempEnv);
+          log.info("Environment Variables are: " + env);
+
+          String command = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
+          try {
+            if(invokeEMSForScript) {
+              String output =
+                  ems.executeActionOnEMS(
+                      vnfcInstance.getHostname(), command, virtualNetworkFunctionRecord, vnfcInstance);
+              res.add(output);
+
+              log.debug("Saving log to file...");
+              logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
+              for (String key : tempEnv.keySet()) {
+                env.remove(key);
+              }
+            }
+          } catch (Exception e) {
+            // If there is an exception while resume(), old error record is not deleted, no new error record is created.
+            log.debug("Exception for vnfci: " + vnfcInstance.getId());
+            throw new Exception(e);
           }
         }
-      }
-
-      tempEnv.put("hostname", vnfcInstance.getHostname());
-      tempEnv = modifyUnsafeEnvVarNames(tempEnv);
-      env.putAll(tempEnv);
-      log.info("Environment Variables are: " + env);
-
-      String command = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
-      try {
-        String output =
-            ems.executeActionOnEMS(
-                vnfcInstance.getHostname(), command, virtualNetworkFunctionRecord, vnfcInstance);
-        res.add(output);
-
-        log.debug("Saving log to file...");
-        logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
-        for (String key : tempEnv.keySet()) {
-          env.remove(key);
-        }
-      } catch (Exception e) {
-        // Assuming that if there is an exception while resume(), old record is not deleted, no new record created.
-        log.debug("Exception for vnfci: " + vnfcInstance.getId());
-        throw new Exception(e);
       }
     }
     return res;
   }
 
   public void createVnfrErrorRecord(
-      String vnfrId, Action action, Event event, Integer scriptIndex, List<String> vnfciIdList)
+      String vnfrId, Action action, Event event, Integer scriptIndex)
       throws Exception {
-    VNFRErrorStatus vnfrErrorStatus = new VNFRErrorStatus();
-    vnfrErrorStatus.setVnfrId(vnfrId);
-    vnfrErrorStatus.setAction(action);
-    vnfrErrorStatus.setEvent(event);
-    vnfrErrorStatus.setScript(scriptIndex);
-    vnfrErrorStatus.setVnfciId(new HashSet<>());
-    for(String id : vnfciIdList)
-      vnfrErrorStatus.getVnfciId().add(id);
-    vnfrErrorRepository.save(vnfrErrorStatus);
+    try {
+      VNFRErrorStatus vnfrErrorStatus = new VNFRErrorStatus();
+      vnfrErrorStatus.setVnfrId(vnfrId);
+      vnfrErrorStatus.setAction(action);
+      vnfrErrorStatus.setEvent(event);
+      vnfrErrorStatus.setScript(scriptIndex);
+      vnfrErrorRepository.save(vnfrErrorStatus);
+    }
+    catch (Exception e) {
+      log.debug("Exception while creating Vnfr Error Record");
+      throw new Exception(e);
+    }
   }
 }
