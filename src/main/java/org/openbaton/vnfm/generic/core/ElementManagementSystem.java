@@ -53,7 +53,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 @Service
-@Scope
+@Scope("singleton")
 public class ElementManagementSystem implements EmsInterface {
 
   private static Gson parser = new GsonBuilder().setPrettyPrinting().create();
