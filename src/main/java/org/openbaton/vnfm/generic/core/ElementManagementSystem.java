@@ -81,7 +81,10 @@ public class ElementManagementSystem implements EmsInterface {
 
   @Override
   public synchronized EmsRegistrationUnit addRegistrationUnit(String hostname, boolean registered) {
-    this.log.debug("EMSRegister adding: " + hostname);
+    this.log.debug(
+        String.format(
+            "EMSRegister adding: %s with registered status (%s) to list:\n%s",
+            hostname, registered, registrationUnits));
     Optional<EmsRegistrationUnit> unit =
         registrationUnits
             .stream()
@@ -96,6 +99,10 @@ public class ElementManagementSystem implements EmsInterface {
                 })
             .findAny();
     if (!unit.isPresent()) {
+      log.debug(
+          String.format(
+              "Adding for first time unit %s that was not found in registration unit list:\n%s",
+              unit, registrationUnits));
       EmsRegistrationUnit registrationUnit = new EmsRegistrationUnit();
       registrationUnit.setRegistered(registered);
       registrationUnit.setCanceled(false);
@@ -103,12 +110,18 @@ public class ElementManagementSystem implements EmsInterface {
       registrationUnits.add(registrationUnit);
       return registrationUnit;
     } else {
+      log.debug(
+          String.format("Found unit %s in registration unit list:\n%s", unit, registrationUnits));
       return unit.get();
     }
   }
 
   @Override
   public synchronized EmsRegistrationUnit addRegistrationUnit(String hostname) {
+    log.debug(
+        String.format(
+            "Calling add registration unit with hostname: %s with registered set to false",
+            hostname));
     return addRegistrationUnit(hostname, false);
   }
 
@@ -131,7 +144,7 @@ public class ElementManagementSystem implements EmsInterface {
 
   @Override
   public void registerFromEms(String json) {
-    this.log.debug("EMSRegister received: " + json);
+    this.log.debug("EMSRegister received from EMS: " + json);
     JsonObject object = parser.fromJson(json, JsonObject.class);
     String hostname = object.get("hostname").getAsString();
     String extractedId = "";
@@ -141,13 +154,15 @@ public class ElementManagementSystem implements EmsInterface {
       log.info(e.getMessage());
       return;
     }
-    addRegistrationUnit(hostname);
-    for (EmsRegistrationUnit registrationUnit : registrationUnits) {
-      if (registrationUnit.getValue().endsWith(extractedId)) {
-        registrationUnit.registerAndNotify();
-        return;
-      }
-    }
+    EmsRegistrationUnit u = addRegistrationUnit(hostname);
+    u.registerAndNotify();
+    //    for (EmsRegistrationUnit registrationUnit : registrationUnits) {
+    //      if (registrationUnit.getValue().endsWith(extractedId)) {
+    //        log.debug(String.format("Notify to %s", registrationUnit.getValue()));
+    //        registrationUnit.registerAndNotify();
+    //        return;
+    //      }
+    //    }
   }
 
   public Future<EmsRegistrationUnit> waitForEms(
