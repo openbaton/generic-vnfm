@@ -264,13 +264,12 @@ public class ElementManagementSystem implements EmsInterface {
 
     JsonObject jsonObject = parser.fromJson(response, JsonObject.class);
 
-    if ((jsonObject.get("status").getAsInt() == 0) && (jsonObject.get("err").getAsString().contentEquals(""))) {  //why status = 0 but err not null
+    if ((jsonObject.get("status").getAsInt() == 0) && (jsonObject.get("err").getAsString().contentEquals(""))) {
       try {
         log.debug("Output from EMS (" + vduHostname + ") is: " + jsonObject.get("output"));
       } catch (Exception e) {
         e.printStackTrace();
         throw new Exception(e);
-//        throw e;
       }
     } else {
       String err = jsonObject.get("err").getAsString();
@@ -283,7 +282,6 @@ public class ElementManagementSystem implements EmsInterface {
           response,
           true);
       throw new Exception(err);
-      //  throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
     }
     return response;
   }
