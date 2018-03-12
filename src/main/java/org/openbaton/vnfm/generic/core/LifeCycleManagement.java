@@ -19,6 +19,8 @@
 
 package org.openbaton.vnfm.generic.core;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.util.*;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.mano.common.Ip;
@@ -42,20 +44,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+/** Created by lto on 15/09/15. */
 @Service
 @Scope
 @Transactional
 public class LifeCycleManagement {
 
   private Logger log = LoggerFactory.getLogger(this.getClass());
+  private static Gson parser = new GsonBuilder().setPrettyPrinting().create();
 
-  @Autowired
-  private ElementManagementSystem ems;
-  @Autowired
-  private LogUtils logUtils;
-  @Autowired
-  private VNFRErrorRepository vnfrErrorRepository;
+  @Autowired private ElementManagementSystem ems;
+  @Autowired private LogUtils logUtils;
+  @Autowired private VNFRErrorRepository vnfrErrorRepository;
 
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
@@ -66,6 +66,7 @@ public class LifeCycleManagement {
     Collection<String> res = new ArrayList<>();
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+
     if (le != null) {
       log.trace(
           "The number of scripts for "
@@ -80,6 +81,7 @@ public class LifeCycleManagement {
                 + virtualNetworkFunctionRecord.getName());
         for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+
             Map<String, String> tempEnv = new HashMap<>();
             for (Ip ip : vnfcInstance.getIps()) {
               log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
@@ -127,6 +129,33 @@ public class LifeCycleManagement {
     return res;
   }
 
+  private Map<String, String> setOwnIpsInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
+    //Adding own ips
+    for (Ip ip : vnfcInstance.getIps()) {
+      log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+      env.put(ip.getNetName(), ip.getIp());
+    }
+
+    //Adding own floating ip
+    for (Ip fip : vnfcInstance.getFloatingIps()) {
+      log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
+      env.put(fip.getNetName() + "_floatingIp", fip.getIp());
+    }
+    return env;
+  }
+
+  private Map<String, String> clearOwnIpsInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
+    //Clearing own ips
+    for (Ip ip : vnfcInstance.getIps()) {
+      env.remove(ip.getNetName());
+    }
+    //Clearing own floating ip
+    for (Ip fip : vnfcInstance.getFloatingIps()) {
+      env.remove(fip.getNetName() + "_floatingIp");
+    }
+    return env;
+  }
+
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
       Event event,
@@ -137,13 +166,14 @@ public class LifeCycleManagement {
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
     List<String> res = new ArrayList<>();
+    log.debug("vnfr dependency: " + parser.toJson(dependency));
+
     if (le != null) {
+      boolean dependencyAlreadySaved = false;
+      boolean dependencySavedForVNFCInstance = false;
       for (String script : le.getLifecycle_events()) {
+
         String type = null;
-        if((script.contains("mmechess_relation_joined.sh")) || (script.contains("pcscf_relation_joined.sh")))
-        {
-          log.debug("Script: " +script + " Vnfr: " +virtualNetworkFunctionRecord.getName());
-        }
         if (script.contains("_")) {
           type = script.substring(0, script.indexOf('_'));
           log.info(
@@ -157,7 +187,15 @@ public class LifeCycleManagement {
 
         for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-            if (dependency.getVnfcParameters().get(type) != null) {
+
+            // add own ips and floating ip to env
+            env = setOwnIpsInEnv(env, vnfcInstance);
+            // add hostname to env
+            env.put("hostname", vnfcInstance.getHostname());
+
+            // check if the script starts with type
+            if (type != null && dependency.getVnfcParameters().get(type) != null) {
+              // send execute for each dependency
               for (String vnfcId :
                   dependency.getVnfcParameters().get(type).getParameters().keySet()) {
 
@@ -233,8 +271,35 @@ public class LifeCycleManagement {
                 }
               }
             }
+            // the script does not begin with "<type>_" so it will be executed only once
+            // like a script in the INSTANTIATE lifecycle event
+            else {
+              // save dependency in the ems
+              if (!dependencyAlreadySaved) {
+                ems.saveVNFRecordDependencyOnEms(
+                    virtualNetworkFunctionRecord, vnfcInstance, dependency);
+                dependencySavedForVNFCInstance = true;
+              }
+
+              String command = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
+              String output =
+                  ems.executeActionOnEMS(
+                      vnfcInstance.getHostname(),
+                      command,
+                      virtualNetworkFunctionRecord,
+                      vnfcInstance);
+              res.add(output);
+              logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
+            }
+
+            // clear own ips and hostname in env
+            env = clearOwnIpsInEnv(env, vnfcInstance);
+            env.remove("hostname");
           }
         }
+        // prevent the saveVNFRecordDependencyOnEms to be called
+        // multiple times for multiple scripts
+        dependencyAlreadySaved = dependencySavedForVNFCInstance;
       }
     }
     return res;
@@ -357,6 +422,7 @@ public class LifeCycleManagement {
     List<String> res = new LinkedList<>();
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+
     if (le != null) {
       log.trace(
           "The number of scripts for "
@@ -433,6 +499,7 @@ public class LifeCycleManagement {
     List<String> res = new ArrayList<>();
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+
     if (le != null) {
       log.trace(
           "The number of scripts for "

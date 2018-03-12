@@ -58,7 +58,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-/** Created by mob on 16.07.15. */
 @EnableScheduling
 @ConfigurationProperties
 @SpringBootApplication
@@ -118,13 +117,18 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     }
     Set<Future<EmsRegistrationUnit>> waiters = new HashSet<>();
     registrationUnits.forEach(
-        u ->
-            waiters.add(
-                ems.waitForEms(() -> u.waitForEms(emsConfiguration.getWaitForEms() * 1000))));
+        u -> {
+          log.debug(String.format("Waiting for EMS: %s", u.getValue()));
+          waiters.add(ems.waitForEms(() -> u.waitForEms(emsConfiguration.getWaitForEms() * 1000)));
+        });
 
     for (Future<EmsRegistrationUnit> unitFuture : waiters) {
       EmsRegistrationUnit unit = unitFuture.get();
       ems.removeRegistrationUnit(unit);
+      if (!unit.isRegistered()) {
+        log.error(String.format("Timeout waiting for EMS: %s", unit.getValue()));
+        throw new VnfmSdkException(String.format("Timeout waiting for EMS: %s", unit.getValue()));
+      }
       if (unit.isCanceled()) {
         log.info(String.format("Cancelled: %s", unit.getValue()));
         return null;
