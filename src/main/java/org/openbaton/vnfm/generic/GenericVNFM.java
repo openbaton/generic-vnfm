@@ -577,7 +577,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       try {
         for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
-            log.info("Found Vnfci: " + vnfci.getHostname() + " , Event: " + vnfrErrorStatus.getEvent().name() + " and Script# " + vnfrErrorStatus.getScript());
+            log.info(
+                "Found Vnfci: "
+                    + vnfci.getHostname()
+                    + " , Event: "
+                    + vnfrErrorStatus.getEvent().name()
+                    + " and Script# "
+                    + vnfrErrorStatus.getScript());
             log.info("-----------------------------------------------------------------------");
             StringBuilder output =
                 new StringBuilder("\n--------------------\n--------------------\n");
@@ -600,7 +606,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
         log.debug(
             "Deleting error information from database for VNFR: "
                 + virtualNetworkFunctionRecord.getId());
-        if(virtualNetworkFunctionRecord != null)
+        if (virtualNetworkFunctionRecord != null)
           vnfrErrorRepository.deleteByVnfrId(virtualNetworkFunctionRecord.getId());
       } catch (Exception e) {
         throw new VnfmSdkException(
