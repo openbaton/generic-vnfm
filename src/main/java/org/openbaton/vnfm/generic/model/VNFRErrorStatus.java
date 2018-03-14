@@ -1,6 +1,5 @@
 package org.openbaton.vnfm.generic.model;
 
-import java.util.Set;
 import javax.persistence.*;
 import org.openbaton.catalogue.mano.common.Event;
 import org.openbaton.catalogue.nfvo.Action;
@@ -22,9 +21,6 @@ public class VNFRErrorStatus {
 
   private Integer Script;
 
- // @ElementCollection(fetch = FetchType.EAGER)
-//  private Set<String> vnfciId;
-
   public Long getId() {
     return id;
   }
@@ -32,14 +28,6 @@ public class VNFRErrorStatus {
   public void setId(Long id) {
     this.id = id;
   }
-
- // public Set<String> getVnfciId() {
- //   return vnfciId;
- // }
-
- // public void setVnfciId(Set<String> vnfciId) {
-//    this.vnfciId = vnfciId;
-//  }
 
   public Integer getScript() {
     return Script;
@@ -71,8 +59,6 @@ public class VNFRErrorStatus {
         + '\''
         + ", Script="
         + Script
-        + ", vnfciId="
- //       + vnfciId
         + '}';
   }
 

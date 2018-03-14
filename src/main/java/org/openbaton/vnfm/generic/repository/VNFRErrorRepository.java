@@ -9,5 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public interface VNFRErrorRepository extends CrudRepository<VNFRErrorStatus, String> {
   VNFRErrorStatus findFirstByVnfrId(String vnfrId);
+
   void deleteByVnfrId(String vnfrId);
 }

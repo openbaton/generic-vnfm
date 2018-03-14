@@ -306,7 +306,7 @@ public class ElementManagementSystem implements EmsInterface {
 
     JsonObject jsonObject = parser.fromJson(response, JsonObject.class);
 
-    if ((jsonObject.get("status").getAsInt() == 0) && (jsonObject.get("err").getAsString().contentEquals(""))) {
+    if ((jsonObject.get("status").getAsInt() == 0)) {
       try {
         log.debug("Output from EMS (" + vduHostname + ") is: " + jsonObject.get("output"));
       } catch (Exception e) {
