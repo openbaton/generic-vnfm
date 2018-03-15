@@ -201,18 +201,6 @@ public class LifeCycleManagement {
 
                 Map<String, String> tempEnv = new HashMap<>();
 
-                //Adding own ips
-                for (Ip ip : vnfcInstance.getIps()) {
-                  log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-                  tempEnv.put(ip.getNetName(), ip.getIp());
-                }
-
-                //Adding own floating ip
-                for (Ip fip : vnfcInstance.getFloatingIps()) {
-                  log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
-                  tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-                }
-
                 if (script.contains("_")) {
                   //Adding foreign parameters such as ip
                   log.debug("Fetching parameter from dependency of type: " + type);
@@ -239,7 +227,6 @@ public class LifeCycleManagement {
                   }
                 }
 
-                tempEnv.put("hostname", vnfcInstance.getHostname());
                 tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                 env.putAll(tempEnv);
                 log.info("Environment Variables are: " + env);
@@ -276,7 +263,8 @@ public class LifeCycleManagement {
             else {
               try {
                 // save dependency in the ems
-                if (!dependencyAlreadySaved) {
+                if (!dependencyAlreadySaved
+                    && isSaveVNFRecordDependencySupported(ems.getEmsVersion())) {
                   ems.saveVNFRecordDependencyOnEms(
                       virtualNetworkFunctionRecord, vnfcInstance, dependency);
                   dependencySavedForVNFCInstance = true;
@@ -314,6 +302,15 @@ public class LifeCycleManagement {
       }
     }
     return res;
+  }
+
+  // Check if SaveVNFRecordDependency is supported
+  // It is supported for ems version >= 1.1.0
+  private boolean isSaveVNFRecordDependencySupported(String emsVersion) {
+    String[] emsVersionSplitted = emsVersion.split(".");
+    return emsVersionSplitted.length >= 2
+        && (emsVersionSplitted[0].compareTo("1") >= 0)
+        && (emsVersionSplitted[1].compareTo("1") >= 0);
   }
 
   public Iterable<String> executeScriptsForEvent(
@@ -709,7 +706,6 @@ public class LifeCycleManagement {
                   + " to VirtualNetworkFunctionRecord: "
                   + virtualNetworkFunctionRecord.getName());
 
-
           // Following section is executed only for CONFIGURE lifecycle event with dependencies
           if ((dependency != null) && (erroredEvent.ordinal() == Event.CONFIGURE.ordinal())) {
 
@@ -719,8 +715,7 @@ public class LifeCycleManagement {
             if (script.contains("_")) type = script.substring(0, script.indexOf('_'));
 
             //This section is executed for scripts beginning with "type"
-            if (type != null
-                && dependency.getVnfcParameters().get(type) != null) {
+            if (type != null && dependency.getVnfcParameters().get(type) != null) {
               vnfcDependencyParameters = dependency.getVnfcParameters().get(type);
               log.info(
                   "Sending command: "
