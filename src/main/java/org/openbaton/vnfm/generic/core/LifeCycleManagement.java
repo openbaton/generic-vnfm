@@ -233,7 +233,8 @@ public class LifeCycleManagement {
             // like a script in the INSTANTIATE lifecycle event
             else {
               // save dependency in the ems
-              if (!dependencyAlreadySaved) {
+              if (!dependencyAlreadySaved
+                  && isSaveVNFRecordDependencySupported(ems.getEmsVersion())) {
                 ems.saveVNFRecordDependencyOnEms(
                     virtualNetworkFunctionRecord, vnfcInstance, dependency);
                 dependencySavedForVNFCInstance = true;
@@ -261,6 +262,15 @@ public class LifeCycleManagement {
       }
     }
     return res;
+  }
+
+  // Check if SaveVNFRecordDependency is supported
+  // It is supported for ems version >= 1.1.0
+  private boolean isSaveVNFRecordDependencySupported(String emsVersion) {
+    String[] emsVersionSplitted = emsVersion.split(".");
+    return emsVersionSplitted.length > 1
+        && emsVersionSplitted[0].equals("1")
+        && emsVersionSplitted[1].equals("1");
   }
 
   public Iterable<String> executeScriptsForEvent(
