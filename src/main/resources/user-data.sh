@@ -15,10 +15,13 @@ export ENDPOINT=
 
 # Hostname/IP and path of the EMS repository
 export UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
-export UBUNTU_EMS_REPOSITORY_PATH="repos/apt/debian/"
+export UBUNTU_EMS_REPOSITORY_PATH="repos/openbaton"
 export CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
 export CENTOS_EMS_REPOSITORY_PATH="repos/rpm/"
 
+export EMS_PROPERTIES_FILE="/etc/openbaton/openbaton-ems.properties"
+
+export OS_DISTRIBUTION_CODENAME=
 export OS_DISTRIBUTION_RELEASE_MAJOR=
 
 export LANG=en_US.UTF-8
@@ -36,18 +39,26 @@ install_ems_on_ubuntu () {
     result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
     if [ ${result} -eq 0 ]; then
         echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
-        wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
-	echo "Checking for running apt-get processes"
-	while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
-	    echo "Waiting for running apt-get processes to finish"
-	    sleep 5s
-	done
-	echo "Finished waiting for running apt-get processes"
+
+        # TODO: use the general approach when the "openbaton-ems" pckg is added to all repositories
+        #echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH}/${OS_DISTRIBUTION_CODENAME}/release ${OS_DISTRIBUTION_CODENAME} main" >> /etc/apt/sources.list
+        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/repos/openbaton/stretch/release stretch main" >> /etc/apt/sources.list
+        wget -O - http://get.openbaton.org/keys/openbaton.public.key | apt-key add -
+
+        echo "Checking for running apt-get processes"
+        while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
+            echo "Waiting for running apt-get processes to finish"
+            sleep 5s
+        done
+        echo "Finished waiting for running apt-get processes"
         apt-get update
         cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
         apt-get install -y git
-        apt-get install -y --force-yes ems-$EMS_VERSION
+        if [ -z ${EMS_VERSION} ]; then
+            apt-get install -y --force-yes openbaton-ems=${EMS_VERSION}
+        else
+            apt-get install -y --force-yes openbaton-ems
+        fi
     else
         echo "EMS is already installed"
     fi
@@ -68,6 +79,7 @@ install_zabbix_on_ubuntu () {
 #### CentOS ####
 ################
 
+# TODO: create the new openbaton-ems.rpm and update the references to that EMS
 install_ems_on_centos () {
     result=$(yum list installed | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
     if [ ${result} -eq 0 ]; then
@@ -105,19 +117,18 @@ install_zabbix_on_centos () {
 #############
 
 configure_ems () {
-    mkdir -p /etc/openbaton/ems
-    echo [ems] > /etc/openbaton/ems/conf.ini
-    echo broker_ip=$BROKER_IP >> /etc/openbaton/ems/conf.ini
-    echo broker_port=$BROKER_PORT >> /etc/openbaton/ems/conf.ini
-    echo username=$USERNAME >> /etc/openbaton/ems/conf.ini
-    echo password=$PASSWORD >> /etc/openbaton/ems/conf.ini
-    echo exchange=$EXCHANGE_NAME >> /etc/openbaton/ems/conf.ini
-    echo heartbeat=$EMS_HEARTBEAT >> /etc/openbaton/ems/conf.ini
-    echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
-    echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
-    echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
+    echo [ems] > ${EMS_PROPERTIES_FILE}
+    echo broker_ip=$BROKER_IP >> ${EMS_PROPERTIES_FILE}
+    echo broker_port=$BROKER_PORT >> ${EMS_PROPERTIES_FILE}
+    echo username=$USERNAME >> ${EMS_PROPERTIES_FILE}
+    echo password=$PASSWORD >> ${EMS_PROPERTIES_FILE}
+    echo exchange=$EXCHANGE_NAME >> ${EMS_PROPERTIES_FILE}
+    echo heartbeat=$EMS_HEARTBEAT >> ${EMS_PROPERTIES_FILE}
+    echo autodelete=$EMS_AUTODELETE >> ${EMS_PROPERTIES_FILE}
+    echo type=$ENDPOINT >> ${EMS_PROPERTIES_FILE}
+    echo hostname=$Hostname >> ${EMS_PROPERTIES_FILE}
 
-    service ems restart
+    service openbaton-ems restart
 }
 
 
@@ -145,6 +156,7 @@ fi
 
 case ${os} in
     ubuntu) 
+        OS_DISTRIBUTION_CODENAME=$( lsb_release -a | grep "Codename" | sed "s/[ \t]*//g" | awk -F':' '{ print $2 }' )
 	    install_ems_on_ubuntu
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
