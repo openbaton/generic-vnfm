@@ -709,7 +709,6 @@ public class LifeCycleManagement {
                   + " to VirtualNetworkFunctionRecord: "
                   + virtualNetworkFunctionRecord.getName());
 
-
           // Following section is executed only for CONFIGURE lifecycle event with dependencies
           if ((dependency != null) && (erroredEvent.ordinal() == Event.CONFIGURE.ordinal())) {
 
@@ -719,8 +718,7 @@ public class LifeCycleManagement {
             if (script.contains("_")) type = script.substring(0, script.indexOf('_'));
 
             //This section is executed for scripts beginning with "type"
-            if (type != null
-                && dependency.getVnfcParameters().get(type) != null) {
+            if (type != null && dependency.getVnfcParameters().get(type) != null) {
               vnfcDependencyParameters = dependency.getVnfcParameters().get(type);
               log.info(
                   "Sending command: "
