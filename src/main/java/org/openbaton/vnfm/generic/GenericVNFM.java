@@ -306,14 +306,14 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
      * otherwise the content of the script passed is used to update the correspondent script in the VNFC instances
      *
      * */
-    //      if (script == null) lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.UPDATE);
-    //      else {
-    //        for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
-    //          for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-    //            updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
-    //          }
-    //        }
-    //      }
+          if (script == null) lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.UPDATE);
+          else {
+            for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+              for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+                updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
+              }
+            }
+          }
     return virtualNetworkFunctionRecord;
   }
 
