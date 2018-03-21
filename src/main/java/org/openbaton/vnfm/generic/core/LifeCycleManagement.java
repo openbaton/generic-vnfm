@@ -678,7 +678,8 @@ public class LifeCycleManagement {
     Map<String, String> env = getMap(virtualNetworkFunctionRecord);
     List<String> res = new ArrayList<>();
 
-    LifecycleEvent le = VnfmUtils.getLifecycleEvent(
+    LifecycleEvent le =
+        VnfmUtils.getLifecycleEvent(
             virtualNetworkFunctionRecord.getLifecycle_event(), erroredEvent);
 
     if (le != null) {
@@ -711,8 +712,7 @@ public class LifeCycleManagement {
             VNFCDependencyParameters vnfcDependencyParameters = null;
             String type = null;
 
-            if (script.contains("_"))
-              type = script.substring(0, script.indexOf('_'));
+            if (script.contains("_")) type = script.substring(0, script.indexOf('_'));
 
             //This section is executed for scripts beginning with "type"
             if (type != null && dependency.getVnfcParameters().get(type) != null) {
@@ -734,7 +734,8 @@ public class LifeCycleManagement {
               for (String vnfcForeignId : vnfcDependencyParameters.getParameters().keySet()) {
 
                 //Adding foreign parameters such as ip
-                Map<String, String> parameters = dependency.getParameters().get(type).getParameters();
+                Map<String, String> parameters =
+                    dependency.getParameters().get(type).getParameters();
 
                 for (Map.Entry<String, String> param : parameters.entrySet()) {
                   tempEnv.put(type + "_" + param.getKey(), param.getValue());
@@ -755,7 +756,8 @@ public class LifeCycleManagement {
             // executed by mmechess_relation_joined.sh script in bind9
             else {
               // save dependency in the ems
-              if (!dependencyAlreadySaved && isSaveVNFRecordDependencySupported(ems.getEmsVersion())) {
+              if (!dependencyAlreadySaved
+                  && isSaveVNFRecordDependencySupported(ems.getEmsVersion())) {
                 try {
                   ems.saveVNFRecordDependencyOnEms(
                       virtualNetworkFunctionRecord, vnfcInstance, dependency);
