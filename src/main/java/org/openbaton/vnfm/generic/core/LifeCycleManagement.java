@@ -19,6 +19,8 @@
 
 package org.openbaton.vnfm.generic.core;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,6 +51,7 @@ import org.springframework.stereotype.Service;
 public class LifeCycleManagement {
 
   private Logger log = LoggerFactory.getLogger(this.getClass());
+  private static Gson parser = new GsonBuilder().setPrettyPrinting().create();
 
   @Autowired private ElementManagementSystem ems;
   @Autowired private LogUtils logUtils;
@@ -111,6 +114,33 @@ public class LifeCycleManagement {
     return res;
   }
 
+  private Map<String, String> setOwnIpsInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
+    //Adding own ips
+    for (Ip ip : vnfcInstance.getIps()) {
+      log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+      env.put(ip.getNetName(), ip.getIp());
+    }
+
+    //Adding own floating ip
+    for (Ip fip : vnfcInstance.getFloatingIps()) {
+      log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
+      env.put(fip.getNetName() + "_floatingIp", fip.getIp());
+    }
+    return env;
+  }
+
+  private Map<String, String> clearOwnIpsInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
+    //Clearing own ips
+    for (Ip ip : vnfcInstance.getIps()) {
+      env.remove(ip.getNetName());
+    }
+    //Clearing own floating ip
+    for (Ip fip : vnfcInstance.getFloatingIps()) {
+      env.remove(fip.getNetName() + "_floatingIp");
+    }
+    return env;
+  }
+
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
       Event event,
@@ -120,9 +150,12 @@ public class LifeCycleManagement {
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
     List<String> res = new ArrayList<>();
-    if (le != null) {
-      for (String script : le.getLifecycle_events()) {
+    log.debug("vnfr dependency: " + parser.toJson(dependency));
 
+    if (le != null) {
+      boolean dependencyAlreadySaved = false;
+      boolean dependencySavedForVNFCInstance = false;
+      for (String script : le.getLifecycle_events()) {
         String type = null;
         if (script.contains("_")) {
           type = script.substring(0, script.indexOf('_'));
@@ -137,23 +170,19 @@ public class LifeCycleManagement {
 
         for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
           for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-            if (dependency.getVnfcParameters().get(type) != null) {
+
+            // add own ips and floating ip to env
+            env = setOwnIpsInEnv(env, vnfcInstance);
+            // add hostname to env
+            env.put("hostname", vnfcInstance.getHostname());
+
+            // check if the script starts with type
+            if (type != null && dependency.getVnfcParameters().get(type) != null) {
+              // send execute for each dependency
               for (String vnfcId :
                   dependency.getVnfcParameters().get(type).getParameters().keySet()) {
 
                 Map<String, String> tempEnv = new HashMap<>();
-
-                //Adding own ips
-                for (Ip ip : vnfcInstance.getIps()) {
-                  log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-                  tempEnv.put(ip.getNetName(), ip.getIp());
-                }
-
-                //Adding own floating ip
-                for (Ip fip : vnfcInstance.getFloatingIps()) {
-                  log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
-                  tempEnv.put(fip.getNetName() + "_floatingIp", fip.getIp());
-                }
 
                 if (script.contains("_")) {
                   //Adding foreign parameters such as ip
@@ -181,7 +210,6 @@ public class LifeCycleManagement {
                   }
                 }
 
-                tempEnv.put("hostname", vnfcInstance.getHostname());
                 tempEnv = modifyUnsafeEnvVarNames(tempEnv);
                 env.putAll(tempEnv);
                 log.info("Environment Variables are: " + env);
@@ -201,11 +229,48 @@ public class LifeCycleManagement {
                 }
               }
             }
+            // the script does not begin with "<type>_" so it will be executed only once
+            // like a script in the INSTANTIATE lifecycle event
+            else {
+              // save dependency in the ems
+              if (!dependencyAlreadySaved
+                  && isSaveVNFRecordDependencySupported(ems.getEmsVersion())) {
+                ems.saveVNFRecordDependencyOnEms(
+                    virtualNetworkFunctionRecord, vnfcInstance, dependency);
+                dependencySavedForVNFCInstance = true;
+              }
+
+              String command = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
+              String output =
+                  ems.executeActionOnEMS(
+                      vnfcInstance.getHostname(),
+                      command,
+                      virtualNetworkFunctionRecord,
+                      vnfcInstance);
+              res.add(output);
+              logUtils.saveLogToFile(virtualNetworkFunctionRecord, script, vnfcInstance, output);
+            }
+
+            // clear own ips and hostname in env
+            env = clearOwnIpsInEnv(env, vnfcInstance);
+            env.remove("hostname");
           }
         }
+        // prevent the saveVNFRecordDependencyOnEms to be called
+        // multiple times for multiple scripts
+        dependencyAlreadySaved = dependencySavedForVNFCInstance;
       }
     }
     return res;
+  }
+
+  // Check if SaveVNFRecordDependency is supported
+  // It is supported for ems version >= 1.1.0
+  private boolean isSaveVNFRecordDependencySupported(String emsVersion) {
+    String[] emsVersionSplitted = emsVersion.split(".");
+    return emsVersionSplitted.length >= 2
+        && (emsVersionSplitted[0].compareTo("1") >= 0)
+        && (emsVersionSplitted[1].compareTo("1") >= 0);
   }
 
   public Iterable<String> executeScriptsForEvent(

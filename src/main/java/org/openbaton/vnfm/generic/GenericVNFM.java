@@ -43,6 +43,7 @@ import org.openbaton.catalogue.nfvo.viminstances.BaseVimInstance;
 import org.openbaton.common.vnfm_sdk.AbstractVnfm;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
+import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.core.ElementManagementSystem;
@@ -112,13 +113,18 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     }
     Set<Future<EmsRegistrationUnit>> waiters = new HashSet<>();
     registrationUnits.forEach(
-        u ->
-            waiters.add(
-                ems.waitForEms(() -> u.waitForEms(emsConfiguration.getWaitForEms() * 1000))));
+        u -> {
+          log.debug(String.format("Waiting for EMS: %s", u.getValue()));
+          waiters.add(ems.waitForEms(() -> u.waitForEms(emsConfiguration.getWaitForEms() * 1000)));
+        });
 
     for (Future<EmsRegistrationUnit> unitFuture : waiters) {
       EmsRegistrationUnit unit = unitFuture.get();
       ems.removeRegistrationUnit(unit);
+      if (!unit.isRegistered()) {
+        log.error(String.format("Timeout waiting for EMS: %s", unit.getValue()));
+        throw new VnfmSdkException(String.format("Timeout waiting for EMS: %s", unit.getValue()));
+      }
       if (unit.isCanceled()) {
         log.info(String.format("Cancelled: %s", unit.getValue()));
         return null;
@@ -285,9 +291,17 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Override
   public VirtualNetworkFunctionRecord updateSoftware(
       Script script, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
-    for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
-      for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-        updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
+    /*
+     * If script is null the "updateSoftware" operation is intended as the execution of the UPDATE lifecycle event
+     * otherwise the content of the script passed is used to update the correspondent script in the VNFC instances
+     *
+     * */
+    if (script == null) lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.UPDATE);
+    else {
+      for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+        for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+          updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
+        }
       }
     }
     return virtualNetworkFunctionRecord;

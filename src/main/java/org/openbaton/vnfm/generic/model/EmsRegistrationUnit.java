@@ -58,4 +58,17 @@ public class EmsRegistrationUnit {
       this.notify();
     }
   }
+
+  @Override
+  public String toString() {
+    return "EmsRegistrationUnit{"
+        + "registered="
+        + registered
+        + ", canceled="
+        + canceled
+        + ", value='"
+        + value
+        + '\''
+        + '}';
+  }
 }
