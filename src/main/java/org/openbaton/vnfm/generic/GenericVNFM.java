@@ -629,6 +629,44 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   }
 
   @Override
+  public VirtualNetworkFunctionRecord executeScript(
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Script script) throws Exception {
+    for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+      for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+        StringBuilder output = new StringBuilder("\n--------------------\n--------------------");
+        log.info(output.toString());
+        log.info(
+            "Executing script '"
+                + script.getName()
+                + "' on VNFCI '"
+                + vnfcInstance.getHostname()
+                + "' :");
+        log.info(script.toString());
+
+        // Saving script on VNFC instance
+        Set<Script> scriptSet = new HashSet<>();
+        scriptSet.add(script);
+        ems.saveScriptOnEms(virtualNetworkFunctionRecord, scriptSet);
+
+        // Executing script on VNFC instance
+        JsonObject jsonMessage =
+            JsonUtils.getJsonObject(
+                "EXECUTE",
+                script.getName(),
+                properties.getProperty("script-path", "/opt/openbaton/scripts"));
+        ems.executeActionOnEMS(
+            vnfcInstance.getHostname(),
+            jsonMessage.toString(),
+            virtualNetworkFunctionRecord,
+            vnfcInstance);
+
+        log.info(output.toString());
+      }
+    }
+    return virtualNetworkFunctionRecord;
+  }
+
+  @Override
   protected Action getResumedAction(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance) {
     return vnfrErrorRepository.findFirstByVnfrId(virtualNetworkFunctionRecord.getId()).getAction();
