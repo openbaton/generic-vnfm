@@ -41,7 +41,6 @@ import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.catalogue.nfvo.Script;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
-import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.openbaton.vnfm.generic.model.EmsRegistrationUnit;
@@ -307,12 +306,12 @@ public class ElementManagementSystem implements EmsInterface {
 
     JsonObject jsonObject = parser.fromJson(response, JsonObject.class);
 
-    if (jsonObject.get("status").getAsInt() == 0) {
+    if ((jsonObject.get("status").getAsInt() == 0)) {
       try {
         log.debug("Output from EMS (" + vduHostname + ") is: " + jsonObject.get("output"));
       } catch (Exception e) {
         e.printStackTrace();
-        throw e;
+        throw new Exception(e);
       }
     } else {
       String err = jsonObject.get("err").getAsString();
@@ -324,7 +323,7 @@ public class ElementManagementSystem implements EmsInterface {
           vnfcInstance,
           response,
           true);
-      throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
+      throw new Exception(err);
     }
     return response;
   }
