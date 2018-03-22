@@ -379,7 +379,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     return virtualNetworkFunctionRecord;
   }
 
-  //When the EMS reveive a script which terminate the vnf, the EMS is still running.
+  //When the EMS receives a script which terminate the vnf, the EMS is still running.
   //Once the vnf is terminated NFVO requests deletion of resources (MANO B.5) and the EMS will be terminated.
   @Override
   public VirtualNetworkFunctionRecord terminate(
