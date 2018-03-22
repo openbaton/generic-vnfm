@@ -307,7 +307,7 @@ public class LifeCycleManagement {
   // Check if SaveVNFRecordDependency is supported
   // It is supported for ems version >= 1.1.0
   private boolean isSaveVNFRecordDependencySupported(String emsVersion) {
-    String[] emsVersionSplitted = emsVersion.split(".");
+    String[] emsVersionSplitted = emsVersion.split("\\.");
     return emsVersionSplitted.length >= 2
         && (emsVersionSplitted[0].compareTo("1") >= 0)
         && (emsVersionSplitted[1].compareTo("1") >= 0);
