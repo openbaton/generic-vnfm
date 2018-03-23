@@ -247,55 +247,57 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Override
   public VirtualNetworkFunctionRecord heal(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
-      VNFCInstance component,
+      VNFCInstance vnfcInstanceSample,
       String cause)
       throws Exception {
 
-    if ("switchToStandby".equals(cause)) {
-      for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
-        for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
-          if (vnfcInstance.getId().equals(component.getId())
-              && "standby".equalsIgnoreCase(vnfcInstance.getState())) {
-            log.debug("Activation of the standby component");
-            if (VnfmUtils.getLifecycleEvent(
+    if (cause.equals("switchToStandby")) {
+      // execute start in the standby vnfc instance and set state to ACTIVE
+      VNFCInstance vnfcInstance =
+          getVNFCInstanceByVNFComponentId(virtualNetworkFunctionRecord, vnfcInstanceSample.getId());
+      if (vnfcInstance != null && vnfcInstance.getState().equalsIgnoreCase("standby")) {
+        log.debug("Activation of the standby VNFCInstance");
+        boolean isStartLifeCycleEventPresent =
+            VnfmUtils.getLifecycleEvent(
                     virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
-                != null) {
-              log.debug(
-                  "Executed scripts for event START "
-                      + lcm.executeScriptsForEvent(
-                          virtualNetworkFunctionRecord, component, Event.START, Action.START));
-            }
-            log.debug("Changing the status from standby to active");
-            //This is inside the vnfr
-            vnfcInstance.setState("ACTIVE");
-            // This is a copy of the object received as parameter and modified.
-            // It will be sent to the orchestrator
-            component.setState("ACTIVE");
-            break;
-          }
+                != null;
+        if (isStartLifeCycleEventPresent) {
+          log.debug(
+              "Executed scripts for event START "
+                  + lcm.executeScriptsForEvent(
+                      virtualNetworkFunctionRecord, vnfcInstance, Event.START, Action.START));
+          //This is inside the vnfr
+          vnfcInstance.setState("ACTIVE");
+          // This is a copy of the object received as parameter and modified.
+          // It will be sent to the orchestrator
+          vnfcInstanceSample.setState("ACTIVE");
         }
-      }
+      } else log.warn("Not found VNFC instance in standby with id: " + vnfcInstanceSample.getId());
     } else if (VnfmUtils.getLifecycleEvent(
             virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL)
         != null) {
-      if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL)
-              .getLifecycle_events()
-          != null) {
-        log.debug("Heal method started");
-        log.info("-----------------------------------------------------------------------");
-        StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
-        for (String result :
-            lcm.executeScriptsForEvent(
-                virtualNetworkFunctionRecord, component, Event.HEAL, cause, Action.HEAL)) {
-          output.append(JsonUtils.parse(result));
-          output.append("\n--------------------\n");
-        }
+      log.debug("Heal method started");
+      log.info("-----------------------------------------------------------------------");
+      StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
+      for (String result :
+          lcm.executeScriptsForEvent(
+              virtualNetworkFunctionRecord, vnfcInstanceSample, Event.HEAL, cause, Action.HEAL)) {
+        output.append(JsonUtils.parse(result));
         output.append("\n--------------------\n");
-        log.info("Executed script for HEAL. Output was: \n\n" + output);
-        log.info("-----------------------------------------------------------------------");
       }
+      output.append("\n--------------------\n");
+      log.info("Executed script for HEAL. Output was: \n\n" + output);
+      log.info("-----------------------------------------------------------------------");
     }
     return virtualNetworkFunctionRecord;
+  }
+
+  private VNFCInstance getVNFCInstanceByVNFComponentId(
+      VirtualNetworkFunctionRecord vnfr, String vnfComponentId) {
+    for (VirtualDeploymentUnit virtualDeploymentUnit : vnfr.getVdu())
+      for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
+        if (vnfcInstance.getId().equals(vnfComponentId)) return vnfcInstance;
+    return null;
   }
 
   @Override
