@@ -129,7 +129,8 @@ public class LifeCycleManagement {
     return res;
   }
 
-  private Map<String, String> setOwnIpsInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
+  private Map<String, String> setOwnIpAndFloatingIpInEnv(
+      Map<String, String> env, VNFCInstance vnfcInstance) {
     //Adding own ips
     for (Ip ip : vnfcInstance.getIps()) {
       log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
@@ -189,7 +190,7 @@ public class LifeCycleManagement {
           for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
 
             // add own ips and floating ip to env
-            env = setOwnIpsInEnv(env, vnfcInstance);
+            env = setOwnIpAndFloatingIpInEnv(env, vnfcInstance);
             // add hostname to env
             env.put("hostname", vnfcInstance.getHostname());
 
@@ -696,7 +697,7 @@ public class LifeCycleManagement {
           // Following section (Set own IP, Floating IP, Hostname) is executed by scripts of all events
 
           // add own ips and floating ip to env
-          env = setOwnIpsInEnv(env, vnfcInstance);
+          env = setOwnIpAndFloatingIpInEnv(env, vnfcInstance);
           // add hostname to env
           env.put("hostname", vnfcInstance.getHostname());
 
