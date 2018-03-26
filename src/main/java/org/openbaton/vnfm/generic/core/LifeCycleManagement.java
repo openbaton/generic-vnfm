@@ -759,7 +759,7 @@ public class LifeCycleManagement {
     return res;
   }
 
-  public void createVnfrErrorRecord(String vnfrId, Action action, Event event, Integer scriptIndex)
+  private void createVnfrErrorRecord(String vnfrId, Action action, Event event, Integer scriptIndex)
       throws Exception {
     try {
       VNFRErrorStatus vnfrErrorStatus = new VNFRErrorStatus();
