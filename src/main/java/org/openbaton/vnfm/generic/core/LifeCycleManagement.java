@@ -145,7 +145,7 @@ public class LifeCycleManagement {
     return env;
   }
 
-  private Map<String, String> clearOwnIpsInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
+  private Map<String, String> clearOwnIpAndFloatingIpInEnv(Map<String, String> env, VNFCInstance vnfcInstance) {
     //Clearing own ips
     for (Ip ip : vnfcInstance.getIps()) {
       env.remove(ip.getNetName());
@@ -293,7 +293,7 @@ public class LifeCycleManagement {
             }
 
             // clear own ips and hostname in env
-            env = clearOwnIpsInEnv(env, vnfcInstance);
+            env = clearOwnIpAndFloatingIpInEnv(env, vnfcInstance);
             env.remove("hostname");
           }
         }
@@ -791,7 +791,7 @@ public class LifeCycleManagement {
               env.remove(key);
             }
             // clear own ips and hostname in env
-            env = clearOwnIpsInEnv(env, vnfcInstance);
+            env = clearOwnIpAndFloatingIpInEnv(env, vnfcInstance);
             env.remove("hostname");
 
             dependencyAlreadySaved = dependencySavedForVNFCInstance;
