@@ -46,7 +46,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 /** Created by lto on 15/09/15. */
 @Service
-@Scope
 @Transactional
 public class LifeCycleManagement {
 
