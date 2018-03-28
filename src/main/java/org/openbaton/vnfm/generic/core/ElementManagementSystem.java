@@ -270,7 +270,7 @@ public class ElementManagementSystem implements EmsInterface {
   }
 
   @Override
-  public void saveVNFRecordDependencyOnEms(
+  public void saveVNFRecordDependency(
       VirtualNetworkFunctionRecord vnfr,
       VNFCInstance vnfcInstance,
       VNFRecordDependency vnfRecordDependency)
@@ -351,5 +351,14 @@ public class ElementManagementSystem implements EmsInterface {
   @Override
   public String getEmsVersion() {
     return emsConfiguration.getVersion();
+  }
+
+  // It is supported for ems version >= 1.1.0
+  @Override
+  public boolean isSaveVNFRecordDependencySupported() {
+    String[] emsVersionSplitted = getEmsVersion().split("\\.");
+    return emsVersionSplitted.length >= 2
+        && (emsVersionSplitted[0].compareTo("1") >= 0)
+        && (emsVersionSplitted[1].compareTo("1") >= 0);
   }
 }
