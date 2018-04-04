@@ -76,7 +76,6 @@ apply from: 'gradle/gradle/git.release.gradle'
 
 apply from: 'gradle/gradle/packaging.vnfm-generic.debian.gradle'
 apply from: 'gradle/gradle/packaging.vnfm-generic.docker.gradle'
-apply from: 'gradle/gradle/packaging.innosetup.gradle'
 apply from: 'gradle/gradle/distribution.gradle'
 apply from: 'gradle/gradle/brew.formula.creator.gradle'
 
