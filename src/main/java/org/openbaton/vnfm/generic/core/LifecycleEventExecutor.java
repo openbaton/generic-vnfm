@@ -95,7 +95,9 @@ public abstract class LifecycleEventExecutor {
       throws VnfmSdkException {
     log.debug("Exception for vnfci: " + vnfcInstance.getId());
     Integer indexOfScript = scripts.indexOf(script);
-    createVnfrErrorRecord(indexOfScript);
+    //to prevent creation of duplicate error record
+    if (vnfrErrorRepository.findByVnfrIdAndEventAndScriptIndex(vnfr.getId(), event, indexOfScript)
+        == null) createVnfrErrorRecord(indexOfScript);
     throw new VnfmSdkException(
         "EMS (" + vnfcInstance.getHostname() + ") had the following error:" + e);
   }
