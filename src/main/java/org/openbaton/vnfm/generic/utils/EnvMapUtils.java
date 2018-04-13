@@ -33,6 +33,11 @@ public class EnvMapUtils {
   public static Map<String, String> createConfigurationParametersAndProvidesMapFromVNFR(
       VirtualNetworkFunctionRecord vnfr) {
     Map<String, String> res = new HashMap<>();
+
+    if (vnfr.getProvides() == null
+        || vnfr.getProvides().getConfigurationParameters() == null
+        || vnfr.getConfigurations() == null
+        || vnfr.getConfigurations().getConfigurationParameters() == null) return res;
     for (ConfigurationParameter configurationParameter :
         vnfr.getProvides().getConfigurationParameters()) {
       res.put(configurationParameter.getConfKey(), configurationParameter.getValue());
