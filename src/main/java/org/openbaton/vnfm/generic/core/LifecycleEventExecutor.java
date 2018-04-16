@@ -43,6 +43,29 @@ public abstract class LifecycleEventExecutor {
     setEnv(EnvMapUtils.createConfigurationParametersAndProvidesMapFromVNFR(vnfr));
   }
 
+  private void setEvent(Event event) {
+    this.event = event;
+  }
+
+  public void setScripts(List<String> scripts) {
+    Assert.notNull(scripts, "List of scripts is null");
+    this.scripts = scripts;
+  }
+
+  private void setVnfr(VirtualNetworkFunctionRecord vnfr) {
+    this.vnfr = vnfr;
+  }
+
+  private void setEnv(Map<String, String> env) {
+    this.env = env;
+  }
+
+  public Collection<String> executeOn(VNFCInstance vnfcInstance) throws Exception {
+    this.vnfcInstances = new HashSet<>();
+    this.vnfcInstances.add(vnfcInstance);
+    return execute();
+  }
+
   protected abstract Collection<String> execute() throws Exception;
 
   protected String executeActionOnEMS(String action, VNFCInstance vnfcInstance, String script)
@@ -56,10 +79,16 @@ public abstract class LifecycleEventExecutor {
     return output;
   }
 
-  public Collection<String> executeOn(VNFCInstance vnfcInstance) throws Exception {
-    this.vnfcInstances = new HashSet<>();
-    this.vnfcInstances.add(vnfcInstance);
-    return execute();
+  private String sendActionToEMSAndSaveLogToFile(
+      String action, VNFCInstance vnfcInstance, String script) throws Exception {
+    String output = sendActionToEMS(action, vnfcInstance);
+    log.debug("Saving log to file...");
+    logUtils.saveLogToFile(vnfr, script, vnfcInstance, output);
+    return output;
+  }
+
+  private String sendActionToEMS(String action, VNFCInstance vnfcInstance) throws Exception {
+    return ems.executeActionOnEMS(vnfcInstance.getHostname(), action, vnfr, vnfcInstance);
   }
 
   protected Set<VNFCInstance> getVnfcInstances() {
@@ -70,25 +99,8 @@ public abstract class LifecycleEventExecutor {
     return vnfcInstances;
   }
 
-  public void setScripts(List<String> scripts) {
-    Assert.notNull(scripts, "List of scripts is null");
-    this.scripts = scripts;
-  }
-
   protected Map<String, String> createEnvMapFrom(VNFCInstance vnfcInstance) {
     return EnvMapUtils.createForLifeCycleEventExecutionOnVNFCInstance(vnfcInstance);
-  }
-
-  private String sendActionToEMSAndSaveLogToFile(
-      String action, VNFCInstance vnfcInstance, String script) throws Exception {
-    String output = sendActionToEMS(action, vnfcInstance);
-    log.debug("Saving log to file...");
-    logUtils.saveLogToFile(vnfr, script, vnfcInstance, output);
-    return output;
-  }
-
-  private void setEvent(Event event) {
-    this.event = event;
   }
 
   private void handleScriptException(Exception e, VNFCInstance vnfcInstance, String script)
@@ -105,18 +117,6 @@ public abstract class LifecycleEventExecutor {
   private void createVnfrErrorRecord(Integer scriptIndex) {
     VNFRErrorStatus vnfrErrorStatus = new VNFRErrorStatus(vnfr.getId(), event, scriptIndex);
     vnfrErrorRepository.save(vnfrErrorStatus);
-  }
-
-  private String sendActionToEMS(String action, VNFCInstance vnfcInstance) throws Exception {
-    return ems.executeActionOnEMS(vnfcInstance.getHostname(), action, vnfr, vnfcInstance);
-  }
-
-  private void setEnv(Map<String, String> env) {
-    this.env = env;
-  }
-
-  private void setVnfr(VirtualNetworkFunctionRecord vnfr) {
-    this.vnfr = vnfr;
   }
 
   public void setEms(EmsInterface ems) {
