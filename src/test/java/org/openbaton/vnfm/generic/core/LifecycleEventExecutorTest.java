@@ -21,9 +21,6 @@ import org.openbaton.catalogue.mano.descriptor.VNFComponent;
 import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
-import org.openbaton.catalogue.nfvo.Location;
-import org.openbaton.catalogue.nfvo.images.NFVImage;
-import org.openbaton.catalogue.nfvo.networks.Network;
 import org.openbaton.catalogue.nfvo.viminstances.BaseVimInstance;
 import org.openbaton.catalogue.nfvo.viminstances.OpenstackVimInstance;
 import org.openbaton.vnfm.generic.repository.VNFRErrorRepository;
@@ -38,9 +35,8 @@ public class LifecycleEventExecutorTest {
   @Test
   public void testGetVnfcInstances() {
     VirtualNetworkFunctionRecord vnfr = createVirtualNetworkFunctionRecord();
-    BaseVimInstance vimInstance = createVimInstance();
     for (int i = 0; i < 3; i++) {
-      vnfr.getVdu().add(createVDU(i, vimInstance));
+      vnfr.getVdu().add(createVDU(i, new OpenstackVimInstance()));
     }
     LifecycleEvent le = createLifecycleEvent(Event.INSTANTIATE);
 
@@ -70,60 +66,6 @@ public class LifecycleEventExecutorTest {
     virtualNetworkFunctionRecord.setName("mocked_vnfr");
     virtualNetworkFunctionRecord.setVdu(new HashSet<>());
     return virtualNetworkFunctionRecord;
-  }
-
-  private static OpenstackVimInstance createVimInstance() {
-    OpenstackVimInstance vimInstance = new OpenstackVimInstance();
-    vimInstance.setId("vim_instance_id");
-    vimInstance.setName("vim_instance");
-    vimInstance.setAuthUrl("http://auth.url.hello");
-    vimInstance.setTenant("tenant");
-    vimInstance.setUsername("username");
-    vimInstance.setPassword("password");
-    vimInstance.setType("test");
-    Location location = new Location();
-    location.setName("Location");
-    location.setLatitude("8463947");
-    location.setLongitude("-857638");
-    vimInstance.setLocation(location);
-    vimInstance.setNetworks(
-        new HashSet<Network>() {
-          {
-            Network network = new Network();
-            network.setExtId("ext_id");
-            network.setName("network_name");
-            add(network);
-          }
-        });
-    vimInstance.setFlavours(
-        new HashSet<DeploymentFlavour>() {
-          {
-            DeploymentFlavour deploymentFlavour = new DeploymentFlavour();
-            deploymentFlavour.setExtId("ext_id_1");
-            deploymentFlavour.setFlavour_key("flavor_name");
-            add(deploymentFlavour);
-
-            deploymentFlavour = new DeploymentFlavour();
-            deploymentFlavour.setExtId("ext_id_2");
-            deploymentFlavour.setFlavour_key("m1.tiny");
-            add(deploymentFlavour);
-          }
-        });
-    vimInstance.setImages(
-        new HashSet<NFVImage>() {
-          {
-            NFVImage image = new NFVImage();
-            image.setExtId("ext_id_1");
-            image.setName("ubuntu-14.04-server-cloudimg-amd64-disk1");
-            add(image);
-
-            image = new NFVImage();
-            image.setExtId("ext_id_2");
-            image.setName("image_name_1");
-            add(image);
-          }
-        });
-    return vimInstance;
   }
 
   private VirtualDeploymentUnit createVDU(int suffix, BaseVimInstance vimInstance) {
