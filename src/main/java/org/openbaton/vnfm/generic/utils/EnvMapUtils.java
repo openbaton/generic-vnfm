@@ -83,15 +83,19 @@ public class EnvMapUtils {
   private static Map<String, String> putOwnIpAndFloatingIp(
       Map<String, String> map, VNFCInstance vnfcInstance) {
     //Adding own ips
-    for (Ip ip : vnfcInstance.getIps()) {
-      log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
-      map.put(ip.getNetName(), ip.getIp());
+    if (vnfcInstance.getIps() != null) {
+      for (Ip ip : vnfcInstance.getIps()) {
+        log.debug("Adding net: " + ip.getNetName() + " with value: " + ip.getIp());
+        map.put(ip.getNetName(), ip.getIp());
+      }
     }
 
     //Adding own floating ip
-    for (Ip fip : vnfcInstance.getFloatingIps()) {
-      log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
-      map.put(fip.getNetName() + "_floatingIp", fip.getIp());
+    if (vnfcInstance.getFloatingIps() != null) {
+      for (Ip fip : vnfcInstance.getFloatingIps()) {
+        log.debug("adding floatingIp: " + fip.getNetName() + " = " + fip.getIp());
+        map.put(fip.getNetName() + "_floatingIp", fip.getIp());
+      }
     }
     return map;
   }

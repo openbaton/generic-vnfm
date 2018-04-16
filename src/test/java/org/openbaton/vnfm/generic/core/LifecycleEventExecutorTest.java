@@ -9,13 +9,17 @@
 package org.openbaton.vnfm.generic.core;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.openbaton.catalogue.mano.common.*;
 import org.openbaton.catalogue.mano.descriptor.VNFComponent;
 import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
@@ -26,11 +30,12 @@ import org.openbaton.catalogue.nfvo.viminstances.OpenstackVimInstance;
 import org.openbaton.vnfm.generic.repository.VNFRErrorRepository;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LifecycleEventExecutorTest {
 
-  @Mock private ElementManagementSystem ems;
-  @Mock private LogUtils logUtils;
-  @Mock private VNFRErrorRepository vnfrErrorRepository;
+  @Mock private ElementManagementSystem emsMock;
+  @Mock private LogUtils logUtilsMock;
+  @Mock private VNFRErrorRepository vnfrErrorRepositoryMock;
 
   @Test
   public void testGetVnfcInstances() {
@@ -39,6 +44,12 @@ public class LifecycleEventExecutorTest {
       vnfr.getVdu().add(createVDU(i, new OpenstackVimInstance()));
     }
     LifecycleEvent le = createLifecycleEvent(Event.INSTANTIATE);
+    le.setLifecycle_events(
+        new ArrayList<String>() {
+          {
+            add("script1");
+          }
+        });
 
     LifecycleEventExecutor lifecycleEventExecutor = new GeneralLifecycleEventExecutor(le, vnfr);
     setLifecycleEventExecutorDependencies(lifecycleEventExecutor);
@@ -47,22 +58,52 @@ public class LifecycleEventExecutorTest {
         "Number of vnfc instances is not 3", 3, lifecycleEventExecutor.getVnfcInstances().size());
   }
 
-  private LifecycleEvent createLifecycleEvent(Event event) {
-    LifecycleEvent lifecycleEvent = new LifecycleEvent();
-    lifecycleEvent.setEvent(event);
-    lifecycleEvent.setLifecycle_events(
+  @Test
+  public void testGetVnfcInstancesAfterExecutionOnSingleVnfcInstance() throws Exception {
+    VirtualNetworkFunctionRecord vnfr = createVirtualNetworkFunctionRecord();
+    VirtualDeploymentUnit vdu = createVDU(0, new OpenstackVimInstance());
+    vnfr.getVdu().add(vdu);
+    LifecycleEvent le = createLifecycleEvent(Event.INSTANTIATE);
+    le.setLifecycle_events(
         new ArrayList<String>() {
           {
             add("script1");
-            add("script2");
-            add("script3");
           }
         });
+    when(emsMock.executeActionOnEMS(
+            any(String.class),
+            any(String.class),
+            any(VirtualNetworkFunctionRecord.class),
+            any(VNFCInstance.class)))
+        .thenReturn("");
+    LifecycleEventExecutor lifecycleEventExecutor = new GeneralLifecycleEventExecutor(le, vnfr);
+    setLifecycleEventExecutorDependencies(lifecycleEventExecutor);
+    lifecycleEventExecutor.executeOn(vdu.getVnfc_instance().iterator().next());
+
+    assertEquals(
+        "Number of vnfc instances is not 1", 1, lifecycleEventExecutor.getVnfcInstances().size());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void assertExceptionIfScriptsAreNull() {
+    VirtualNetworkFunctionRecord vnfr = createVirtualNetworkFunctionRecord();
+    for (int i = 0; i < 3; i++) {
+      vnfr.getVdu().add(createVDU(i, new OpenstackVimInstance()));
+    }
+    LifecycleEvent le = createLifecycleEvent(Event.INSTANTIATE);
+
+    new GeneralLifecycleEventExecutor(le, vnfr);
+  }
+
+  private LifecycleEvent createLifecycleEvent(Event event) {
+    LifecycleEvent lifecycleEvent = new LifecycleEvent();
+    lifecycleEvent.setEvent(event);
     return lifecycleEvent;
   }
 
   private VirtualNetworkFunctionRecord createVirtualNetworkFunctionRecord() {
     VirtualNetworkFunctionRecord virtualNetworkFunctionRecord = new VirtualNetworkFunctionRecord();
+    virtualNetworkFunctionRecord.setId("123");
     virtualNetworkFunctionRecord.setName("mocked_vnfr");
     virtualNetworkFunctionRecord.setVdu(new HashSet<>());
     return virtualNetworkFunctionRecord;
@@ -100,8 +141,8 @@ public class LifecycleEventExecutorTest {
 
   private void setLifecycleEventExecutorDependencies(
       LifecycleEventExecutor lifecycleEventExecutor) {
-    lifecycleEventExecutor.setEms(ems);
-    lifecycleEventExecutor.setLogUtils(logUtils);
-    lifecycleEventExecutor.setVnfrErrorRepository(vnfrErrorRepository);
+    lifecycleEventExecutor.setEms(emsMock);
+    lifecycleEventExecutor.setLogUtils(logUtilsMock);
+    lifecycleEventExecutor.setVnfrErrorRepository(vnfrErrorRepositoryMock);
   }
 }
