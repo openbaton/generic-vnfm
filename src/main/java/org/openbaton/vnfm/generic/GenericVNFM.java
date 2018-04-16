@@ -670,8 +670,17 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Override
   protected Action getResumedAction(
-      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance) {
-    return vnfrErrorRepository.findFirstByVnfrId(virtualNetworkFunctionRecord.getId()).getAction();
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance)
+      throws Exception {
+    Action vnfrErrorAction = null;
+    try {
+      vnfrErrorAction =
+          vnfrErrorRepository.findFirstByVnfrId(virtualNetworkFunctionRecord.getId()).getAction();
+      return vnfrErrorAction;
+    } catch (Exception e) {
+      throw new VnfmSdkException(
+          "Resume is allowed only for VNFRs with script errors. Please check log for the previous error information.");
+    }
   }
 
   @Override
