@@ -49,6 +49,7 @@ public class LifeCycleManagement {
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event) throws Exception {
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
+    if (le == null) return new ArrayList<>();
     LifecycleEventExecutor lifecycleEventExecutor =
         new GeneralLifecycleEventExecutor(le, virtualNetworkFunctionRecord);
     setLifecycleEventExecutorDependencies(lifecycleEventExecutor);
@@ -60,6 +61,7 @@ public class LifeCycleManagement {
       throws Exception {
 
     LifecycleEvent le = VnfmUtils.getLifecycleEvent(vnfr.getLifecycle_event(), event);
+    if (le == null) return new ArrayList<>();
     ConfigureLifecycleEventExecutor configureLifecycleEventExecutor =
         new ConfigureLifecycleEventExecutor(le, vnfr, dependency);
     setLifecycleEventExecutorDependencies(configureLifecycleEventExecutor);
@@ -73,6 +75,7 @@ public class LifeCycleManagement {
       VNFRecordDependency dependency)
       throws Exception {
     LifecycleEvent le = VnfmUtils.getLifecycleEvent(vnfr.getLifecycle_event(), event);
+    if (le == null) return new ArrayList<>();
     ConfigureLifecycleEventExecutor configureLifecycleEventExecutor =
         new ConfigureLifecycleEventExecutor(le, vnfr, dependency);
     setLifecycleEventExecutorDependencies(configureLifecycleEventExecutor);
@@ -83,6 +86,7 @@ public class LifeCycleManagement {
       VirtualNetworkFunctionRecord vnfr, VNFCInstance vnfcInstance, Event event, String cause)
       throws Exception {
     LifecycleEvent le = VnfmUtils.getLifecycleEvent(vnfr.getLifecycle_event(), event);
+    if (le == null) return new ArrayList<>();
     HealLifecycleEventExecutor healLifecycleEventExecutor =
         new HealLifecycleEventExecutor(le, vnfr, cause);
     setLifecycleEventExecutorDependencies(healLifecycleEventExecutor);
@@ -93,6 +97,7 @@ public class LifeCycleManagement {
       VirtualNetworkFunctionRecord vnfr, VNFCInstance vnfcInstance, Event event) throws Exception {
 
     LifecycleEvent le = VnfmUtils.getLifecycleEvent(vnfr.getLifecycle_event(), event);
+    if (le == null) return new ArrayList<>();
     GeneralLifecycleEventExecutor generalLifecycleEventExecutor =
         new GeneralLifecycleEventExecutor(le, vnfr);
     setLifecycleEventExecutorDependencies(generalLifecycleEventExecutor);
@@ -103,6 +108,7 @@ public class LifeCycleManagement {
       VirtualNetworkFunctionRecord vnfr, VNFCInstance vnfcInstanceRemote, Event event)
       throws Exception {
     LifecycleEvent le = VnfmUtils.getLifecycleEvent(vnfr.getLifecycle_event(), event);
+    if (le == null) return new ArrayList<>();
     ScaleInLifecycleEventExecutor scaleInLifecycleEventExecutor =
         new ScaleInLifecycleEventExecutor(le, vnfr, vnfcInstanceRemote);
     setLifecycleEventExecutorDependencies(scaleInLifecycleEventExecutor);
@@ -117,6 +123,7 @@ public class LifeCycleManagement {
       VNFRecordDependency dependency)
       throws Exception { // Invoked by Resume method
     LifecycleEvent le = VnfmUtils.getLifecycleEvent(vnfr.getLifecycle_event(), erroredEvent);
+    if (le == null) return new ArrayList<>();
     List<String> scripts = new ArrayList<>();
     for (String script : le.getLifecycle_events()) {
       if (le.getLifecycle_events().indexOf(script) >= scriptId) {
