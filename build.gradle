@@ -101,8 +101,9 @@ javadoc {
 dependencies {
     compile 'org.openbaton:vnfm-sdk-amqp:5.2.1-SNAPSHOT'
     compile 'org.springframework.boot:spring-boot-starter-data-jpa:1.5.8.RELEASE'
-    compile 'org.mariadb.jdbc:mariadb-java-client'
     runtime 'org.hsqldb:hsqldb:2.3.4'
+    compile 'org.xerial:sqlite-jdbc:3.20.1'
+    compile 'com.zsoltfabok:sqlite-dialect:1.0'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.10.19'
