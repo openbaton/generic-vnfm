@@ -47,7 +47,6 @@ public class LifeCycleManagement {
 
   public Iterable<String> executeScriptsForEvent(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Event event) throws Exception {
-    //TODO make it parallel
     LifecycleEvent le =
         VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), event);
     LifecycleEventExecutor lifecycleEventExecutor =
