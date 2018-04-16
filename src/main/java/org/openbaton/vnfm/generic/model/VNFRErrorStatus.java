@@ -2,13 +2,10 @@ package org.openbaton.vnfm.generic.model;
 
 import javax.persistence.*;
 import org.openbaton.catalogue.mano.common.Event;
+import org.openbaton.catalogue.util.BaseEntity;
 
 @Entity
-public class VNFRErrorStatus {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+public class VNFRErrorStatus extends BaseEntity {
 
   private String vnfrId;
 
@@ -23,14 +20,6 @@ public class VNFRErrorStatus {
     this.vnfrId = vnfrId;
     this.event = event;
     this.scriptIndex = script;
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
   }
 
   public Integer getScriptIndex() {
@@ -60,9 +49,7 @@ public class VNFRErrorStatus {
   @Override
   public String toString() {
     return "VNFRErrorStatus{"
-        + "id="
-        + id
-        + ", vnfrId='"
+        + "vnfrId='"
         + vnfrId
         + '\''
         + ", event="
