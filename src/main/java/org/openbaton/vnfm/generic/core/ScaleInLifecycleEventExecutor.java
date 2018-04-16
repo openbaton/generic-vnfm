@@ -48,10 +48,6 @@ public class ScaleInLifecycleEventExecutor extends GeneralLifecycleEventExecutor
     return envMap;
   }
 
-  private VNFCInstance getRemovedVnfcInstance() {
-    return removedVnfcInstance;
-  }
-
   private void setRemovedVnfcInstance(VNFCInstance removedVnfcInstance) {
     this.removedVnfcInstance = removedVnfcInstance;
   }
