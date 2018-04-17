@@ -100,7 +100,7 @@ javadoc {
 
 dependencies {
     compile 'org.openbaton:vnfm-sdk-amqp:5.2.1-SNAPSHOT'
-    compile 'org.springframework.boot:spring-boot-starter-data-jpa:1.5.8.RELEASE'
+    compile 'org.springframework.boot:spring-boot-starter-data-jpa'
     compile 'org.apache.derby:derby:10.7.1.1'
 
     testCompile 'junit:junit:4.12'
