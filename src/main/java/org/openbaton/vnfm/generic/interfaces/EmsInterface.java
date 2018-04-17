@@ -44,6 +44,8 @@ public interface EmsInterface {
 
   String getEmsVersion();
 
+  boolean isSaveVNFRecordDependencySupported();
+
   void saveScriptOnEms(VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Object scripts)
       throws Exception;
 
@@ -53,7 +55,7 @@ public interface EmsInterface {
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord)
       throws Exception;
 
-  void saveVNFRecordDependencyOnEms(
+  void saveVNFRecordDependency(
       VirtualNetworkFunctionRecord vnfr,
       VNFCInstance vnfcInstance,
       VNFRecordDependency vnfRecordDependency)

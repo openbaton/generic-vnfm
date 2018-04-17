@@ -2,11 +2,11 @@
 
 ##############################################################################
 ##
-##  Gradle start up script for UN*X
+##  Gradle start up scriptIndex for UN*X
 ##
 ##############################################################################
 
-# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this scriptIndex.
 DEFAULT_JVM_OPTS=""
 
 APP_NAME="Gradle"

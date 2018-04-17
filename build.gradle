@@ -29,7 +29,7 @@ plugins {
     id "nebula.ospackage" version "4.5.1"
     id "com.github.sherter.google-java-format" version "0.6"
     id 'com.github.ben-manes.versions' version '0.13.0'
-    id 'org.springframework.boot' version '1.5.8.RELEASE'
+    id 'org.springframework.boot' version '1.5.11.RELEASE'
 }
 
 apply plugin: 'java'
@@ -76,7 +76,6 @@ apply from: 'gradle/gradle/git.release.gradle'
 
 apply from: 'gradle/gradle/packaging.vnfm-generic.debian.gradle'
 apply from: 'gradle/gradle/packaging.vnfm-generic.docker.gradle'
-apply from: 'gradle/gradle/packaging.innosetup.gradle'
 apply from: 'gradle/gradle/distribution.gradle'
 apply from: 'gradle/gradle/brew.formula.creator.gradle'
 
@@ -102,10 +101,10 @@ javadoc {
 dependencies {
     compile 'org.openbaton:vnfm-sdk-amqp:5.2.1-SNAPSHOT'
     compile 'org.springframework.boot:spring-boot-starter-data-jpa:1.5.8.RELEASE'
-
     compile 'org.apache.derby:derby:10.7.1.1'
 
-    compile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-all:1.10.19'
 }
 
 // Force code formatting
