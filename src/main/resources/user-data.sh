@@ -28,7 +28,6 @@ export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LC_COLLATE=C
 export LC_CTYPE=en_US.UTF-8
-source /etc/bashrc
 
 
 ################
@@ -55,9 +54,9 @@ install_ems_on_ubuntu () {
         cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
         apt-get install -y git
         if [ -z ${EMS_VERSION} ]; then
-            apt-get install -y --force-yes openbaton-ems=${EMS_VERSION}
+            apt-get install -y openbaton-ems=${EMS_VERSION}
         else
-            apt-get install -y --force-yes openbaton-ems
+            apt-get install -y openbaton-ems
         fi
     else
         echo "EMS is already installed"
