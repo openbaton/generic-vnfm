@@ -13,12 +13,6 @@ export EMS_VERSION=
 export #Hostname=
 export ENDPOINT=
 
-# Hostname/IP and path of the EMS repository
-export UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
-export UBUNTU_EMS_REPOSITORY_PATH="repos/apt/debian/"
-export CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
-export CENTOS_EMS_REPOSITORY_PATH="repos/rpm/"
-
 export OS_DISTRIBUTION_RELEASE_MAJOR=
 
 export LANG=en_US.UTF-8
@@ -27,30 +21,49 @@ export LC_COLLATE=C
 export LC_CTYPE=en_US.UTF-8
 source /etc/bashrc
 
+#################
+#### Generic ####
+#################
+
+prepare_machine_generic () {
+    cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+    mkdir /opt/openbaton
+    #Installation of pip
+    wget https://bootstrap.pypa.io/get-pip.py
+    python get-pip.py
+    pip install --upgrade setuptools
+}
+
+install_configure_pip_packages () {
+    pip install pika
+    pip install gitpython
+    #Installation of Generic EMS
+    ##If
+    [ -n "$EMS_VERSION" ] && 
+    ##THEN
+    echo "Installing EMS $EMS_VERSION" && 
+    pip install openbaton-ems==$EMS_VERSION || 
+    ##ELSE or THEN failed
+    echo "Not defined or existing version. Installing latest version..." && 
+    pip install openbaton-ems
+    
+    add-upstart-ems    
+}
 
 ################
 #### Ubuntu ####
 ################
 
-install_ems_on_ubuntu () {
-    result=$(dpkg -l | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "deb http://${UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP}/${UBUNTU_EMS_REPOSITORY_PATH} ems main" >> /etc/apt/sources.list
-        wget -O - http://get.openbaton.org/public.gpg.key | apt-key add -
-	echo "Checking for running apt-get processes"
-	while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
-	    echo "Waiting for running apt-get processes to finish"
-	    sleep 5s
-	done
-	echo "Finished waiting for running apt-get processes"
-        apt-get update
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        apt-get install -y git
-        apt-get install -y --force-yes ems-$EMS_VERSION
-    else
-        echo "EMS is already installed"
-    fi
+prepare_machine_ubuntu () {
+    echo "Checking for running apt-get processes"
+    while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
+    echo "Waiting for running apt-get processes to finish"
+    sleep 5s
+    done
+    echo "Finished waiting for running apt-get processes"
+    apt-get update
+    apt-get install -y python
+    apt-get install -y git
 }
 
 install_zabbix_on_ubuntu () {
@@ -68,23 +81,9 @@ install_zabbix_on_ubuntu () {
 #### CentOS ####
 ################
 
-install_ems_on_centos () {
-    result=$(yum list installed | grep "ems" | grep -i "open baton\|openbaton" | wc -l)
-    if [ ${result} -eq 0 ]; then
-        echo "Downloading EMS from ${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}"
-        echo "[openbaton]" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "name=Open Baton Repository" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "baseurl=http://${CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP}/${CENTOS_EMS_REPOSITORY_PATH}" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "gpgcheck=0" >> /etc/yum.repos.d/OpenBaton.repo
-        echo "enabled=1" >> /etc/yum.repos.d/OpenBaton.repo
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        yum install -y git
-        yum install -y ems
-        systemctl enable ems
-        #systemctl start ems
-    else
-        echo "EMS is already installed"
-    fi
+prepare_machine_centos () {
+    yum install -y wget
+    yum install -y git
 }
 
 install_zabbix_on_centos () {
@@ -116,8 +115,7 @@ configure_ems () {
     echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
     echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
     echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
-
-    service ems restart
+    service openbaton-ems restart
 }
 
 
@@ -141,11 +139,13 @@ elif [ $(cat /etc/os-release | grep -i "centos" | wc -l) -gt 0 ]; then
     os=centos
 else
     os=undefined
+    echo "OS is not supported... Thus neither EMS nor Zabbix gets installed/configured. Supported OS: [ubuntu, centos]"
+    exit 1
 fi
 
 case ${os} in
-    ubuntu) 
-	    install_ems_on_ubuntu
+    ubuntu)
+            prepare_machine_ubuntu
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
@@ -153,7 +153,7 @@ case ${os} in
         fi
 	    ;;
     centos)
-	    install_ems_on_centos
+	    prepare_machine_centos
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
@@ -166,8 +166,10 @@ case ${os} in
 	    echo "OS not recognized"
 	    exit 1
 	    ;;
-esac	
+esac
 
+prepare_machine_generic
+install_configure_pip_packages
 configure_ems
 if [ -n "${MONITORING_IP}" ]; then
     configure_zabbix
