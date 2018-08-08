@@ -36,11 +36,11 @@ import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.VNFCInstance;
+import org.openbaton.catalogue.mano.record.VNFRecordDependency;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.catalogue.nfvo.Script;
 import org.openbaton.common.vnfm_sdk.VnfmHelper;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
-import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.interfaces.EmsInterface;
 import org.openbaton.vnfm.generic.model.EmsRegistrationUnit;
@@ -67,12 +67,16 @@ public class ElementManagementSystem implements EmsInterface {
   private ThreadPoolExecutor executor;
 
   private String scriptPath;
+  // Path of the parameters' file on the EMS
+  // If it is /opt/openbaton/, in such path will be stored the VNFRDependency object
+  private String parametersFilePath;
 
   private VnfmHelper vnfmHelper;
   @Autowired private LogUtils logUtils;
 
   public void init(String scriptPath, VnfmHelper vnfmHelper) {
     this.scriptPath = scriptPath;
+    this.parametersFilePath = this.scriptPath;
     registrationUnits = ConcurrentHashMap.newKeySet();
     executor =
         new ThreadPoolExecutor(5, 10, 5000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -266,6 +270,22 @@ public class ElementManagementSystem implements EmsInterface {
   }
 
   @Override
+  public void saveVNFRecordDependency(
+      VirtualNetworkFunctionRecord vnfr,
+      VNFCInstance vnfcInstance,
+      VNFRecordDependency vnfRecordDependency)
+      throws Exception {
+
+    String vnfRecordDependencyJson = parser.toJson(vnfRecordDependency);
+
+    JsonObject jsonMessage =
+        JsonUtils.getJsonObject(
+            "SAVE_VNFR_DEPENDENCY", vnfRecordDependencyJson, parametersFilePath);
+
+    executeActionOnEMS(vnfcInstance.getHostname(), jsonMessage.toString(), vnfr, vnfcInstance);
+  }
+
+  @Override
   public String executeActionOnEMS(
       String vduHostname,
       String command,
@@ -286,12 +306,12 @@ public class ElementManagementSystem implements EmsInterface {
 
     JsonObject jsonObject = parser.fromJson(response, JsonObject.class);
 
-    if (jsonObject.get("status").getAsInt() == 0) {
+    if ((jsonObject.get("status").getAsInt() == 0)) {
       try {
         log.debug("Output from EMS (" + vduHostname + ") is: " + jsonObject.get("output"));
       } catch (Exception e) {
         e.printStackTrace();
-        throw e;
+        throw new Exception(e);
       }
     } else {
       String err = jsonObject.get("err").getAsString();
@@ -303,7 +323,7 @@ public class ElementManagementSystem implements EmsInterface {
           vnfcInstance,
           response,
           true);
-      throw new VnfmSdkException("EMS (" + vduHostname + ") had the following error: " + err);
+      throw new Exception(err);
     }
     return response;
   }
@@ -331,5 +351,14 @@ public class ElementManagementSystem implements EmsInterface {
   @Override
   public String getEmsVersion() {
     return emsConfiguration.getVersion();
+  }
+
+  // It is supported for ems version >= 1.1.0
+  @Override
+  public boolean isSaveVNFRecordDependencySupported() {
+    String[] emsVersionSplitted = getEmsVersion().split("\\.");
+    return emsVersionSplitted.length >= 2
+        && (emsVersionSplitted[0].compareTo("1") >= 0)
+        && (emsVersionSplitted[1].compareTo("1") >= 0);
   }
 }
