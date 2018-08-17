@@ -1,4 +1,3 @@
-
 APP_NAME="Open Baton VNFM Generic"
 CONFIG_FILE="$APP_HOME/application.properties"
 PID_FILE=~/.openbaton-vnfm-generic.pid

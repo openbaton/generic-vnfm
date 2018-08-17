@@ -21,12 +21,8 @@ import com.google.gson.JsonObject;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Scanner;
-import java.util.Set;
 import java.util.concurrent.Future;
 import org.apache.commons.codec.binary.Base64;
 import org.openbaton.catalogue.mano.common.Event;
@@ -43,23 +39,29 @@ import org.openbaton.catalogue.nfvo.viminstances.BaseVimInstance;
 import org.openbaton.common.vnfm_sdk.AbstractVnfm;
 import org.openbaton.common.vnfm_sdk.amqp.AbstractVnfmSpringAmqp;
 import org.openbaton.common.vnfm_sdk.exception.BadFormatException;
+import org.openbaton.common.vnfm_sdk.exception.VnfmSdkException;
 import org.openbaton.common.vnfm_sdk.utils.VnfmUtils;
 import org.openbaton.vnfm.generic.configuration.EMSConfiguration;
 import org.openbaton.vnfm.generic.core.ElementManagementSystem;
 import org.openbaton.vnfm.generic.core.LifeCycleManagement;
 import org.openbaton.vnfm.generic.model.EmsRegistrationUnit;
+import org.openbaton.vnfm.generic.model.VNFRErrorStatus;
+import org.openbaton.vnfm.generic.repository.VNFRErrorRepository;
 import org.openbaton.vnfm.generic.utils.JsonUtils;
 import org.openbaton.vnfm.generic.utils.LogDispatcher;
 import org.openbaton.vnfm.generic.utils.LogUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-/** Created by mob on 16.07.15. */
 @EnableScheduling
 @ConfigurationProperties
+@SpringBootApplication
+@EnableJpaRepositories("org.openbaton.vnfm.generic.repository")
 public class GenericVNFM extends AbstractVnfmSpringAmqp {
 
   @Autowired private ElementManagementSystem ems;
@@ -89,6 +91,8 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Autowired private LogDispatcher logDispatcher;
   @Autowired private EMSConfiguration emsConfiguration;
 
+  @Autowired private VNFRErrorRepository vnfrErrorRepository;
+
   public static void main(String[] args) {
     SpringApplication.run(GenericVNFM.class, args);
   }
@@ -116,13 +120,18 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     }
     Set<Future<EmsRegistrationUnit>> waiters = new HashSet<>();
     registrationUnits.forEach(
-        u ->
-            waiters.add(
-                ems.waitForEms(() -> u.waitForEms(emsConfiguration.getWaitForEms() * 1000))));
+        u -> {
+          log.debug(String.format("Waiting for EMS: %s", u.getValue()));
+          waiters.add(ems.waitForEms(() -> u.waitForEms(emsConfiguration.getWaitForEms() * 1000)));
+        });
 
     for (Future<EmsRegistrationUnit> unitFuture : waiters) {
       EmsRegistrationUnit unit = unitFuture.get();
       ems.removeRegistrationUnit(unit);
+      if (!unit.isRegistered()) {
+        log.error(String.format("Timeout waiting for EMS: %s", unit.getValue()));
+        throw new VnfmSdkException(String.format("Timeout waiting for EMS: %s", unit.getValue()));
+      }
       if (unit.isCanceled()) {
         log.info(String.format("Cancelled: %s", unit.getValue()));
         return null;
@@ -235,63 +244,73 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   @Override
   public VirtualNetworkFunctionRecord heal(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
-      VNFCInstance component,
+      VNFCInstance vnfcInstanceSample,
       String cause)
       throws Exception {
 
-    if ("switchToStandby".equals(cause)) {
-      for (VirtualDeploymentUnit virtualDeploymentUnit : virtualNetworkFunctionRecord.getVdu()) {
-        for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance()) {
-          if (vnfcInstance.getId().equals(component.getId())
-              && "standby".equalsIgnoreCase(vnfcInstance.getState())) {
-            log.debug("Activation of the standby component");
-            if (VnfmUtils.getLifecycleEvent(
+    if (cause.equals("switchToStandby")) {
+      // execute start in the standby vnfc instance and set state to ACTIVE
+      VNFCInstance vnfcInstance =
+          getVNFCInstanceByVNFComponentId(virtualNetworkFunctionRecord, vnfcInstanceSample.getId());
+      if (vnfcInstance != null && vnfcInstance.getState().equalsIgnoreCase("standby")) {
+        log.debug("Activation of the standby VNFCInstance");
+        boolean isStartLifeCycleEventPresent =
+            VnfmUtils.getLifecycleEvent(
                     virtualNetworkFunctionRecord.getLifecycle_event(), Event.START)
-                != null) {
-              log.debug(
-                  "Executed scripts for event START "
-                      + lcm.executeScriptsForEvent(
-                          virtualNetworkFunctionRecord, component, Event.START));
-            }
-            log.debug("Changing the status from standby to active");
-            //This is inside the vnfr
-            vnfcInstance.setState("ACTIVE");
-            // This is a copy of the object received as parameter and modified.
-            // It will be sent to the orchestrator
-            component.setState("ACTIVE");
-            break;
-          }
+                != null;
+        if (isStartLifeCycleEventPresent) {
+          log.debug(
+              "Executed scripts for event START "
+                  + lcm.executeScriptsForEvent(
+                      virtualNetworkFunctionRecord, vnfcInstance, Event.START));
+          //This is inside the vnfr
+          vnfcInstance.setState("ACTIVE");
+          // This is a copy of the object received as parameter and modified.
+          // It will be sent to the orchestrator
+          vnfcInstanceSample.setState("ACTIVE");
         }
-      }
+      } else log.warn("Not found VNFC instance in standby with id: " + vnfcInstanceSample.getId());
     } else if (VnfmUtils.getLifecycleEvent(
             virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL)
         != null) {
-      if (VnfmUtils.getLifecycleEvent(virtualNetworkFunctionRecord.getLifecycle_event(), Event.HEAL)
-              .getLifecycle_events()
-          != null) {
-        log.debug("Heal method started");
-        log.info("-----------------------------------------------------------------------");
-        StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
-        for (String result :
-            lcm.executeScriptsForEvent(
-                virtualNetworkFunctionRecord, component, Event.HEAL, cause)) {
-          output.append(JsonUtils.parse(result));
-          output.append("\n--------------------\n");
-        }
+      log.debug("Heal method started");
+      log.info("-----------------------------------------------------------------------");
+      StringBuilder output = new StringBuilder("\n--------------------\n--------------------\n");
+      for (String result :
+          lcm.executeScriptsForEvent(
+              virtualNetworkFunctionRecord, vnfcInstanceSample, Event.HEAL, cause)) {
+        output.append(JsonUtils.parse(result));
         output.append("\n--------------------\n");
-        log.info("Executed script for HEAL. Output was: \n\n" + output);
-        log.info("-----------------------------------------------------------------------");
       }
+      output.append("\n--------------------\n");
+      log.info("Executed script for HEAL. Output was: \n\n" + output);
+      log.info("-----------------------------------------------------------------------");
     }
     return virtualNetworkFunctionRecord;
+  }
+
+  private VNFCInstance getVNFCInstanceByVNFComponentId(
+      VirtualNetworkFunctionRecord vnfr, String vnfComponentId) {
+    for (VirtualDeploymentUnit virtualDeploymentUnit : vnfr.getVdu())
+      for (VNFCInstance vnfcInstance : virtualDeploymentUnit.getVnfc_instance())
+        if (vnfcInstance.getId().equals(vnfComponentId)) return vnfcInstance;
+    return null;
   }
 
   @Override
   public VirtualNetworkFunctionRecord updateSoftware(
       Script script, VirtualNetworkFunctionRecord virtualNetworkFunctionRecord) throws Exception {
-    for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
-      for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
-        updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
+    /*
+     * If script is null the "updateSoftware" operation is intended as the execution of the UPDATE lifecycle event
+     * otherwise the content of the script passed is used to update the correspondent script in the VNFC instances
+     *
+     * */
+    if (script == null) lcm.executeScriptsForEvent(virtualNetworkFunctionRecord, Event.UPDATE);
+    else {
+      for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+        for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+          updateScript(script, virtualNetworkFunctionRecord, vnfcInstance);
+        }
       }
     }
     return virtualNetworkFunctionRecord;
@@ -357,7 +376,7 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
     return virtualNetworkFunctionRecord;
   }
 
-  //When the EMS reveive a script which terminate the vnf, the EMS is still running.
+  //When the EMS receives a script which terminate the vnf, the EMS is still running.
   //Once the vnf is terminated NFVO requests deletion of resources (MANO B.5) and the EMS will be terminated.
   @Override
   public VirtualNetworkFunctionRecord terminate(
@@ -380,6 +399,13 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
       for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
         try {
           ems.removeRegistrationUnit(vnfci.getHostname());
+          if (vnfrErrorRepository.findFirstByVnfrId(virtualNetworkFunctionRecord.getId()) != null) {
+            vnfrErrorRepository.deleteByVnfrId(virtualNetworkFunctionRecord.getId());
+            log.info(
+                "Error information for terminated VNRF with id: "
+                    + virtualNetworkFunctionRecord.getId()
+                    + "  deleted from database");
+          }
         } catch (BadFormatException e) {
           e.printStackTrace();
         }
@@ -544,8 +570,138 @@ public class GenericVNFM extends AbstractVnfmSpringAmqp {
   public VirtualNetworkFunctionRecord resume(
       VirtualNetworkFunctionRecord virtualNetworkFunctionRecord,
       VNFCInstance vnfcInstance,
-      VNFRecordDependency dependency) {
+      VNFRecordDependency dependency)
+      throws Exception {
+    log.info("Resuming VNFR: " + virtualNetworkFunctionRecord.getId());
+    VNFRErrorStatus vnfrErrorStatus =
+        vnfrErrorRepository.findFirstByVnfrId(virtualNetworkFunctionRecord.getId());
+    if (vnfrErrorStatus != null) {
+      try {
+        for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+          for (VNFCInstance vnfci : vdu.getVnfc_instance()) {
+            log.info(
+                "Found Vnfci: "
+                    + vnfci.getHostname()
+                    + " , Event: "
+                    + vnfrErrorStatus.getEvent().name()
+                    + " and Script# "
+                    + vnfrErrorStatus.getScriptIndex());
+            log.info("-----------------------------------------------------------------------");
+            StringBuilder output =
+                new StringBuilder("\n--------------------\n--------------------\n");
+            for (String result :
+                lcm.executeScriptsForEvent(
+                    virtualNetworkFunctionRecord,
+                    vnfrErrorStatus.getEvent(),
+                    vnfci,
+                    vnfrErrorStatus.getScriptIndex(),
+                    dependency)) {
+              output.append(JsonUtils.parse(result));
+              output.append("\n--------------------\n");
+            }
+            output.append("\n--------------------\n");
+            log.info("Executed script for RESUME. Output was: \n\n" + output);
+            log.info("-----------------------------------------------------------------------");
+          }
+        }
+        //      delete vnfrError record
+        log.debug(
+            "Deleting error information from database for VNFR: "
+                + virtualNetworkFunctionRecord.getId());
+        if (virtualNetworkFunctionRecord != null)
+          vnfrErrorRepository.deleteByVnfrId(virtualNetworkFunctionRecord.getId());
+      } catch (Exception e) {
+        throw new VnfmSdkException(
+            "VNFR: "
+                + virtualNetworkFunctionRecord.getId()
+                + " has thrown the following error while resume action: "
+                + e);
+      }
+    }
     return virtualNetworkFunctionRecord;
+  }
+
+  @Override
+  public VirtualNetworkFunctionRecord executeScript(
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, Script script) throws Exception {
+    for (VirtualDeploymentUnit vdu : virtualNetworkFunctionRecord.getVdu()) {
+      for (VNFCInstance vnfcInstance : vdu.getVnfc_instance()) {
+        StringBuilder output = new StringBuilder("\n--------------------\n--------------------");
+        log.info(output.toString());
+        log.info(
+            "Executing script '"
+                + script.getName()
+                + "' on VNFCI '"
+                + vnfcInstance.getHostname()
+                + "' :");
+        log.info(script.toString());
+
+        // Saving script on VNFC instance
+        Set<Script> scriptSet = new HashSet<>();
+        scriptSet.add(script);
+        ems.saveScriptOnEms(virtualNetworkFunctionRecord, scriptSet);
+
+        // Executing script on VNFC instance
+        JsonObject jsonMessage =
+            JsonUtils.getJsonObject(
+                "EXECUTE",
+                script.getName(),
+                properties.getProperty("script-path", "/opt/openbaton/scripts"));
+        ems.executeActionOnEMS(
+            vnfcInstance.getHostname(),
+            jsonMessage.toString(),
+            virtualNetworkFunctionRecord,
+            vnfcInstance);
+
+        log.info(output.toString());
+      }
+    }
+    return virtualNetworkFunctionRecord;
+  }
+
+  @Override
+  protected Action getResumedAction(
+      VirtualNetworkFunctionRecord virtualNetworkFunctionRecord, VNFCInstance vnfcInstance)
+      throws Exception {
+    try {
+      Event failedEvent =
+          vnfrErrorRepository.findFirstByVnfrId(virtualNetworkFunctionRecord.getId()).getEvent();
+      return getActionFromEvent(failedEvent);
+    } catch (Exception e) {
+      throw new VnfmSdkException(
+          "Resume is allowed only for VNFRs with script errors. Please check log for the previous error information.");
+    }
+  }
+
+  private Action getActionFromEvent(Event event) {
+    Action action = null;
+    switch (event) {
+      case INSTANTIATE:
+        action = Action.INSTANTIATE;
+        break;
+      case CONFIGURE:
+        action = Action.MODIFY;
+        break;
+      case STOP:
+        action = Action.STOP;
+        break;
+      case START:
+        action = Action.START;
+        break;
+      case TERMINATE:
+        action = Action.RELEASE_RESOURCES;
+        break;
+      case ERROR:
+        action = Action.ERROR;
+        break;
+      case HEAL:
+        action = Action.HEAL;
+        break;
+      case UPDATE:
+        action = Action.UPDATE;
+        break;
+    }
+    return action;
   }
 
   @Override
