@@ -29,38 +29,58 @@ source /etc/bashrc
 
 
 
+
+install_ems_offline () {
+    mkdir -p /opt/openbaton/
+    python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems-package.tar');ems = response.read();file = open('ems-package.tar.gz', 'w');file.write(ems);file.close();"
+    tar -xf ems-package.tar.gz --directory /opt/openbaton/
+    bash /opt/openbaton/ems-package/install-ems-with-dependencies.sh
+    add-upstart-ems
+}
+
+prepare_machine_generic () {
+    cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+    mkdir /opt/openbaton
+    #Installation of pip
+    wget https://bootstrap.pypa.io/get-pip.py
+    python get-pip.py
+    pip install --upgrade setuptools
+}
+
+install_configure_pip_packages () {
+    pip install pika
+    pip install gitpython
+    #Installation of Generic EMS
+    ##If
+    [ -n "$EMS_VERSION" ] &&
+    ##THEN
+    echo "Installing EMS $EMS_VERSION" &&
+    pip install openbaton-ems==$EMS_VERSION ||
+    ##ELSE or THEN failed
+    echo "Not defined or existing version. Installing latest version..." &&
+    pip install openbaton-ems
+
+    add-upstart-ems
+}
+
+
 ################
 #### Ubuntu ####
 ################
 
-install_ems_on_ubuntu () {
-    if [ ${OFFLINE_EMS} -eq 1 ]; then
-        mkdir -p /opt/openbaton/
-        python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems-package.tar.gz');ems = response.read();file = open('ems-package.tar.gz', 'w');file.write(ems);file.close();"
-        tar -xf ems-package.tar.gz --directory /opt/openbaton/
-        bash /opt/openbaton/ems-package/install-ems-with-dependencies.sh
-        add-upstart-ems
-    else
-        echo "Checking for running apt-get processes"
-        while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
-        echo "Waiting for running apt-get processes to finish"
-        sleep 5s
-        done
-        echo "Finished waiting for running apt-get processes"
-        apt-get update
-        apt-get install -y python
-        wget https://bootstrap.pypa.io/get-pip.py
-        python get-pip.py
-        apt-get install -y git
-        pip install pika
-        pip install gitpython
-        cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-        mkdir /opt/openbaton
-        pip install openbaton-ems
-        add-upstart-ems
-
-    fi
+prepare_machine_ubuntu () {
+    echo "Checking for running apt-get processes"
+    while [ ! -z "$(ps -A | grep apt-get | awk '{print $1}')" ];do
+    echo "Waiting for running apt-get processes to finish"
+    sleep 5s
+    done
+    echo "Finished waiting for running apt-get processes"
+    apt-get update
+    apt-get install -y python
+    apt-get install -y git
 }
+i
+
 
 install_zabbix_on_ubuntu () {
     result=$(dpkg -l | grep "zabbix-agent" | wc -l)
@@ -77,27 +97,12 @@ install_zabbix_on_ubuntu () {
 #### CentOS ####
 ################
 
-install_ems_on_centos () {
-    if [ ${OFFLINE_EMS} -eq 1 ]; then
-        mkdir -p /opt/openbaton/
-        python -c "import urllib2;response = urllib2.urlopen('http://${BROKER_IP}:9999/api/v1/download/ems-package.tar.gz');ems = response.read();file = open('ems-package.tar.gz', 'w');file.write(ems);file.close();"
-        tar -xf ems-package.tar.gz --directory /opt/openbaton/
-        bash /opt/openbaton/ems-package/install-ems-with-dependencies.sh
-        add-upstart-ems
-    else
-       yum --enablerepo=extras install -y epel-release
-       yum install -y wget
-       wget https://bootstrap.pypa.io/get-pip.py
-       python get-pip.py
-       yum install -y git
-       pip install pika
-       pip install gitpython
-       cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-       mkdir /opt/openbaton
-       pip install openbaton-ems
-       add-upstart-ems
-    fi
+prepare_machine_centos () {
+    yum install -y wget
+    yum install -y git
 }
+
+
 
 install_zabbix_on_centos () {
     result=$( yum list installed | grep zabbix-agent | wc -l )
@@ -157,7 +162,7 @@ fi
 
 case ${os} in
     ubuntu) 
-	    install_ems_on_ubuntu
+	    prepare_machine_ubuntu
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
@@ -165,7 +170,7 @@ case ${os} in
         fi
 	    ;;
     centos)
-	    install_ems_on_centos
+	    prepare_machine_centos
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
@@ -180,7 +185,14 @@ case ${os} in
 	    ;;
 esac	
 
+prepare_machine_generic
+if [ ${OFFLINE_EMS} -eq 1 ]; then
+	        install_ems_offline
+	    else
+	        install_configure_pip_packages
+	    fi
 configure_ems
 if [ -n "${MONITORING_IP}" ]; then
     configure_zabbix
 fi
+

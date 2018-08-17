@@ -102,6 +102,8 @@ dependencies {
     compile 'org.openbaton:vnfm-sdk-amqp:6.0.0-RC1'
     compile 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtime 'org.apache.derby:derby:10.7.1.1'
+    compile("org.springframework.boot:spring-boot-starter-web:1.5.6.RELEASE")
+    compile("org.springframework.boot:spring-boot-starter-tomcat:1.5.6.RELEASE")
 
     testCompile 'junit:junit:'+ junitVersion
     testCompile 'org.mockito:mockito-all:1.10.19'

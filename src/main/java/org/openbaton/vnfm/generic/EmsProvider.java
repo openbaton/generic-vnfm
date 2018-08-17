@@ -15,24 +15,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/download")
 public class EmsProvider {
-  @Value("${vnfm.ems.package.path:/opt/openbaton/ems/ems-0.22.deb}")
+  @Value("${vnfm.ems.package.path:/opt/openbaton/ems-package/ems-package.tar}")
   private String emsPath;
 
-  @RequestMapping(value = "ems-package.tar.gz", method = RequestMethod.GET)
+  @RequestMapping(value = "ems-package.tar", method = RequestMethod.GET)
   public ResponseEntity fetchEmsDebian() {
     FileInputStream fi;
     try {
       fi = new FileInputStream(emsPath);
     } catch (FileNotFoundException e) {
       return new ResponseEntity<>(
-              "EMS package does not exist in the path that is set in properties",
-              HttpStatus.FAILED_DEPENDENCY);
+          "EMS package does not exist in the path that is set in properties",
+          HttpStatus.FAILED_DEPENDENCY);
     }
     return ResponseEntity.ok()
-            .header("Accept-Ranges", "bytes")
-            .eTag("\"" + "ems.deb" + "\"")
-            .contentType(MediaType.parseMediaType("application/octet-stream"))
-            .header("content-disposition", "attachment; filename=\"" + "ems-package.tar.gz" + "\"")
-            .body(new InputStreamResource(fi));
+        .header("Accept-Ranges", "bytes")
+        .eTag("\"" + "ems.deb" + "\"")
+        .contentType(MediaType.parseMediaType("application/octet-stream"))
+        .header("content-disposition", "attachment; filename=\"" + "ems-package.tar" + "\"")
+        .body(new InputStreamResource(fi));
   }
 }
