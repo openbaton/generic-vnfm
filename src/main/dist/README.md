@@ -13,7 +13,7 @@ This VNFM may be assigned the management of a single VNF instance, or the manage
 The Generic VNFManager is supposed to be used for any type of VNF that follows some conventions regarding:
 
 * VMs deployment
-* script execution
+* scriptIndex execution
 * VMs termination
 
 Please refer to [our documentation][generic-vnfm] for more details about this project.

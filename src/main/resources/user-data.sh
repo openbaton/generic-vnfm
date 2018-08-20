@@ -13,13 +13,21 @@ export EMS_VERSION=
 export #Hostname=
 export ENDPOINT=
 
+# Hostname/IP and path of the EMS repository
+export UBUNTU_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
+export UBUNTU_EMS_REPOSITORY_PATH="repos/openbaton"
+export CENTOS_EMS_REPOSITORY_HOSTNAME_OR_IP="get.openbaton.org"
+export CENTOS_EMS_REPOSITORY_PATH="repos/rpm/"
+
+export EMS_PROPERTIES_FILE="/etc/openbaton/openbaton-ems.properties"
+
+export OS_DISTRIBUTION_CODENAME=
 export OS_DISTRIBUTION_RELEASE_MAJOR=
 
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LC_COLLATE=C
 export LC_CTYPE=en_US.UTF-8
-source /etc/bashrc
 
 #################
 #### Generic ####
@@ -39,15 +47,15 @@ install_configure_pip_packages () {
     pip install gitpython
     #Installation of Generic EMS
     ##If
-    [ -n "$EMS_VERSION" ] && 
+    [ -n "$EMS_VERSION" ] &&
     ##THEN
-    echo "Installing EMS $EMS_VERSION" && 
-    pip install openbaton-ems==$EMS_VERSION || 
+    echo "Installing EMS $EMS_VERSION" &&
+    pip install openbaton-ems==$EMS_VERSION ||
     ##ELSE or THEN failed
-    echo "Not defined or existing version. Installing latest version..." && 
+    echo "Not defined or existing version. Installing latest version..." &&
     pip install openbaton-ems
-    
-    add-upstart-ems    
+
+    add-upstart-ems
 }
 
 ################
