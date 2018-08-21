@@ -46,15 +46,14 @@ install_configure_pip_packages () {
     pip install pika
     pip install gitpython
     #Installation of Generic EMS
-    ##If
-    [ -n "$EMS_VERSION" ] &&
-    ##THEN
-    echo "Installing EMS $EMS_VERSION" &&
-    pip install openbaton-ems==$EMS_VERSION ||
-    ##ELSE or THEN failed
-    echo "Not defined or existing version. Installing latest version..." &&
-    pip install openbaton-ems
-
+    if [ -n "$EMS_VERSION" ]
+    then
+        echo "Installing EMS $EMS_VERSION"
+        pip install openbaton-ems==$EMS_VERSION
+    else
+        echo "Not defined ems version. Installing latest version..." &&
+        pip install openbaton-ems
+    fi
     add-upstart-ems
 }
 
@@ -153,7 +152,7 @@ fi
 
 case ${os} in
     ubuntu)
-            prepare_machine_ubuntu
+        prepare_machine_ubuntu
         if [ -z "${MONITORING_IP}" ]; then
             echo "No MONITORING_IP is defined, I will not download zabbix-agent"
         else
