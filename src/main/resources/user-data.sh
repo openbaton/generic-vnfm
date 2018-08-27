@@ -111,17 +111,17 @@ install_zabbix_on_centos () {
 #############
 
 configure_ems () {
-    mkdir -p /etc/openbaton/ems
-    echo [ems] > /etc/openbaton/ems/conf.ini
-    echo broker_ip=$BROKER_IP >> /etc/openbaton/ems/conf.ini
-    echo broker_port=$BROKER_PORT >> /etc/openbaton/ems/conf.ini
-    echo username=$USERNAME >> /etc/openbaton/ems/conf.ini
-    echo password=$PASSWORD >> /etc/openbaton/ems/conf.ini
-    echo exchange=$EXCHANGE_NAME >> /etc/openbaton/ems/conf.ini
-    echo heartbeat=$EMS_HEARTBEAT >> /etc/openbaton/ems/conf.ini
-    echo autodelete=$EMS_AUTODELETE >> /etc/openbaton/ems/conf.ini
-    echo type=$ENDPOINT >> /etc/openbaton/ems/conf.ini
-    echo hostname=$Hostname >> /etc/openbaton/ems/conf.ini
+    mkdir -p /etc/openbaton
+    echo [ems] > ${EMS_PROPERTIES_FILE}
+    echo broker_ip=$BROKER_IP >> ${EMS_PROPERTIES_FILE}
+    echo broker_port=$BROKER_PORT >> ${EMS_PROPERTIES_FILE}
+    echo username=$USERNAME >> ${EMS_PROPERTIES_FILE}
+    echo password=$PASSWORD >> ${EMS_PROPERTIES_FILE}
+    echo exchange=$EXCHANGE_NAME >> ${EMS_PROPERTIES_FILE}
+    echo heartbeat=$EMS_HEARTBEAT >> ${EMS_PROPERTIES_FILE}
+    echo autodelete=$EMS_AUTODELETE >> ${EMS_PROPERTIES_FILE}
+    echo type=$ENDPOINT >> ${EMS_PROPERTIES_FILE}
+    echo hostname=$Hostname >> ${EMS_PROPERTIES_FILE}
     service openbaton-ems restart
 }
 
