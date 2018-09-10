@@ -51,7 +51,7 @@ ext {
     applicationVersionFull = "${applicationVersion}${applicationVersionSnapshot}"
     mainClass = 'org.openbaton.vnfm.generic.GenericVNFM'
     junitVersion = "4.12"
-    openbatonVersion='6.0.0'
+    openbatonVersion='6.0.1-SNAPSHOT'
 }
 
 
