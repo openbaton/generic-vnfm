@@ -41,11 +41,6 @@ apply from: 'gradle/gradle/git.helpers.gradle'
 apply from: 'gradle/gradle/command.line.helper.gradle'
 
 ext {
-    //------------------------------------------------//
-    //------------------------------------------------//
-    /**
-     * Application Related Version
-     */
     applicationVersion = version
 
     applicationRelease = isApplicationRelease()
@@ -54,18 +49,9 @@ ext {
 
     applicationVersionSnapshot = (!applicationRelease) ? ".${asUTC(applicationDate, 'yyyyMMdd')}.git${applicationRevision}" : ""
     applicationVersionFull = "${applicationVersion}${applicationVersionSnapshot}"
-
-    //------------------------------------------------//
-    /**
-     * gradle Related Vars
-     */
     mainClass = 'org.openbaton.vnfm.generic.GenericVNFM'
-    //------------------------------------------------//
-    //------------------------------------------------//
-    /**
-     * Junit Version
-     */
     junitVersion = "4.12"
+    openbatonVersion='6.0.0'
 }
 
 
@@ -98,7 +84,7 @@ javadoc {
 }
 
 dependencies {
-    compile 'org.openbaton:vnfm-sdk-amqp:6.0.0-RC1'
+    compile 'org.openbaton:vnfm-sdk-amqp:'+openbatonVersion
     compile 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtime 'org.apache.derby:derby:10.7.1.1'
 
