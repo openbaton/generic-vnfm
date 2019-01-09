@@ -140,7 +140,7 @@ configure_zabbix () {
 #### Main ####
 ##############
 
-if [ $(cat /etc/os-release | grep -i "ubuntu" | wc -l) -gt 0 ]; then
+if [ $(cat /etc/os-release | grep -i "debian\|ubuntu" | wc -l) -gt 0 ]; then
     os=ubuntu
 elif [ $(cat /etc/os-release | grep -i "centos" | wc -l) -gt 0 ]; then
     os=centos
