@@ -35,9 +35,10 @@ public class ScaleInLifecycleEventExecutor extends GeneralLifecycleEventExecutor
   }
 
   @Override
-  protected Map<String, String> createEnvMapFrom(VNFCInstance vnfcInstance) {
+  protected Map<String, String> createEnvMapFrom(
+      Map<String, String> env, VNFCInstance vnfcInstance) {
     Map<String, String> envMap =
-        EnvMapUtils.createForLifeCycleEventExecutionOnVNFCInstance(vnfcInstance);
+        EnvMapUtils.createForLifeCycleEventExecutionOnVNFCInstance(env, vnfcInstance);
     envMap = putInfoFrom(envMap, removedVnfcInstance);
     return envMap;
   }

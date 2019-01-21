@@ -44,7 +44,7 @@ public class ConfigureLifecycleEventExecutor extends LifecycleEventExecutor {
     for (String script : scripts) {
       String foreignDependencyType = getForeingDependencyType(script);
       for (VNFCInstance vnfcInstance : getVnfcInstances()) {
-        env = createEnvMapFrom(vnfcInstance);
+        env = createEnvMapFrom(env, vnfcInstance);
 
         // check if the script starts with type
         if (foreignDependencyType != null

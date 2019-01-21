@@ -107,8 +107,9 @@ public abstract class LifecycleEventExecutor {
     return vnfcInstances;
   }
 
-  protected Map<String, String> createEnvMapFrom(VNFCInstance vnfcInstance) {
-    return EnvMapUtils.createForLifeCycleEventExecutionOnVNFCInstance(vnfcInstance);
+  protected Map<String, String> createEnvMapFrom(
+      Map<String, String> env, VNFCInstance vnfcInstance) {
+    return EnvMapUtils.createForLifeCycleEventExecutionOnVNFCInstance(env, vnfcInstance);
   }
 
   private void handleScriptException(Exception e, VNFCInstance vnfcInstance, String script)
