@@ -44,7 +44,8 @@ public class ConfigureLifecycleEventExecutor extends LifecycleEventExecutor {
     for (String script : scripts) {
       String foreignDependencyType = getForeingDependencyType(script);
       for (VNFCInstance vnfcInstance : getVnfcInstances()) {
-        env = createEnvMapFrom(env, vnfcInstance);
+        Map<String, String> tempEnv = createEnvMapFrom(vnfcInstance);
+        env.putAll(tempEnv);
 
         // check if the script starts with type
         if (foreignDependencyType != null
@@ -57,7 +58,7 @@ public class ConfigureLifecycleEventExecutor extends LifecycleEventExecutor {
                   .getParameters()
                   .keySet()) {
 
-            Map<String, String> tempEnv = new HashMap<>();
+            Map<String, String> tempEnv1 = new HashMap<>();
 
             //Adding foreign parameters such as ip
             log.debug("Fetching parameter from dependency of type: " + foreignDependencyType);
@@ -72,7 +73,7 @@ public class ConfigureLifecycleEventExecutor extends LifecycleEventExecutor {
                       + param.getKey()
                       + " = "
                       + param.getValue());
-              tempEnv.put(foreignDependencyType + "_" + param.getKey(), param.getValue());
+              tempEnv1.put(foreignDependencyType + "_" + param.getKey(), param.getValue());
             }
 
             Map<String, String> parametersVNFC =
@@ -90,17 +91,17 @@ public class ConfigureLifecycleEventExecutor extends LifecycleEventExecutor {
                       + param.getKey()
                       + " = "
                       + param.getValue());
-              tempEnv.put(foreignDependencyType + "_" + param.getKey(), param.getValue());
+              tempEnv1.put(foreignDependencyType + "_" + param.getKey(), param.getValue());
             }
 
-            tempEnv = EnvMapUtils.modifyUnsafeEnvVarNames(tempEnv);
-            env.putAll(tempEnv);
+            tempEnv1 = EnvMapUtils.modifyUnsafeEnvVarNames(tempEnv1);
+            env.putAll(tempEnv1);
             log.info("Environment Variables are: " + env);
             //TODO remove "script" from executeActionOnEMS arguments
             String action = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
             String output = executeActionOnEMS(action, vnfcInstance, script);
             result.add(output);
-            env = EnvMapUtils.clearEnvFromTempValues(env, tempEnv);
+            env = EnvMapUtils.clearEnvFromTempValues(env, tempEnv1);
           }
         }
         // the script does not begin with "<type>_" so it will be executed only once
@@ -117,6 +118,7 @@ public class ConfigureLifecycleEventExecutor extends LifecycleEventExecutor {
         }
         env = EnvMapUtils.clearOwnIpAndFloatingIpInEnv(env, vnfcInstance);
         env = EnvMapUtils.clearVNFCInstanceHostnameInMap(env);
+        env = EnvMapUtils.clearEnvFromTempValues(env, tempEnv);
       }
       // Prevent the saveVNFRecordDependency to be called
       // multiple times for multiple scripts

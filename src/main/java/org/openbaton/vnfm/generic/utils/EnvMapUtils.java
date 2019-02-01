@@ -30,11 +30,12 @@ public class EnvMapUtils {
   private static final Logger log = LoggerFactory.getLogger(EnvMapUtils.class);
 
   public static Map<String, String> createForLifeCycleEventExecutionOnVNFCInstance(
-      Map<String, String> env, VNFCInstance vnfcInstance) {
-    env = putOwnIpAndFloatingIp(env, vnfcInstance);
-    env = putVNFCInstanceHostnameInMap(env, vnfcInstance);
-    env = modifyUnsafeEnvVarNames(env);
-    return env;
+      VNFCInstance vnfcInstance) {
+    Map<String, String> tempEnv = new HashMap<>();
+    tempEnv = putOwnIpAndFloatingIp(tempEnv, vnfcInstance);
+    tempEnv = putVNFCInstanceHostnameInMap(tempEnv, vnfcInstance);
+    tempEnv = modifyUnsafeEnvVarNames(tempEnv);
+    return tempEnv;
   }
 
   public static Map<String, String> createConfigurationParametersAndProvidesMapFromVNFR(

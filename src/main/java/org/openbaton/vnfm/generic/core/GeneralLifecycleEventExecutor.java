@@ -37,7 +37,7 @@ public class GeneralLifecycleEventExecutor extends LifecycleEventExecutor {
     for (String script : scripts) {
       log.info("Sending script: " + script + " to VirtualNetworkFunctionRecord: " + vnfr.getName());
       for (VNFCInstance vnfcInstance : getVnfcInstances()) {
-        Map<String, String> tempEnv = createEnvMapFrom(env, vnfcInstance);
+        Map<String, String> tempEnv = createEnvMapFrom(vnfcInstance);
         env.putAll(tempEnv);
         log.info("Environment Variables are: " + env);
         String action = JsonUtils.getJsonObject("EXECUTE", script, env).toString();
